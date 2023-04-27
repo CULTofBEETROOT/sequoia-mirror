@@ -61,6 +61,15 @@ pub mod hex {
         inner: W,
         indent: String,
         offset: usize,
+
+        /// Pad the offset to this width.
+        offset_width: usize,
+
+        /// Width of the dump in bytes.
+        width: usize,
+
+        /// Whether to print two columns of numbers for readability.
+        two_columns: bool,
     }
 
     assert_send_and_sync!(Dumper<W> where W: io::Write);
@@ -86,7 +95,42 @@ pub mod hex {
                 inner,
                 indent: indent.as_ref().into(),
                 offset,
+                offset_width: 8,
+                width: 16,
+                two_columns: true,
             }
+        }
+
+        /// Pads the offset to this width.
+        pub fn offset_width(mut self, width: usize) -> Self {
+            self.offset_width = width;
+            self
+        }
+
+        /// Sets the width of the dump in bytes.
+        pub fn width(mut self, width: usize) -> Self {
+            self.width = width;
+            self
+        }
+
+        /// Enables one-column format.
+        pub fn one_column(mut self) -> Self {
+            self.two_columns = false;
+            self
+        }
+
+        /// Enables two-columns format.
+        pub fn two_columns(mut self) -> Self {
+            self.two_columns = true;
+            self
+        }
+
+        /// Formats the dump like the samples in RFC9580.
+        pub fn rfc_mode(mut self) -> Self {
+            self.indent.push_str("0x");
+            self.width(8)
+                .offset_width(4)
+                .one_column()
         }
 
         /// Returns the inner writer.
@@ -148,14 +192,15 @@ pub mod hex {
                   L: FnMut(usize, &[u8]) -> Option<String>,
         {
             let buf = buf.as_ref();
-            let mut first_label_offset = self.offset % 16;
+            let mut first_label_offset = self.offset % self.width;
 
-            write!(self.inner, "{}{:08x} ", self.indent, self.offset)?;
-            for i in 0 .. self.offset % 16 {
-                if i != 7 {
-                    write!(self.inner, "   ")?;
-                } else {
+            write!(self.inner, "{}{:0width$x} ", self.indent, self.offset,
+                   width = self.offset_width)?;
+            for i in 0 .. self.offset % self.width {
+                if self.two_columns && i == self.width / 2 - 1 {
                     write!(self.inner, "    ")?;
+                } else {
+                    write!(self.inner, "   ")?;
                 }
             }
 
@@ -164,13 +209,14 @@ pub mod hex {
             for (i, c) in buf.iter().enumerate() {
                 if ! offset_printed {
                     write!(self.inner,
-                           "\n{}{:08x} ", self.indent, self.offset)?;
+                           "\n{}{:0width$x} ", self.indent, self.offset,
+                           width = self.offset_width)?;
                     offset_printed = true;
                 }
 
                 write!(self.inner, " {:02x}", c)?;
                 self.offset += 1;
-                match self.offset % 16 {
+                match self.offset % self.width {
                     0 => {
                         if let Some(msg) = Some(&buf[data_start..i + 1])
                             .filter(|b| ! b.is_empty())
@@ -183,7 +229,8 @@ pub mod hex {
                         data_start = i + 1;
                         offset_printed = false;
                     },
-                    8 => write!(self.inner, " ")?,
+                    n if self.two_columns && n == self.width / 2 =>
+                        write!(self.inner, " ")?,
                     _ => (),
                 }
             }
@@ -192,11 +239,11 @@ pub mod hex {
                 .filter(|b| ! b.is_empty())
                 .and_then(|b| labeler(first_label_offset, b))
             {
-                for i in self.offset % 16 .. 16 {
-                    if i != 7 {
-                        write!(self.inner, "   ")?;
-                    } else {
+                for i in self.offset % self.width .. self.width {
+                    if self.two_columns && i == self.width / 2 - 1 {
                         write!(self.inner, "    ")?;
+                    } else {
+                        write!(self.inner, "   ")?;
                     }
                 }
 
