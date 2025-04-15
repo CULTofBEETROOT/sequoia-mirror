@@ -39,8 +39,9 @@ impl Asymmetric for super::Backend {
             // XXX: Would be better to have a runtime test.
             SLHDSA128s | SLHDSA128f | SLHDSA256s =>
                 openssl::version::number() >= 0x3_05_00_00_0,
+            // XXX: Would be better to have a runtime test.
             MLKEM768_X25519 | MLKEM1024_X448 =>
-                false,
+                openssl::version::number() >= 0x3_05_00_00_0,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
@@ -436,6 +437,129 @@ impl Asymmetric for super::Backend {
         let mut ctx = PkeyCtx::new(&key)?;
         ctx.verify_message_init(&mut algo)?;
         Ok(ctx.verify(digest, &signature[..])?)
+    }
+
+    fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {
+        use openssl::pkey_ml_kem::{PKeyMlKemBuilder, PKeyMlKemParams, Variant};
+
+        let key = PKeyMlKemBuilder::<Private>::new_generate(Variant::MlKem768)?
+            .generate()?;
+        let key_params = PKeyMlKemParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 64]);
+        let mut public = Box::new([0; 1184]);
+        debug_assert_eq!(secret.len(), key_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), key_params.public_key()?.len());
+        secret[..].copy_from_slice(key_params.private_key_seed()?);
+        public[..].copy_from_slice(key_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn mlkem768_encapsulate(public: &[u8; 1184])
+                            -> Result<(Box<[u8; 1088]>, Protected)>
+    {
+        use openssl::pkey_ml_kem::{PKeyMlKemBuilder, Variant};
+
+        let key = PKeyMlKemBuilder::<Public>::new(
+            Variant::MlKem768, public, None)?
+            .build()?;
+
+        let mut ciphertext = Box::new([0; 1088]);
+        let mut keyshare = Protected::from(vec![0; 32]);
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.encapsulate_init()?;
+        let (l0, l1) = ctx.encapsulate(Some(&mut ciphertext[..]),
+                                       Some(&mut keyshare))?;
+
+        debug_assert_eq!(l0, ciphertext.len());
+        debug_assert_eq!(l1, keyshare.len());
+        Ok((ciphertext, keyshare))
+    }
+
+    fn mlkem768_decapsulate(secret: &Protected,
+                            ciphertext: &[u8; 1088])
+                            -> Result<Protected>
+    {
+        use openssl::pkey_ml_kem::{PKeyMlKemBuilder, Variant};
+
+        let key = PKeyMlKemBuilder::<Private>::from_seed(
+            Variant::MlKem768, secret.as_ref())?
+            .build()?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.decapsulate_init()?;
+        let len = ctx.decapsulate(&ciphertext[..], None)?;
+        let mut keyshare = Protected::from(vec![0; len]);
+        let len = ctx.decapsulate(&ciphertext[..], Some(&mut keyshare[..]))?;
+
+        // Shouldn't happen, but better safe than sorry.
+        if len != keyshare.len() {
+            let mut k = Protected::from(vec![0; len]);
+            k[..].copy_from_slice(&keyshare[..len]);
+            keyshare = k;
+        }
+
+        Ok(keyshare)
+    }
+
+    fn mlkem1024_generate_key() -> Result<(Protected, Box<[u8; 1568]>)> {
+        use openssl::pkey_ml_kem::{PKeyMlKemBuilder, PKeyMlKemParams, Variant};
+
+        let key = PKeyMlKemBuilder::<Private>::new_generate(Variant::MlKem1024)?
+            .generate()?;
+        let key_params = PKeyMlKemParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 64]);
+        let mut public = Box::new([0; 1568]);
+        debug_assert_eq!(secret.len(), key_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), key_params.public_key()?.len());
+        secret[..].copy_from_slice(key_params.private_key_seed()?);
+        public[..].copy_from_slice(key_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn mlkem1024_encapsulate(public: &[u8; 1568])
+                             -> Result<(Box<[u8; 1568]>, Protected)>
+    {
+        use openssl::pkey_ml_kem::{PKeyMlKemBuilder, Variant};
+
+        let key = PKeyMlKemBuilder::<Public>::new(
+            Variant::MlKem1024, public, None)?
+            .build()?;
+
+        let mut ciphertext = Box::new([0; 1568]);
+        let mut keyshare = Protected::from(vec![0; 32]);
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.encapsulate_init()?;
+        let (l0, l1) = ctx.encapsulate(Some(&mut ciphertext[..]),
+                                       Some(&mut keyshare))?;
+
+        debug_assert_eq!(l0, ciphertext.len());
+        debug_assert_eq!(l1, keyshare.len());
+        Ok((ciphertext, keyshare))
+    }
+
+    fn mlkem1024_decapsulate(secret: &Protected,
+                             ciphertext: &[u8; 1568])
+                             -> Result<Protected>
+    {
+        use openssl::pkey_ml_kem::{PKeyMlKemBuilder, Variant};
+
+        let key = PKeyMlKemBuilder::<Private>::from_seed(
+            Variant::MlKem1024, secret.as_ref())?
+            .build()?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.decapsulate_init()?;
+        let mut keyshare = Protected::from(vec![0; 32]);
+        let len = ctx.decapsulate(&ciphertext[..], Some(&mut keyshare[..]))?;
+        debug_assert_eq!(len, keyshare.len());
+
+        Ok(keyshare)
     }
 
     fn dsa_generate_key(p_bits: usize)
