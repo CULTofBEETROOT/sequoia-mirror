@@ -4299,4 +4299,42 @@ xHUDBRY0WIQ+50WENDPP";
 
         Ok(())
     }
+
+    /// This sample detached signature is from draft-ietf-openpgp-pqc-09.
+    #[test]
+    fn detached_mldsa_65() -> Result<()> {
+        sample_detached_sig("pqc/v6-mldsa-65-sample-pk.pgp",
+                            "pqc/v6-mldsa-65-sample-signature.pgp",
+                            b"Testing\n")
+    }
+
+    /// This sample detached signature is from draft-ietf-openpgp-pqc-09.
+    #[test]
+    fn detached_mldsa_87() -> Result<()> {
+        sample_detached_sig("pqc/v6-mldsa-87-sample-pk.pgp",
+                            "pqc/v6-mldsa-87-sample-signature.pgp",
+                            b"Testing\n")
+    }
+
+    fn sample_detached_sig(cert: &str, sig: &str, data: &[u8])
+                           -> Result<()>
+    {
+        eprintln!("Test vector {}/{}...", cert, sig);
+
+        let cert = Cert::from_bytes(crate::tests::file(cert))?;
+        skip_unless_supported!(cert.primary_key().key().pk_algo());
+
+        let h = VHelper::new(0, 0, 0, 0, vec![cert]);
+        let p = &P::new();
+        let mut v = DetachedVerifierBuilder::from_bytes(
+            crate::tests::file(sig))?
+            .with_policy(p, None, h)?;
+
+        assert!(v.verify_bytes(data).is_ok());
+
+        let h = v.into_helper();
+        assert_eq!(h.good, 1);
+
+        Ok(())
+    }
 }

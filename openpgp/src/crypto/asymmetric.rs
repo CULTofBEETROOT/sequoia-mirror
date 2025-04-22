@@ -244,6 +244,32 @@ impl Signer for KeyPair {
                     })
                 },
 
+                (PublicKeyAlgorithm::MLDSA65_Ed25519,
+                 mpi::PublicKey::MLDSA65_Ed25519 {
+                     eddsa: eddsa_pub, ..
+                 },
+                 mpi::SecretKeyMaterial::MLDSA65_Ed25519 {
+                     eddsa: eddsa_sec, mldsa: mldsa_sec,
+                 }) => Ok(mpi::Signature::MLDSA65_Ed25519 {
+                     eddsa: Box::new(Backend::ed25519_sign(
+                         eddsa_sec, eddsa_pub, digest)?),
+                     mldsa: Backend::mldsa65_sign(
+                         mldsa_sec, digest)?,
+                 }),
+
+                (PublicKeyAlgorithm::MLDSA87_Ed448,
+                 mpi::PublicKey::MLDSA87_Ed448 {
+                     eddsa: eddsa_pub, ..
+                 },
+                 mpi::SecretKeyMaterial::MLDSA87_Ed448 {
+                     eddsa: eddsa_sec, mldsa: mldsa_sec,
+                 }) => Ok(mpi::Signature::MLDSA87_Ed448 {
+                     eddsa: Box::new(Backend::ed448_sign(
+                         eddsa_sec, eddsa_pub, digest)?),
+                     mldsa: Backend::mldsa87_sign(
+                         mldsa_sec, digest)?,
+                 }),
+
                 (PublicKeyAlgorithm::EdDSA,
                  mpi::PublicKey::EdDSA { curve, q },
                  mpi::SecretKeyMaterial::EdDSA { scalar }) => match curve {

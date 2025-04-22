@@ -27,6 +27,18 @@
    - crypto::aead::SEIPv2Schedule
    - crypto::aead::Encryptor
    - crypto::aead::Decryptor
+   - Key6::generate_mldsa65_ed25519
+   - Key6::generate_mldsa87_ed448
+   - mpi::PublicKey::MLDSA65_Ed25519
+   - mpi::PublicKey::MLDSA87_Ed448
+   - mpi::SecretKeyMaterial::MLDSA65_Ed25519
+   - mpi::SecretKeyMaterial::MLDSA87_Ed448
+   - mpi::Signature::MLDSA65_Ed25519
+   - mpi::Signature::MLDSA87_Ed448
+   - PublicKeyAlgorithm::MLDSA65_Ed25519
+   - PublicKeyAlgorithm::MLDSA87_Ed448
+   - policy::AsymmetricAlgorithm::MLDSA65_Ed25519
+   - policy::AsymmetricAlgorithm::MLDSA87_Ed448
 
 * Changes in 2.0.0
 ** Notable changes

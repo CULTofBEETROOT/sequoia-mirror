@@ -157,6 +157,32 @@ impl mpi::PublicKey {
                 Ok(mpi::PublicKey::Ed448 { a: Box::new(a) })
             },
 
+            MLDSA65_Ed25519 => Ok(mpi::PublicKey::MLDSA65_Ed25519 {
+                eddsa: {
+                    let mut a = Box::new([0; 32]);
+                    php.parse_bytes_into("ed25519_public", &mut a[..])?;
+                    a
+                },
+                mldsa: {
+                    let mut a = Box::new([0; 1952]);
+                    php.parse_bytes_into("mldsa65_public", &mut a[..])?;
+                    a
+                },
+            }),
+
+            MLDSA87_Ed448 => Ok(mpi::PublicKey::MLDSA87_Ed448 {
+                eddsa: {
+                    let mut a = Box::new([0; 57]);
+                    php.parse_bytes_into("ed448_public", &mut a[..])?;
+                    a
+                },
+                mldsa: {
+                    let mut a = Box::new([0; 2592]);
+                    php.parse_bytes_into("mldsa87_public", &mut a[..])?;
+                    a
+                },
+            }),
+
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
                 while let Ok(mpi) = MPI::parse("unknown_len",
@@ -323,6 +349,22 @@ impl mpi::SecretKeyMaterial {
                 let mut x: Protected = vec![0; 57].into();
                 php.parse_bytes_into("ed448_secret", &mut x)?;
                 Ok(mpi::SecretKeyMaterial::Ed448 { x })
+            },
+
+            MLDSA65_Ed25519 => {
+                let mut eddsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("ed25519_secret", &mut eddsa)?;
+                let mut mldsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("mldsa_secret", &mut mldsa)?;
+                Ok(mpi::SecretKeyMaterial::MLDSA65_Ed25519 { eddsa, mldsa })
+            },
+
+            MLDSA87_Ed448 => {
+                let mut eddsa: Protected = vec![0; 57].into();
+                php.parse_bytes_into("ed448_secret", &mut eddsa)?;
+                let mut mldsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("mldsa_secret", &mut mldsa)?;
+                Ok(mpi::SecretKeyMaterial::MLDSA87_Ed448 { eddsa, mldsa })
             },
 
             Unknown(_) | Private(_) => {
@@ -494,6 +536,7 @@ impl mpi::Ciphertext {
             }
 
             RSASign | DSA | EdDSA | ECDSA | Ed25519 | Ed448
+                | MLDSA65_Ed25519 | MLDSA87_Ed448
                 => Err(Error::InvalidArgument(
                     format!("not an encryption algorithm: {:?}", algo)).into()),
         }
@@ -596,6 +639,32 @@ impl mpi::Signature {
                 php.parse_bytes_into("ed448_sig", &mut s)?;
                 Ok(mpi::Signature::Ed448 { s: Box::new(s) })
             },
+
+            MLDSA65_Ed25519 => Ok(mpi::Signature::MLDSA65_Ed25519 {
+                eddsa: {
+                    let mut s = Box::new([0; 64]);
+                    php.parse_bytes_into("ed25519_sig", &mut s[..])?;
+                    s
+                },
+                mldsa: {
+                    let mut s = Box::new([0; 3309]);
+                    php.parse_bytes_into("mldsa65_sig", &mut s[..])?;
+                    s
+                },
+            }),
+
+            MLDSA87_Ed448 => Ok(mpi::Signature::MLDSA87_Ed448 {
+                eddsa: {
+                    let mut s = Box::new([0; 114]);
+                    php.parse_bytes_into("ed448_sig", &mut s[..])?;
+                    s
+                },
+                mldsa: {
+                    let mut s = Box::new([0; 4627]);
+                    php.parse_bytes_into("mldsa87_sig", &mut s[..])?;
+                    s
+                },
+            }),
 
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();

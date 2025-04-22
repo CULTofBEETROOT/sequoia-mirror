@@ -26,6 +26,7 @@ use quickcheck::{Arbitrary, Gen};
 ///
 ///   [Section 9.1 of RFC 9580]: https://www.rfc-editor.org/rfc/rfc9580.html#section-9.1
 #[non_exhaustive]
+#[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub enum PublicKeyAlgorithm {
     /// RSA (Encrypt or Sign)
@@ -59,6 +60,13 @@ pub enum PublicKeyAlgorithm {
     Ed25519,
     /// Ed448 (RFC 8032).
     Ed448,
+
+    /// Composite signature algorithm using ML-DSA-65 and Ed25519.
+    MLDSA65_Ed25519,
+
+    /// Composite signature algorithm using ML-DSA-87 and Ed448.
+    MLDSA87_Ed448,
+
     /// Private algorithm identifier.
     Private(u8),
     /// Unknown algorithm identifier.
@@ -67,7 +75,7 @@ pub enum PublicKeyAlgorithm {
 assert_send_and_sync!(PublicKeyAlgorithm);
 
 #[allow(deprecated)]
-pub(crate) const PUBLIC_KEY_ALGORITHM_VARIANTS: [PublicKeyAlgorithm; 13] = [
+pub(crate) const PUBLIC_KEY_ALGORITHM_VARIANTS: [PublicKeyAlgorithm; 15] = [
     PublicKeyAlgorithm::RSAEncryptSign,
     PublicKeyAlgorithm::RSAEncrypt,
     PublicKeyAlgorithm::RSASign,
@@ -81,6 +89,8 @@ pub(crate) const PUBLIC_KEY_ALGORITHM_VARIANTS: [PublicKeyAlgorithm; 13] = [
     PublicKeyAlgorithm::X448,
     PublicKeyAlgorithm::Ed25519,
     PublicKeyAlgorithm::Ed448,
+    PublicKeyAlgorithm::MLDSA65_Ed25519,
+    PublicKeyAlgorithm::MLDSA87_Ed448,
 ];
 
 impl PublicKeyAlgorithm {
@@ -107,6 +117,8 @@ impl PublicKeyAlgorithm {
                      | EdDSA
                      | Ed25519
                      | Ed448
+                     | MLDSA65_Ed25519
+                     | MLDSA87_Ed448
                      | Private(_)
                      | Unknown(_)
             )
@@ -186,6 +198,8 @@ impl From<u8> for PublicKeyAlgorithm {
             26 => X448,
             27 => Ed25519,
             28 => Ed448,
+            30 => MLDSA65_Ed25519,
+            31 => MLDSA87_Ed448,
             100..=110 => Private(u),
             u => Unknown(u),
         }
@@ -210,6 +224,8 @@ impl From<PublicKeyAlgorithm> for u8 {
             X448 => 26,
             Ed25519 => 27,
             Ed448 => 28,
+            MLDSA65_Ed25519 => 30,
+            MLDSA87_Ed448 => 31,
             Private(u) => u,
             Unknown(u) => u,
         }
@@ -253,6 +269,10 @@ impl fmt::Display for PublicKeyAlgorithm {
                 X448 => f.write_str("X448"),
                 Ed25519 => f.write_str("Ed25519"),
                 Ed448 => f.write_str("Ed448"),
+                MLDSA65_Ed25519 =>
+                    f.write_str("Composite signature algorithm using ML-DSA-65 and Ed25519"),
+                MLDSA87_Ed448 =>
+                    f.write_str("Composite signature algorithm using ML-DSA-87 and Ed448"),
                 Private(u) =>
                     f.write_fmt(format_args!("Private/Experimental public key algorithm {}", u)),
                 Unknown(u) =>
@@ -273,6 +293,8 @@ impl fmt::Display for PublicKeyAlgorithm {
                 X448 => f.write_str("X448"),
                 Ed25519 => f.write_str("Ed25519"),
                 Ed448 => f.write_str("Ed448"),
+                MLDSA65_Ed25519 => f.write_str("ML-DSA-65+Ed25519"),
+                MLDSA87_Ed448 => f.write_str("ML-DSA-87+Ed448"),
                 Private(u) =>
                     f.write_fmt(format_args!("Private algo {}", u)),
                 Unknown(u) =>
@@ -298,6 +320,8 @@ impl PublicKeyAlgorithm {
         let a = g.choose(&[
             RSAEncryptSign, RSASign, DSA, ECDSA, EdDSA,
             Ed25519, Ed448,
+            MLDSA65_Ed25519,
+            MLDSA87_Ed448,
         ]).unwrap();
         assert!(a.for_signing());
         *a
