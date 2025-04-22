@@ -17,7 +17,7 @@ use openssl::derive::Deriver;
 use openssl::ec::{EcGroup, EcKey, EcPoint, PointConversionForm};
 use openssl::ecdsa::EcdsaSig;
 use openssl::nid::Nid;
-use openssl::pkey::PKey;
+use openssl::pkey::{PKey, Private, Public};
 use openssl::pkey_ctx::PkeyCtx;
 use openssl::rsa::{Padding, Rsa, RsaPrivateKeyBuilder};
 use openssl::sign::Signer as OpenSslSigner;
@@ -33,7 +33,9 @@ impl Asymmetric for super::Backend {
             RSAEncryptSign | RSAEncrypt | RSASign => true,
             DSA => true,
             ECDH | ECDSA | EdDSA => true,
-            MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
+            // XXX: Would be better to have a runtime test.
+            MLDSA65_Ed25519 | MLDSA87_Ed448 =>
+                openssl::version::number() >= 0x3_05_00_00_0,
             SLHDSA128s | SLHDSA128f | SLHDSA256s =>
                 false,
             MLKEM768_X25519 | MLKEM1024_X448 =>
@@ -163,6 +165,114 @@ impl Asymmetric for super::Backend {
             public, openssl::pkey::Id::ED448)?;
         let mut verifier = Verifier::new_without_digest(&key)?;
         Ok(verifier.verify_oneshot(signature, digest)?)
+    }
+
+    fn mldsa65_generate_key() -> Result<(Protected, Box<[u8; 1952]>)> {
+        use openssl::pkey_ml_dsa::{PKeyMlDsaBuilder, PKeyMlDsaParams, Variant};
+
+        let key = PKeyMlDsaBuilder::<Private>::new_generate(Variant::MlDsa65)?
+            .generate()?;
+        let public_params = PKeyMlDsaParams::<Public>::from_pkey(&key)?;
+        let secret_params = PKeyMlDsaParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 32]);
+        let mut public = Box::new([0; 1952]);
+        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), public_params.public_key()?.len());
+        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        public[..].copy_from_slice(public_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn mldsa65_sign(secret: &Protected, digest: &[u8])
+                    -> Result<Box<[u8; 3309]>>
+    {
+        use openssl::pkey_ml_dsa::{PKeyMlDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeyMlDsaBuilder::<Private>::from_seed(
+            Variant::MlDsa65, secret.as_ref())?
+            .build()?;
+        let mut algo = Signature::for_ml_dsa(Variant::MlDsa65)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.sign_message_init(&mut algo)?;
+        let mut signature = Box::new([0; 3309]);
+        let len = ctx.sign(digest, Some(&mut signature[..]))?;
+        debug_assert_eq!(len, signature.len());
+
+        Ok(signature)
+    }
+
+    fn mldsa65_verify(public: &[u8; 1952], digest: &[u8], signature: &[u8; 3309])
+                      -> Result<bool>
+    {
+        use openssl::pkey_ml_dsa::{PKeyMlDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeyMlDsaBuilder::<Public>::new(
+            Variant::MlDsa65, public, None)?
+            .build()?;
+        let mut algo = Signature::for_ml_dsa(Variant::MlDsa65)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.verify_message_init(&mut algo)?;
+        Ok(ctx.verify(digest, &signature[..])?)
+    }
+
+    fn mldsa87_generate_key() -> Result<(Protected, Box<[u8; 2592]>)> {
+        use openssl::pkey_ml_dsa::{PKeyMlDsaBuilder, PKeyMlDsaParams, Variant};
+
+        let key = PKeyMlDsaBuilder::<Private>::new_generate(Variant::MlDsa87)?
+            .generate()?;
+        let public_params = PKeyMlDsaParams::<Public>::from_pkey(&key)?;
+        let secret_params = PKeyMlDsaParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 32]);
+        let mut public = Box::new([0; 2592]);
+        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), public_params.public_key()?.len());
+        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        public[..].copy_from_slice(public_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn mldsa87_sign(secret: &Protected, digest: &[u8])
+                    -> Result<Box<[u8; 4627]>>
+    {
+        use openssl::pkey_ml_dsa::{PKeyMlDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeyMlDsaBuilder::<Private>::from_seed(
+            Variant::MlDsa87, secret.as_ref())?
+            .build()?;
+        let mut algo = Signature::for_ml_dsa(Variant::MlDsa87)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.sign_message_init(&mut algo)?;
+        let mut signature = Box::new([0; 4627]);
+        let len = ctx.sign(digest, Some(&mut signature[..]))?;
+        debug_assert_eq!(len, signature.len());
+
+        Ok(signature)
+    }
+
+    fn mldsa87_verify(public: &[u8; 2592], digest: &[u8], signature: &[u8; 4627])
+                      -> Result<bool>
+    {
+        use openssl::pkey_ml_dsa::{PKeyMlDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeyMlDsaBuilder::<Public>::new(
+            Variant::MlDsa87, public, None)?
+            .build()?;
+        let mut algo = Signature::for_ml_dsa(Variant::MlDsa87)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.verify_message_init(&mut algo)?;
+        Ok(ctx.verify(digest, &signature[..])?)
     }
 
     fn dsa_generate_key(p_bits: usize)
