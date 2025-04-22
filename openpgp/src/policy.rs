@@ -714,7 +714,7 @@ a_cutoff_list!(SubpacketTagCutoffList, SubpacketTag, 40,
                    ACCEPT,                 // 39. PreferredAEADCiphersuites.
                ]);
 
-a_cutoff_list!(AsymmetricAlgorithmCutoffList, AsymmetricAlgorithm, 24,
+a_cutoff_list!(AsymmetricAlgorithmCutoffList, AsymmetricAlgorithm, 26,
                [
                    Some(Timestamp::Y2014M2), // 0. RSA1024.
                    ACCEPT,                   // 1. RSA2048.
@@ -740,6 +740,8 @@ a_cutoff_list!(AsymmetricAlgorithmCutoffList, AsymmetricAlgorithm, 24,
                    ACCEPT,                   // 21. Ed25519.
                    ACCEPT,                   // 22. Ed448.
                    ACCEPT,                   // 23. EdDSA (i.e., Legacy Ed25519).
+                   ACCEPT,                   // 24. MLDSA65_Ed25519.
+                   ACCEPT,                   // 25. MLDSA87_Ed448.
                ]);
 
 a_cutoff_list!(SymmetricAlgorithmCutoffList, SymmetricAlgorithm, 14,
@@ -1594,6 +1596,11 @@ impl<'a> Policy for StandardPolicy<'a> {
             (PublicKeyAlgorithm::Ed25519, _) => AsymmetricAlgorithm::Ed25519,
             (PublicKeyAlgorithm::Ed448, _) => AsymmetricAlgorithm::Ed448,
 
+            (PublicKeyAlgorithm::MLDSA65_Ed25519, _) =>
+                AsymmetricAlgorithm::MLDSA65_Ed25519,
+            (PublicKeyAlgorithm::MLDSA87_Ed448, _) =>
+                AsymmetricAlgorithm::MLDSA87_Ed448,
+
             (PublicKeyAlgorithm::Private(_), _)
                 | (PublicKeyAlgorithm::Unknown(_), _)
                 => AsymmetricAlgorithm::Unknown,
@@ -1680,6 +1687,7 @@ impl<'a> Policy for StandardPolicy<'a> {
 /// bucket.  For example, a 3253-bit RSA key is categorized as
 /// `RSA3072`.
 #[non_exhaustive]
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub enum AsymmetricAlgorithm {
     /// RSA with key sizes up to 2048-1 bit.
@@ -1730,12 +1738,19 @@ pub enum AsymmetricAlgorithm {
     Ed448,
     /// EdDSA (v4 Ed25519Legacy)
     EdDSA,
+
+    /// Composite signature algorithm using ML-DSA-65 and Ed25519.
+    MLDSA65_Ed25519,
+
+    /// Composite signature algorithm using ML-DSA-87 and Ed448.
+    MLDSA87_Ed448,
+
     /// Unknown algorithm.
     Unknown,
 }
 assert_send_and_sync!(AsymmetricAlgorithm);
 
-const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 24] = [
+const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 26] = [
     AsymmetricAlgorithm::RSA1024,
     AsymmetricAlgorithm::RSA2048,
     AsymmetricAlgorithm::RSA3072,
@@ -1760,6 +1775,8 @@ const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 24] = [
     AsymmetricAlgorithm::Ed25519,
     AsymmetricAlgorithm::Ed448,
     AsymmetricAlgorithm::EdDSA,
+    AsymmetricAlgorithm::MLDSA65_Ed25519,
+    AsymmetricAlgorithm::MLDSA87_Ed448,
 ];
 
 impl AsymmetricAlgorithm {
@@ -1806,6 +1823,8 @@ impl From<AsymmetricAlgorithm> for u8 {
             Ed25519 => 21,
             Ed448 => 22,
             EdDSA => 23,
+            MLDSA65_Ed25519 => 24,
+            MLDSA87_Ed448 => 25,
             Unknown => 255,
         }
     }

@@ -4,6 +4,11 @@ use std::time::SystemTime;
 
 use crate::{
     Result,
+    crypto::{
+        PublicKeyAlgorithm,
+        backend::{Backend, interface::Asymmetric},
+        mpi,
+    },
     packet::key::{self, Key4, Key6, SecretParts},
     types::Curve,
 };
@@ -29,6 +34,42 @@ impl<R> Key6<SecretParts, R>
     /// Generates a new Ed448 key.
     pub fn generate_ed448() -> Result<Self> {
         Key4::generate_ed448().map(Key6::from_common)
+    }
+
+    /// Generates a new MLDSA65+Ed25519 key.
+    pub fn generate_mldsa65_ed25519() -> Result<Self> {
+        let (eddsa_secret, eddsa_public) = Backend::ed25519_generate_key()?;
+        let (mldsa_secret, mldsa_public) = Backend::mldsa65_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA65_Ed25519,
+            mpi::PublicKey::MLDSA65_Ed25519 {
+                eddsa: Box::new(eddsa_public),
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA65_Ed25519 {
+                eddsa: eddsa_secret,
+                mldsa: mldsa_secret,
+            }.into())
+    }
+
+    /// Generates a new MLDSA87+Ed448 key.
+    pub fn generate_mldsa87_ed448() -> Result<Self> {
+        let (eddsa_secret, eddsa_public) = Backend::ed448_generate_key()?;
+        let (mldsa_secret, mldsa_public) = Backend::mldsa87_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA87_Ed448,
+            mpi::PublicKey::MLDSA87_Ed448 {
+                eddsa: Box::new(eddsa_public),
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA87_Ed448 {
+                eddsa: eddsa_secret,
+                mldsa: mldsa_secret,
+            }.into())
     }
 
     /// Generates a new RSA key with a public modulos of size `bits`.

@@ -12,8 +12,22 @@
      ML-DSA, SLH-DSA, and ML-KEM.  In terms of algorithm coverage,
      ossl does not currently include support for RipeMD160, but it
      brings support for CAST5 and Blowfish.
+
 ** New functionality
    - types::PublicKeyAlgorithmSpecification
+   - Key6::generate_mldsa65_ed25519
+   - Key6::generate_mldsa87_ed448
+   - mpi::PublicKey::MLDSA65_Ed25519
+   - mpi::PublicKey::MLDSA87_Ed448
+   - mpi::SecretKeyMaterial::MLDSA65_Ed25519
+   - mpi::SecretKeyMaterial::MLDSA87_Ed448
+   - mpi::Signature::MLDSA65_Ed25519
+   - mpi::Signature::MLDSA87_Ed448
+   - PublicKeyAlgorithm::MLDSA65_Ed25519
+   - PublicKeyAlgorithm::MLDSA87_Ed448
+   - policy::AsymmetricAlgorithm::MLDSA65_Ed25519
+   - policy::AsymmetricAlgorithm::MLDSA87_Ed448
+
 ** New functionality
    - CertBuilder::set_encryption_algorithm
    - CertBuilder::set_signing_algorithm

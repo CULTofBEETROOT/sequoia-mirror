@@ -47,6 +47,7 @@ impl Asymmetric for super::Backend {
             RSAEncryptSign | RSAEncrypt | RSASign => true,
             DSA => true,
             ECDH | ECDSA | EdDSA => true,
+            MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
@@ -608,7 +609,8 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
 
             ECDH => crate::crypto::ecdh::encrypt(self.parts_as_public(), data),
 
-            RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448 =>
+            RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448 |
+                MLDSA65_Ed25519 | MLDSA87_Ed448 =>
                 Err(Error::InvalidOperation(
                     format!("{} is not an encryption algorithm", self.pk_algo())
                 ).into()),
