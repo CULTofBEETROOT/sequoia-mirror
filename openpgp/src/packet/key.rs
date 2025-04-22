@@ -1789,7 +1789,8 @@ impl<P, R> Key<P, R>
                     "Key: Expected X448 public key, got {:?}", self.mpis())).into())
             },
 
-            RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448 =>
+            RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448
+                | MLDSA65_Ed25519 | MLDSA87_Ed448 =>
                 Err(Error::InvalidOperation(
                     format!("{} is not an encryption algorithm", self.pk_algo())
                 ).into()),
@@ -1868,7 +1869,47 @@ impl<P, R> Key<P, R>
                 },
                 _ => return
                     Err(Error::UnsupportedEllipticCurve(curve.clone()).into()),
-            },
+              },
+
+            (PublicKey::MLDSA65_Ed25519 { eddsa: eddsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA65_Ed25519 { eddsa: eddsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    if let Ok(true) = Backend::ed25519_verify(
+                        eddsa_pub, digest, eddsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa65_verify(
+                        mldsa_pub, digest, mldsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::MLDSA87_Ed448 { eddsa: eddsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA87_Ed448 { eddsa: eddsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    if let Ok(true) = Backend::ed448_verify(
+                        eddsa_pub, digest, eddsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa87_verify(
+                        mldsa_pub, digest, mldsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
 
             (PublicKey::DSA { p, q, g, y }, Signature::DSA { r, s }) =>
                 Backend::dsa_verify(p, q, g, y, digest, r, s)?,

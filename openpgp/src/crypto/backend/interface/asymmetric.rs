@@ -114,6 +114,66 @@ pub trait Asymmetric {
         Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::Ed448).into())
     }
 
+    /// Generates an ML-DSA-65 key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn mldsa65_generate_key() -> Result<(Protected, Box<[u8; 1952]>)> {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA65_Ed25519).into())
+    }
+
+    /// Creates an ML-DSA-65 signature.
+    fn mldsa65_sign(_secret: &Protected, _digest: &[u8])
+                    -> Result<Box<[u8; 3309]>>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA65_Ed25519).into())
+    }
+
+    /// Verifies an ML-DSA-65 signature.
+    fn mldsa65_verify(_public: &[u8; 1952], _digest: &[u8], _signature: &[u8; 3309])
+                      -> Result<bool>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA65_Ed25519).into())
+    }
+
+    /// Generates an ML-DSA-87 key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn mldsa87_generate_key() -> Result<(Protected, Box<[u8; 2592]>)> {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA87_Ed448).into())
+    }
+
+    /// Creates an ML-DSA-87 signature.
+    fn mldsa87_sign(_secret: &Protected, _digest: &[u8])
+                    -> Result<Box<[u8; 4627]>>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA87_Ed448).into())
+    }
+
+    /// Verifies an ML-DSA-87 signature.
+    fn mldsa87_verify(_public: &[u8; 2592], _digest: &[u8], _signature: &[u8; 4627])
+                      -> Result<bool>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA87_Ed448).into())
+    }
+
     /// Generates a DSA key pair.
     ///
     /// `p_bits` denotes the desired size of the parameter `p`.
