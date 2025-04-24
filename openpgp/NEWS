@@ -64,6 +64,8 @@
    - PublicKeyAlgorithm::MLKEM1024_X448
    - policy::AsymmetricAlgorithm::MLKEM768_X25519
    - policy::AsymmetricAlgorithm::MLKEM1024_X448
+   - CipherSuite::MLDSA65
+   - CipherSuite::MLDSA87
 
 * Changes in 2.0.0
 ** Notable changes
