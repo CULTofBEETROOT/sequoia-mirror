@@ -108,6 +108,8 @@
    - PublicKeyAlgorithm::MLKEM1024_X448
    - policy::AsymmetricAlgorithm::MLKEM768_X25519
    - policy::AsymmetricAlgorithm::MLKEM1024_X448
+   - CipherSuite::MLDSA65_Ed25519
+   - CipherSuite::MLDSA87_Ed448
 
 ** New functionality
    - CertBuilder::set_encryption_algorithm
