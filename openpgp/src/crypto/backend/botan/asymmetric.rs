@@ -43,6 +43,7 @@ impl Asymmetric for super::Backend {
             ElGamalEncrypt | ElGamalEncryptSign
                 => true,
             MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
+            SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
             X448 | Ed448 |
             Private(_) | Unknown(_)
                 => false,

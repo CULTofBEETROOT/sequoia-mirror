@@ -3441,6 +3441,22 @@ pub(crate) mod test {
             ("messages/encrypted/x448.sec.pgp",
              "messages/encrypted/x448.msg.pgp",
              "Hello World!\n"),
+
+            ("pqc/v6-eddsa-sample-sk.pgp",
+             "pqc/v6-eddsa-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/v4-eddsa-sample-sk.pgp",
+             "pqc/v4-eddsa-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/v6-mldsa-65-sample-sk.pgp",
+             "pqc/v6-mldsa-65-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/v6-mldsa-87-sample-sk.pgp",
+             "pqc/v6-mldsa-87-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/v6-slhdsa-128s-sample-sk.pgp",
+             "pqc/v6-slhdsa-128s-sample-message.pgp",
+             "Testing\n"),
         ] {
             eprintln!("Test vector {:?}...", key_file);
             let key = Cert::from_bytes(crate::tests::file(key_file))?;
@@ -4299,6 +4315,30 @@ xHUDBRY0WIQ+50WENDPP";
     fn detached_mldsa_87() -> Result<()> {
         sample_detached_sig("pqc/v6-mldsa-87-sample-pk.pgp",
                             "pqc/v6-mldsa-87-sample-signature.pgp",
+                            b"Testing\n")
+    }
+
+    /// This sample detached signature is from draft-ietf-openpgp-pqc-09.
+    #[test]
+    fn detached_slhdsa_128s() -> Result<()> {
+        sample_detached_sig("pqc/v6-slhdsa-128s-sample-pk.pgp",
+                            "pqc/v6-slhdsa-128s-sample-signature.pgp",
+                            b"Testing\n")
+    }
+
+    /// This sample detached signature is from draft-ietf-openpgp-pqc-09.
+    #[test]
+    fn detached_slhdsa_128f() -> Result<()> {
+        sample_detached_sig("pqc/v6-slhdsa-128f-sample-pk.pgp",
+                            "pqc/v6-slhdsa-128f-sample-signature.pgp",
+                            b"Testing\n")
+    }
+
+    /// This sample detached signature is from draft-ietf-openpgp-pqc-09.
+    #[test]
+    fn detached_slhdsa_256s() -> Result<()> {
+        sample_detached_sig("pqc/v6-slhdsa-256s-sample-pk.pgp",
+                            "pqc/v6-slhdsa-256s-sample-signature.pgp",
                             b"Testing\n")
     }
 
