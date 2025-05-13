@@ -39,6 +39,21 @@
    - PublicKeyAlgorithm::MLDSA87_Ed448
    - policy::AsymmetricAlgorithm::MLDSA65_Ed25519
    - policy::AsymmetricAlgorithm::MLDSA87_Ed448
+   - mpi::PublicKey::SLHDSA128s
+   - mpi::PublicKey::SLHDSA128f
+   - mpi::PublicKey::SLHDSA256s
+   - mpi::SecretKeyMaterial::SLHDSA128s
+   - mpi::SecretKeyMaterial::SLHDSA128f
+   - mpi::SecretKeyMaterial::SLHDSA256s
+   - mpi::Signature::SLHDSA128s
+   - mpi::Signature::SLHDSA128f
+   - mpi::Signature::SLHDSA256s
+   - PublicKeyAlgorithm::SLHDSA128s
+   - PublicKeyAlgorithm::SLHDSA128f
+   - PublicKeyAlgorithm::SLHDSA256s
+   - policy::AsymmetricAlgorithm::SLHDSA128s
+   - policy::AsymmetricAlgorithm::SLHDSA128f
+   - policy::AsymmetricAlgorithm::SLHDSA256s
 
 * Changes in 2.0.0
 ** Notable changes
