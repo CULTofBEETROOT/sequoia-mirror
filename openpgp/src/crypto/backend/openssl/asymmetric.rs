@@ -36,8 +36,9 @@ impl Asymmetric for super::Backend {
             // XXX: Would be better to have a runtime test.
             MLDSA65_Ed25519 | MLDSA87_Ed448 =>
                 openssl::version::number() >= 0x3_05_00_00_0,
+            // XXX: Would be better to have a runtime test.
             SLHDSA128s | SLHDSA128f | SLHDSA256s =>
-                false,
+                openssl::version::number() >= 0x3_05_00_00_0,
             MLKEM768_X25519 | MLKEM1024_X448 =>
                 false,
             ElGamalEncrypt | ElGamalEncryptSign |
@@ -269,6 +270,168 @@ impl Asymmetric for super::Backend {
             Variant::MlDsa87, public, None)?
             .build()?;
         let mut algo = Signature::for_ml_dsa(Variant::MlDsa87)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.verify_message_init(&mut algo)?;
+        Ok(ctx.verify(digest, &signature[..])?)
+    }
+
+    fn slhdsa128s_generate_key() -> Result<(Protected, [u8; 32])> {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, PKeySlhDsaParams, Variant};
+
+        let key = PKeySlhDsaBuilder::<Private>::new_generate(Variant::SlhDsaShake128s)?
+            .generate()?;
+        let public_params = PKeySlhDsaParams::<Public>::from_pkey(&key)?;
+        let secret_params = PKeySlhDsaParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 64]);
+        let mut public = [0; 32];
+        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), public_params.public_key()?.len());
+        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        public[..].copy_from_slice(public_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn slhdsa128s_sign(secret: &Protected, digest: &[u8])
+                       -> Result<Box<[u8; 7856]>>
+    {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeySlhDsaBuilder::<Private>::new_private(
+            Variant::SlhDsaShake128s, secret.as_ref())?
+            .build()?;
+        let mut algo = Signature::for_slh_dsa(Variant::SlhDsaShake128s)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.sign_message_init(&mut algo)?;
+        let mut signature: Box<[u8; 7856]> = vec![0; 7856].try_into().unwrap();
+        let len = ctx.sign(digest, Some(&mut signature[..]))?;
+        debug_assert_eq!(len, signature.len());
+
+        Ok(signature)
+    }
+
+    fn slhdsa128s_verify(public: &[u8; 32], digest: &[u8], signature: &[u8; 7856])
+                         -> Result<bool>
+    {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeySlhDsaBuilder::<Public>::new_public(
+            Variant::SlhDsaShake128s, public)?
+            .build()?;
+        let mut algo = Signature::for_slh_dsa(Variant::SlhDsaShake128s)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.verify_message_init(&mut algo)?;
+        Ok(ctx.verify(digest, &signature[..])?)
+    }
+
+    fn slhdsa128f_generate_key() -> Result<(Protected, [u8; 32])> {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, PKeySlhDsaParams, Variant};
+
+        let key = PKeySlhDsaBuilder::<Private>::new_generate(Variant::SlhDsaShake128f)?
+            .generate()?;
+        let public_params = PKeySlhDsaParams::<Public>::from_pkey(&key)?;
+        let secret_params = PKeySlhDsaParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 64]);
+        let mut public = [0; 32];
+        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), public_params.public_key()?.len());
+        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        public[..].copy_from_slice(public_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn slhdsa128f_sign(secret: &Protected, digest: &[u8])
+                       -> Result<Box<[u8; 17088]>>
+    {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeySlhDsaBuilder::<Private>::new_private(
+            Variant::SlhDsaShake128f, secret.as_ref())?
+            .build()?;
+        let mut algo = Signature::for_slh_dsa(Variant::SlhDsaShake128f)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.sign_message_init(&mut algo)?;
+        let mut signature: Box<[u8; 17088]> = vec![0; 17088].try_into().unwrap();
+        let len = ctx.sign(digest, Some(&mut signature[..]))?;
+        debug_assert_eq!(len, signature.len());
+
+        Ok(signature)
+    }
+
+    fn slhdsa128f_verify(public: &[u8; 32], digest: &[u8], signature: &[u8; 17088])
+                         -> Result<bool>
+    {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeySlhDsaBuilder::<Public>::new_public(
+            Variant::SlhDsaShake128f, public)?
+            .build()?;
+        let mut algo = Signature::for_slh_dsa(Variant::SlhDsaShake128f)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.verify_message_init(&mut algo)?;
+        Ok(ctx.verify(digest, &signature[..])?)
+    }
+
+    fn slhdsa256s_generate_key() -> Result<(Protected, Box<[u8; 64]>)> {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, PKeySlhDsaParams, Variant};
+
+        let key = PKeySlhDsaBuilder::<Private>::new_generate(Variant::SlhDsaShake256s)?
+            .generate()?;
+        let public_params = PKeySlhDsaParams::<Public>::from_pkey(&key)?;
+        let secret_params = PKeySlhDsaParams::<Private>::from_pkey(&key)?;
+
+        let mut secret = Protected::from(vec![0; 64]);
+        let mut public = Box::new([0; 64]);
+        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(public.len(), public_params.public_key()?.len());
+        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        public[..].copy_from_slice(public_params.public_key()?);
+
+        Ok((secret, public))
+    }
+
+    fn slhdsa256s_sign(secret: &Protected, digest: &[u8])
+                       -> Result<Box<[u8; 29792]>>
+    {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeySlhDsaBuilder::<Private>::new_private(
+            Variant::SlhDsaShake256s, secret.as_ref())?
+            .build()?;
+        let mut algo = Signature::for_slh_dsa(Variant::SlhDsaShake256s)?;
+
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.sign_message_init(&mut algo)?;
+        let mut signature: Box<[u8; 29792]> = vec![0; 29792].try_into().unwrap();
+        let len = ctx.sign(digest, Some(&mut signature[..]))?;
+        debug_assert_eq!(len, signature.len());
+
+        Ok(signature)
+    }
+
+    fn slhdsa256s_verify(public: &[u8; 64], digest: &[u8], signature: &[u8; 29792])
+                         -> Result<bool>
+    {
+        use openssl::pkey_slh_dsa::{PKeySlhDsaBuilder, Variant};
+        use openssl::signature::Signature;
+
+        let key = PKeySlhDsaBuilder::<Public>::new_public(
+            Variant::SlhDsaShake256s, public)?
+            .build()?;
+        let mut algo = Signature::for_slh_dsa(Variant::SlhDsaShake256s)?;
 
         let mut ctx = PkeyCtx::new(&key)?;
         ctx.verify_message_init(&mut algo)?;
