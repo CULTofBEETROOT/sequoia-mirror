@@ -9,7 +9,7 @@ use eax::online::{Eax, Encrypt, Decrypt};
 use cipher::generic_array::GenericArray;
 
 use crate::{Error, Result};
-use crate::crypto::aead::{Aead, CipherOp};
+use crate::crypto::aead::{Context, CipherOp};
 use crate::crypto::mem::secure_cmp;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
@@ -24,7 +24,7 @@ const DANGER_DISABLE_AUTHENTICATION: bool = false;
 
 type TagLen = U16;
 
-impl<Cipher> Aead for Eax<Cipher, Encrypt, TagLen>
+impl<Cipher> Context for Eax<Cipher, Encrypt, TagLen>
 where
     Cipher: BlockCipher<BlockSize = U16> + BlockEncrypt + Clone + KeyInit,
 {
@@ -47,7 +47,7 @@ where
     }
 }
 
-impl<Cipher> Aead for Eax<Cipher, Decrypt, TagLen>
+impl<Cipher> Context for Eax<Cipher, Decrypt, TagLen>
 where
     Cipher: BlockCipher<BlockSize = U16> + BlockEncrypt + Clone + KeyInit,
 {
@@ -93,7 +93,7 @@ struct Gcm<Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockEncrypt> 
     aad: Vec<u8>,
 }
 
-impl<Cipher> Aead for Gcm<Cipher>
+impl<Cipher> Context for Gcm<Cipher>
 where
     Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockEncrypt,
 {
@@ -145,7 +145,7 @@ struct Ocb<Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockDecrypt +
     aad: Vec<u8>,
 }
 
-impl<Cipher> Aead for Ocb<Cipher>
+impl<Cipher> Context for Ocb<Cipher>
 where
     Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockDecrypt + BlockEncrypt,
 {
@@ -199,7 +199,7 @@ impl AEADAlgorithm {
         aad: &[u8],
         nonce: &[u8],
         op: CipherOp,
-    ) -> Result<Box<dyn Aead>> {
+    ) -> Result<Box<dyn Context>> {
         #[allow(deprecated)]
         match self {
             AEADAlgorithm::EAX => match sym_algo {

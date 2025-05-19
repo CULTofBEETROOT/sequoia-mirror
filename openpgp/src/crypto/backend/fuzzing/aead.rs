@@ -2,7 +2,7 @@
 
 use crate::Result;
 
-use crate::crypto::aead::{Aead, CipherOp};
+use crate::crypto::aead::{Context, CipherOp};
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
 
@@ -11,7 +11,7 @@ struct NullAEADMode {}
 const DIGEST_SIZE: usize = 16;
 
 impl seal::Sealed for NullAEADMode {}
-impl Aead for NullAEADMode {
+impl Context for NullAEADMode {
     fn encrypt_seal(&mut self, dst: &mut [u8], src: &[u8]) -> Result<()> {
         let l = dst.len() - DIGEST_SIZE;
         dst[..l].copy_from_slice(src);
@@ -35,7 +35,7 @@ impl AEADAlgorithm {
         aad: &[u8],
         nonce: &[u8],
         _op: CipherOp,
-    ) -> Result<Box<dyn Aead>> {
+    ) -> Result<Box<dyn Context>> {
         Ok(Box::new(NullAEADMode {}))
     }
 }

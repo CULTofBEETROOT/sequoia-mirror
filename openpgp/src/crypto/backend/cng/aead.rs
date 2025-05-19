@@ -2,7 +2,7 @@
 use std::cmp::{self, Ordering};
 
 use crate::{Error, Result};
-use crate::crypto::aead::{Aead, CipherOp};
+use crate::crypto::aead::{Context, CipherOp};
 use crate::crypto::mem::secure_cmp;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
@@ -46,7 +46,7 @@ impl AEADAlgorithm {
         aad: &[u8],
         nonce: &[u8],
         op: CipherOp,
-    ) -> Result<Box<dyn Aead>> {
+    ) -> Result<Box<dyn Context>> {
         #[allow(deprecated)]
         match self {
             AEADAlgorithm::EAX => match sym_algo {
@@ -190,7 +190,7 @@ type TagLen = U16;
 macro_rules! impl_aead {
     ($($type: ty),*) => {
         $(
-        impl Aead for Eax<$type, Encrypt, TagLen> {
+        impl Context for Eax<$type, Encrypt, TagLen> {
             fn digest_size(&self) -> usize {
                 TagLen::USIZE
             }
@@ -211,7 +211,7 @@ macro_rules! impl_aead {
         impl seal::Sealed for Eax<$type, Encrypt> {}
         )*
         $(
-        impl Aead for Eax<$type, Decrypt> {
+        impl Context for Eax<$type, Decrypt> {
             fn digest_size(&self) -> usize {
                 TagLen::USIZE
             }
@@ -252,7 +252,7 @@ struct Ocb<Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockDecrypt +
     aad: Vec<u8>,
 }
 
-impl<Cipher> Aead for Ocb<Cipher>
+impl<Cipher> Context for Ocb<Cipher>
 where
     Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockDecrypt + BlockEncrypt,
 {
@@ -304,7 +304,7 @@ struct Gcm<Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockEncrypt> 
     aad: Vec<u8>,
 }
 
-impl<Cipher> Aead for Gcm<Cipher>
+impl<Cipher> Context for Gcm<Cipher>
 where
     Cipher: BlockCipher + BlockSizeUser<BlockSize = U16> + BlockEncrypt,
 {
