@@ -100,7 +100,7 @@ impl Builder<'_> {
 }
 
 /// A block cipher state and AEAD mode for encryption.
-pub struct EncryptionContext(Box<dyn Aead>);
+pub struct EncryptionContext(Box<dyn Context>);
 
 impl EncryptionContext {
     /// Encrypts `src` to `dst`.
@@ -126,7 +126,7 @@ impl EncryptionContext {
 }
 
 /// A block cipher state and AEAD mode for decryption.
-pub struct DecryptionContext(Box<dyn Aead>);
+pub struct DecryptionContext(Box<dyn Context>);
 
 impl DecryptionContext {
     /// Decrypts `src` to `dst`.
@@ -162,7 +162,7 @@ impl DecryptionContext {
 /// you also need to implement the `seal::Sealed` marker trait.
 ///
 /// [sealed]: https://rust-lang.github.io/api-guidelines/future-proofing.html#sealed-traits-protect-against-downstream-implementations-c-sealed
-pub(crate) trait Aead : seal::Sealed {
+pub(crate) trait Context: seal::Sealed {
     /// Encrypts one chunk `src` to `dst` adding a digest.
     ///
     /// Note: `dst` must be large enough to accommodate both the

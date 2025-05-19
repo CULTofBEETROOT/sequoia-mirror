@@ -12,7 +12,7 @@ use nettle::{
 
 use crate::{Error, Result};
 
-use crate::crypto::aead::{Aead, CipherOp};
+use crate::crypto::aead::{Context, CipherOp};
 use crate::crypto::mem::secure_cmp;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
@@ -24,7 +24,7 @@ use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
 const DANGER_DISABLE_AUTHENTICATION: bool = false;
 
 impl<T: nettle::aead::Aead> seal::Sealed for T {}
-impl<T: nettle::aead::Aead> Aead for T {
+impl<T: nettle::aead::Aead> Context for T {
     fn encrypt_seal(&mut self, dst: &mut [u8], src: &[u8]) -> Result<()> {
         debug_assert_eq!(dst.len(), src.len() + self.digest_size());
         self.encrypt(dst, src);
@@ -70,7 +70,7 @@ impl AEADAlgorithm {
         aad: &[u8],
         nonce: &[u8],
         _op: CipherOp,
-    ) -> Result<Box<dyn Aead>> {
+    ) -> Result<Box<dyn Context>> {
         match self {
             AEADAlgorithm::EAX => match sym_algo {
                 SymmetricAlgorithm::AES128 => {
