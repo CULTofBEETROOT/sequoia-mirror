@@ -42,8 +42,8 @@ impl AEADAlgorithm {
                     let algo = SymmetricAlgorithm::AES128;
                     let key = [0; 16];
                     let nonce = &key[..self.nonce_size().unwrap_or(16)];
-                    self.context(algo, &key, &[], nonce,
-                                 crate::crypto::aead::CipherOp::Encrypt)
+                    self.context_impl(algo, &key, &[], nonce,
+                                      crate::crypto::aead::CipherOp::Encrypt)
                         .is_ok()
                 }))
                 .cloned()

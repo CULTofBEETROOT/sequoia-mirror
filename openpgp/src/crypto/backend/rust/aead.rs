@@ -192,7 +192,7 @@ where
 {}
 
 impl AEADAlgorithm {
-    pub(crate) fn context(
+    pub(crate) fn context_impl(
         &self,
         sym_algo: SymmetricAlgorithm,
         key: &[u8],

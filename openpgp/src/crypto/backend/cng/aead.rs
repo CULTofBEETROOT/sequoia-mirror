@@ -39,7 +39,7 @@ impl<T, N: ArrayLength<T>> GenericArrayExt<T, N> for GenericArray<T, N> {
 }
 
 impl AEADAlgorithm {
-    pub(crate) fn context(
+    pub(crate) fn context_impl(
         &self,
         sym_algo: SymmetricAlgorithm,
         key: &[u8],
