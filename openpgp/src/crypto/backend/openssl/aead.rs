@@ -54,7 +54,7 @@ impl Aead for OpenSslContext {
 impl crate::seal::Sealed for OpenSslContext {}
 
 impl AEADAlgorithm {
-    pub(crate) fn context(
+    pub(crate) fn context_impl(
         &self,
         sym_algo: SymmetricAlgorithm,
         key: &[u8],
