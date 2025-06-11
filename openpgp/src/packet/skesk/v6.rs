@@ -310,8 +310,8 @@ mod test {
             eprintln!("derived: {:x?}", &derived[..]);
             assert_eq!(&derived[..], derived_key);
 
-            if aead.is_supported()
-                && aead.supports_symmetric_algo(&cipher)
+            use crate::crypto::backend::{Backend, interface::Aead};
+            if Backend::supports_algo_with_symmetric(aead, cipher)
             {
                 let sk = s.decrypt(&password)?;
                 eprintln!("sk: {:x?}", &sk[..]);

@@ -1,8 +1,6 @@
 //! Implementation of Sequoia crypto API using a fuzzing-friendly null
 //! backend.
 
-use crate::types::*;
-
 #[allow(unused_variables)]
 pub mod aead;
 #[allow(unused_variables)]
@@ -26,17 +24,5 @@ impl super::interface::Backend for Backend {
     fn random(buf: &mut [u8]) -> crate::Result<()> {
         buf.iter_mut().for_each(|b| *b = 4);
         Ok(())
-    }
-}
-
-impl AEADAlgorithm {
-    pub(crate) fn is_supported_by_backend(&self) -> bool {
-        true
-    }
-
-    #[cfg(test)]
-    pub(crate) fn supports_symmetric_algo(&self, _: &SymmetricAlgorithm)
-                                          -> bool {
-        true
     }
 }
