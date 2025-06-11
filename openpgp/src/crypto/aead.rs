@@ -57,7 +57,8 @@ impl AEADAlgorithm {
     /// Fails with [`Error::UnsupportedSymmetricAlgorithm`] if Sequoia
     /// does not support the given symmetric algorithm, and
     /// [`Error::UnsupportedAEADAlgorithm`] if Sequoia does not
-    /// support the given AEAD algorithm.
+    /// support the given AEAD algorithm, or combination of symmetric
+    /// algorithm and AEAD algorithm.
     pub fn context<'s>(self,
                        symm: SymmetricAlgorithm,
                        key: &'s SessionKey,
@@ -69,7 +70,8 @@ impl AEADAlgorithm {
             return Err(Error::UnsupportedSymmetricAlgorithm(symm).into());
         }
 
-        if ! self.is_supported() {
+        use crate::crypto::backend::{Backend, interface::Aead};
+        if ! Backend::supports_algo_with_symmetric(self, symm) {
             return Err(Error::UnsupportedAEADAlgorithm(self).into());
         }
 
@@ -86,16 +88,18 @@ impl AEADAlgorithm {
 impl Builder<'_> {
     /// Returns an AEAD context for encryption.
     pub fn for_encryption(self) -> Result<EncryptionContext> {
+        use crate::crypto::backend::{Backend, interface::Aead};
         Ok(EncryptionContext(
-            self.aead.context_impl(self.symm, self.key, self.aad, self.nonce,
-                                   CipherOp::Encrypt)?))
+            Backend::context(self.aead, self.symm, self.key.as_protected(),
+                             self.aad, self.nonce, CipherOp::Encrypt)?))
     }
 
     /// Returns an AEAD context for decryption.
     pub fn for_decryption(self) -> Result<DecryptionContext> {
+        use crate::crypto::backend::{Backend, interface::Aead};
         Ok(DecryptionContext(
-            self.aead.context_impl(self.symm, self.key, self.aad, self.nonce,
-                                   CipherOp::Decrypt)?))
+            Backend::context(self.aead, self.symm, self.key.as_protected(),
+                             self.aad, self.nonce, CipherOp::Decrypt)?))
     }
 }
 
@@ -906,7 +910,10 @@ mod tests {
                 AEADAlgorithm::EAX,
                 AEADAlgorithm::OCB,
                 AEADAlgorithm::GCM,
-            ].iter().filter(|algo| algo.is_supported() && algo.supports_symmetric_algo(sym_algo)) {
+            ].iter().filter(|algo| {
+                use crate::crypto::backend::{Backend, interface::Aead};
+                Backend::supports_algo_with_symmetric(**algo, *sym_algo)
+            }) {
                 let chunk_size = 64;
                 let mut key = vec![0; sym_algo.key_size().unwrap()];
                 crate::crypto::random(&mut key).unwrap();

@@ -1,7 +1,5 @@
 //! Implementation of crypto primitives using the Windows CNG (Cryptographic API: Next Generation).
 
-use crate::types::*;
-
 use win_crypto_ng::random::RandomNumberGenerator;
 
 pub mod aead;
@@ -23,49 +21,5 @@ impl super::interface::Backend for Backend {
         RandomNumberGenerator::system_preferred()
             .gen_random(buf)?;
         Ok(())
-    }
-}
-
-impl AEADAlgorithm {
-    pub(crate) fn is_supported_by_backend(&self) -> bool {
-        use self::AEADAlgorithm::*;
-        match &self {
-            EAX => true,
-            OCB => true,
-            GCM => true,
-            Private(_) | Unknown(_)
-                => false,
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn supports_symmetric_algo(&self, algo: &SymmetricAlgorithm) -> bool {
-        match &self {
-            AEADAlgorithm::EAX =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 => true,
-                    _ => false,
-                },
-
-            AEADAlgorithm::OCB =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 => true,
-                    _ => false,
-                },
-
-            AEADAlgorithm::GCM =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 => true,
-                    _ => false,
-                },
-
-            _ => false,
-        }
     }
 }

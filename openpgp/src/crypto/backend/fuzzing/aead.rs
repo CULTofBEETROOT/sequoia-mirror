@@ -3,6 +3,7 @@
 use crate::Result;
 
 use crate::crypto::aead::{Context, CipherOp};
+use crate::crypto::mem::Protected;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
 
@@ -27,11 +28,22 @@ impl Context for NullAEADMode {
     }
 }
 
-impl AEADAlgorithm {
-    pub(crate) fn context_impl(
-        &self,
+impl crate::crypto::backend::interface::Aead for super::Backend {
+    fn supports_algo(_: AEADAlgorithm) -> bool {
+        true
+    }
+
+    fn supports_algo_with_symmetric(_: AEADAlgorithm,
+                                    _: SymmetricAlgorithm)
+                                    -> bool
+    {
+        true
+    }
+
+    fn context(
+        algo: AEADAlgorithm,
         sym_algo: SymmetricAlgorithm,
-        key: &[u8],
+        key: &Protected,
         aad: &[u8],
         nonce: &[u8],
         _op: CipherOp,

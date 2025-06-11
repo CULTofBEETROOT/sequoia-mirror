@@ -13,7 +13,7 @@ use nettle::{
 use crate::{Error, Result};
 
 use crate::crypto::aead::{Context, CipherOp};
-use crate::crypto::mem::secure_cmp;
+use crate::crypto::mem::{Protected, secure_cmp};
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
 
@@ -62,16 +62,73 @@ impl<T: nettle::aead::Aead> Context for T {
     }
 }
 
-impl AEADAlgorithm {
-    pub(crate) fn context_impl(
-        &self,
+impl crate::crypto::backend::interface::Aead for super::Backend {
+    fn supports_algo(algo: AEADAlgorithm) -> bool {
+        use AEADAlgorithm::*;
+        match algo {
+            EAX
+                => true,
+            OCB
+                => nettle::aead::OCB_IS_SUPPORTED,
+            GCM
+                => true,
+            Private(_) | Unknown(_)
+                => false,
+        }
+    }
+
+    fn supports_algo_with_symmetric(algo: AEADAlgorithm,
+                                    symm: SymmetricAlgorithm)
+                                    -> bool
+    {
+        match algo {
+            AEADAlgorithm::EAX => match symm {
+                SymmetricAlgorithm::AES128 |
+                SymmetricAlgorithm::AES192 |
+                SymmetricAlgorithm::AES256 |
+                SymmetricAlgorithm::Twofish |
+                SymmetricAlgorithm::Camellia128 |
+                SymmetricAlgorithm::Camellia192 |
+                SymmetricAlgorithm::Camellia256 => true,
+                _ => false,
+            },
+
+            AEADAlgorithm::OCB => match symm {
+                SymmetricAlgorithm::AES128 |
+                SymmetricAlgorithm::AES192 |
+                SymmetricAlgorithm::AES256 |
+                SymmetricAlgorithm::Twofish |
+                SymmetricAlgorithm::Camellia128 |
+                SymmetricAlgorithm::Camellia192 |
+                SymmetricAlgorithm::Camellia256 => true,
+                _ => false,
+            },
+
+            AEADAlgorithm::GCM => match symm {
+                SymmetricAlgorithm::AES128 |
+                SymmetricAlgorithm::AES192 |
+                SymmetricAlgorithm::AES256 |
+                SymmetricAlgorithm::Twofish |
+                SymmetricAlgorithm::Camellia128 |
+                SymmetricAlgorithm::Camellia192 |
+                SymmetricAlgorithm::Camellia256 => true,
+                _ => false,
+            },
+
+            AEADAlgorithm::Private(_) |
+            AEADAlgorithm::Unknown(_) => false,
+        }
+    }
+
+    fn context(
+        algo: AEADAlgorithm,
         sym_algo: SymmetricAlgorithm,
-        key: &[u8],
+        key: &Protected,
         aad: &[u8],
         nonce: &[u8],
         _op: CipherOp,
     ) -> Result<Box<dyn Context>> {
-        match self {
+        match algo {
             AEADAlgorithm::EAX => match sym_algo {
                 SymmetricAlgorithm::AES128 => {
                     let mut ctx =
@@ -210,7 +267,7 @@ impl AEADAlgorithm {
                 _ => Err(Error::UnsupportedSymmetricAlgorithm(sym_algo).into()),
             },
 
-            _ => Err(Error::UnsupportedAEADAlgorithm(*self).into()),
+            _ => Err(Error::UnsupportedAEADAlgorithm(algo).into()),
         }
     }
 }

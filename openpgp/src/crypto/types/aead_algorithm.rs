@@ -89,7 +89,8 @@ impl AEADAlgorithm {
     /// assert!(! AEADAlgorithm::Private(100).is_supported());
     /// ```
     pub fn is_supported(&self) -> bool {
-        self.is_supported_by_backend()
+        use crate::crypto::backend::{Backend, interface::Aead};
+        Backend::supports_algo(*self)
     }
 
     /// Returns an iterator over all valid variants.

@@ -3,6 +3,7 @@
 use crate::{Error, Result};
 
 use crate::crypto::aead::{Context, CipherOp};
+use crate::crypto::mem::Protected;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
 
@@ -37,28 +38,84 @@ impl AEADAlgorithm {
             _ => Err(Error::UnsupportedAEADAlgorithm(self).into()),
         }
     }
+}
 
-    pub(crate) fn context_impl(&self,
-                          sym_algo: SymmetricAlgorithm,
-                          key: &[u8],
-                          aad: &[u8],
-                          nonce: &[u8],
-                          op: CipherOp)
-                          -> Result<Box<dyn Context>>
+
+impl crate::crypto::backend::interface::Aead for super::Backend {
+    fn supports_algo(algo: AEADAlgorithm) -> bool {
+        use self::AEADAlgorithm::*;
+        match algo {
+            EAX | OCB | GCM
+                => true,
+            Private(_) | Unknown(_)
+                => false,
+        }
+    }
+
+    fn supports_algo_with_symmetric(algo: AEADAlgorithm,
+                                    symm: SymmetricAlgorithm)
+                                    -> bool
+    {
+        match algo {
+            AEADAlgorithm::EAX => match symm {
+                SymmetricAlgorithm::AES128 |
+                SymmetricAlgorithm::AES192 |
+                SymmetricAlgorithm::AES256 |
+                SymmetricAlgorithm::Twofish |
+                SymmetricAlgorithm::Camellia128 |
+                SymmetricAlgorithm::Camellia192 |
+                SymmetricAlgorithm::Camellia256 => true,
+                _ => false,
+            },
+
+            AEADAlgorithm::OCB => match symm {
+                SymmetricAlgorithm::AES128 |
+                SymmetricAlgorithm::AES192 |
+                SymmetricAlgorithm::AES256 |
+                SymmetricAlgorithm::Twofish |
+                SymmetricAlgorithm::Camellia128 |
+                SymmetricAlgorithm::Camellia192 |
+                SymmetricAlgorithm::Camellia256 => true,
+                _ => false,
+            },
+
+            AEADAlgorithm::GCM => match symm {
+                SymmetricAlgorithm::AES128 |
+                SymmetricAlgorithm::AES192 |
+                SymmetricAlgorithm::AES256 |
+                SymmetricAlgorithm::Twofish |
+                SymmetricAlgorithm::Camellia128 |
+                SymmetricAlgorithm::Camellia192 |
+                SymmetricAlgorithm::Camellia256 => true,
+                _ => false,
+            },
+
+            AEADAlgorithm::Private(_) |
+            AEADAlgorithm::Unknown(_) => false,
+        }
+    }
+
+    fn context(algo: AEADAlgorithm,
+               sym_algo: SymmetricAlgorithm,
+               key: &Protected,
+               aad: &[u8],
+               nonce: &[u8],
+               op: CipherOp)
+               -> Result<Box<dyn Context>>
     {
         let mut cipher = botan::Cipher::new(
-            &format!("{}/{}", sym_algo.botan_name()?, self.botan_name()?),
+            &format!("{}/{}", sym_algo.botan_name()?, algo.botan_name()?),
             match op {
                 CipherOp::Encrypt => botan::CipherDirection::Encrypt,
                 CipherOp::Decrypt => botan::CipherDirection::Decrypt,
             })
-            // XXX it could be the cipher that is not supported.
-            .map_err(|_| Error::UnsupportedAEADAlgorithm(*self))?;
+        // XXX it could be the cipher that is not supported.
+            .map_err(|_| Error::UnsupportedAEADAlgorithm(algo))?;
 
         cipher.set_key(key)?;
         cipher.set_associated_data(aad)?;
         cipher.start(nonce)?;
 
-        Ok(Box::new(Cipher(cipher, self.digest_size()?)))
+        Ok(Box::new(Cipher(cipher, algo.digest_size()?)))
     }
 }
