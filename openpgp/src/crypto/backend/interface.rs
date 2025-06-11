@@ -2,6 +2,8 @@
 
 use crate::Result;
 
+mod aead;
+pub use aead::Aead;
 mod asymmetric;
 pub use asymmetric::Asymmetric;
 mod kdf;
@@ -10,7 +12,7 @@ mod symmetric;
 pub use symmetric::Symmetric;
 
 /// Abstracts over the cryptographic backends.
-pub trait Backend: Asymmetric + Kdf + Symmetric {
+pub trait Backend: Aead + Asymmetric + Kdf + Symmetric {
     /// Returns a short, human-readable description of the backend.
     ///
     /// This starts with the name of the backend, possibly a version,

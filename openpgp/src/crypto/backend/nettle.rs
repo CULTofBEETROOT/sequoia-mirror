@@ -1,7 +1,5 @@
 //! Implementation of Sequoia crypto API using the Nettle cryptographic library.
 
-use crate::types::*;
-
 use nettle::random::{Random, Yarrow};
 
 pub mod aead;
@@ -27,61 +25,5 @@ impl super::interface::Backend for Backend {
     fn random(buf: &mut [u8]) -> crate::Result<()> {
         Yarrow::default().random(buf);
         Ok(())
-    }
-}
-
-impl AEADAlgorithm {
-    pub(crate) fn is_supported_by_backend(&self) -> bool {
-        use self::AEADAlgorithm::*;
-        match &self {
-            EAX
-                => true,
-            OCB
-                => nettle::aead::OCB_IS_SUPPORTED,
-            GCM
-                => true,
-            Private(_) | Unknown(_)
-                => false,
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn supports_symmetric_algo(&self, algo: &SymmetricAlgorithm) -> bool {
-        match &self {
-            AEADAlgorithm::EAX =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 |
-                    SymmetricAlgorithm::Twofish |
-                    SymmetricAlgorithm::Camellia128 |
-                    SymmetricAlgorithm::Camellia192 |
-                    SymmetricAlgorithm::Camellia256 => true,
-                    _ => false,
-                },
-            AEADAlgorithm::OCB =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 |
-                    SymmetricAlgorithm::Twofish |
-                    SymmetricAlgorithm::Camellia128 |
-                    SymmetricAlgorithm::Camellia192 |
-                    SymmetricAlgorithm::Camellia256 => true,
-                    _ => false,
-                },
-            AEADAlgorithm::GCM =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 |
-                    SymmetricAlgorithm::Twofish |
-                    SymmetricAlgorithm::Camellia128 |
-                    SymmetricAlgorithm::Camellia192 |
-                    SymmetricAlgorithm::Camellia256 => true,
-                    _ => false,
-                },
-            _ => false
-        }
     }
 }

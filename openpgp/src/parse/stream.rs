@@ -4261,8 +4261,8 @@ xHUDBRY0WIQ+50WENDPP";
                             name: &str,
                             plaintext: &[u8])
                             -> Result<()> {
-        if ! (aead.is_supported()
-              && aead.supports_symmetric_algo(&cipher))
+        use crate::crypto::backend::{Backend, interface::Aead};
+        if ! Backend::supports_algo_with_symmetric(aead, cipher)
         {
             eprintln!("Skipping test vector {:?}...", name);
             return Ok(());

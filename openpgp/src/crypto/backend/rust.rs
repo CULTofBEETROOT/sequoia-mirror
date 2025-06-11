@@ -4,7 +4,6 @@
 use cipher::generic_array::{ArrayLength, GenericArray};
 
 use crate::{Error, Result};
-use crate::types::*;
 
 pub mod aead;
 pub mod asymmetric;
@@ -59,55 +58,4 @@ trait GenericArrayExt<T, N: ArrayLength<T>> {
 
 impl<T, N: ArrayLength<T>> GenericArrayExt<T, N> for GenericArray<T, N> {
     const LEN: usize = N::USIZE;
-}
-
-impl AEADAlgorithm {
-    pub(crate) fn is_supported_by_backend(&self) -> bool {
-        use self::AEADAlgorithm::*;
-        match &self {
-            EAX => true,
-            OCB => true,
-            GCM => true,
-            Private(_) | Unknown(_)
-                => false,
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn supports_symmetric_algo(&self, algo: &SymmetricAlgorithm) -> bool {
-        match &self {
-            AEADAlgorithm::EAX =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 |
-                    SymmetricAlgorithm::Twofish |
-                    SymmetricAlgorithm::Camellia128 |
-                    SymmetricAlgorithm::Camellia192 |
-                    SymmetricAlgorithm::Camellia256 => true,
-                    _ => false,
-                },
-
-            AEADAlgorithm::OCB =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 |
-                    SymmetricAlgorithm::Twofish |
-                    SymmetricAlgorithm::Camellia128 |
-                    SymmetricAlgorithm::Camellia192 |
-                    SymmetricAlgorithm::Camellia256 => true,
-                    _ => false,
-                },
-
-            AEADAlgorithm::GCM =>
-                match algo {
-                    SymmetricAlgorithm::AES128 |
-                    SymmetricAlgorithm::AES192 |
-                    SymmetricAlgorithm::AES256 => true,
-                    _ => false,
-                },
-            _ => false
-        }
-    }
 }
