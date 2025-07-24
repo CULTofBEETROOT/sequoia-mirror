@@ -27,6 +27,9 @@
 
 use std::cmp;
 
+mod packet;
+pub use packet::*;
+
 /// Map created during parsing.
 #[derive(Clone, Debug)]
 pub struct Map {
@@ -94,6 +97,14 @@ impl Map {
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = Field> + Send + Sync {
         Iter::new(self)
+    }
+
+    fn find(&self, name: &str) -> Option<Field> {
+        self.iter().find(|e| e.name() == name)
+    }
+
+    fn find_from(&self, offset: usize, name: &str) -> Option<Field> {
+        self.iter().skip(offset).find(|e| e.name() == name)
     }
 }
 

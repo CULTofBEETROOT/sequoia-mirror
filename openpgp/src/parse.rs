@@ -5856,6 +5856,25 @@ impl <'a> PacketParser<'a> {
         &self.header
     }
 
+    /// Returns a view of the current packet suitable for dumping.
+    pub fn mapped_packet<'m>(&'m self) -> Result<map::Packet<'m>> {
+        let m = self.map().ok_or_else(
+            || Error::InvalidOperation("mapping is disabled".into()))?;
+        let h = self.header();
+        match &self.packet {
+            Packet::Signature(Signature::V4(p)) =>
+                Ok(map::Packet::Signature(map::Signature::V4(
+                    map::Signature4::new(m, h, p)))),
+            Packet::Signature(Signature::V6(p)) =>
+                Ok(map::Packet::Signature(map::Signature::V6(
+                    map::Signature6::new(m, h, p)))),
+
+            Packet::Literal(p) =>
+                Ok(map::Packet::Literal(map::Literal::new(m, h, p))),
+            _ => Ok(map::Packet::Other(m, h)),
+        }
+    }
+
     /// Returns a reference to the map (if any is written).
     ///
     /// # Examples
