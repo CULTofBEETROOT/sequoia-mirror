@@ -46,12 +46,12 @@ impl Header {
         Header { ctb, length }
     }
 
-    /// Returns the header's CTB.
+    /// Returns the packet's CTB.
     pub fn ctb(&self) -> &CTB {
         &self.ctb
     }
 
-    /// Returns the header's length.
+    /// Returns the packet's length.
     pub fn length(&self) -> &BodyLength {
         &self.length
     }
