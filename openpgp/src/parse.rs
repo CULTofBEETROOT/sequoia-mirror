@@ -1567,8 +1567,8 @@ impl Signature6 {
             = php_try!(SubpacketArea::parse(&mut php,
                                             unhashed_area_len as usize,
                                             hash_algo));
-        let digest_prefix1 = php_try!(php.parse_u8("digest_prefix1"));
-        let digest_prefix2 = php_try!(php.parse_u8("digest_prefix2"));
+        let mut digest_prefix = [0, 0];
+        php_try!(php.parse_bytes_into("digest_prefix", &mut digest_prefix));
         if ! pk_algo.for_signing() {
             return php.fail("not a signature algorithm");
         }
@@ -1582,7 +1582,7 @@ impl Signature6 {
             typ, pk_algo, hash_algo,
             hashed_area,
             unhashed_area,
-            [digest_prefix1, digest_prefix2],
+            digest_prefix,
             salt,
             mpis));
         let pp = php.ok(sig.into())?;
@@ -1615,8 +1615,8 @@ impl Signature4 {
             = php_try!(SubpacketArea::parse(&mut php,
                                             unhashed_area_len as usize,
                                             hash_algo));
-        let digest_prefix1 = php_try!(php.parse_u8("digest_prefix1"));
-        let digest_prefix2 = php_try!(php.parse_u8("digest_prefix2"));
+        let mut digest_prefix = [0, 0];
+        php_try!(php.parse_bytes_into("digest_prefix", &mut digest_prefix));
         if ! pk_algo.for_signing() {
             return php.fail("not a signature algorithm");
         }
@@ -1628,7 +1628,7 @@ impl Signature4 {
             typ, pk_algo, hash_algo,
             hashed_area,
             unhashed_area,
-            [digest_prefix1, digest_prefix2],
+            digest_prefix,
             mpis).into()))?;
 
         Signature::parse_finish(indent, pp, hash_algo)
@@ -1704,8 +1704,8 @@ impl Signature3 {
             = php_try!(php.parse_u8("pk_algo")).into();
         let hash_algo: HashAlgorithm =
             php_try!(php.parse_u8("hash_algo")).into();
-        let digest_prefix1 = php_try!(php.parse_u8("digest_prefix1"));
-        let digest_prefix2 = php_try!(php.parse_u8("digest_prefix2"));
+        let mut digest_prefix = [0, 0];
+        php_try!(php.parse_bytes_into("digest_prefix", &mut digest_prefix));
         if ! pk_algo.for_signing() {
             return php.fail("not a signature algorithm");
         }
@@ -1715,7 +1715,7 @@ impl Signature3 {
         let typ = typ.into();
         let pp = php.ok(Packet::Signature(Signature3::new(
             typ, creation_time, issuer, pk_algo, hash_algo,
-            [digest_prefix1, digest_prefix2],
+            digest_prefix,
             mpis).into()))?;
 
         Signature::parse_finish(indent, pp, hash_algo)
