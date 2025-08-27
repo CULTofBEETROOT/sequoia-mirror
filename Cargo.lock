@@ -225,7 +225,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "regex",
@@ -243,7 +243,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.10.5",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -1855,7 +1855,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.52.6",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -2185,7 +2185,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 [[package]]
 name = "ossl"
 version = "1.2.0"
-source = "git+https://github.com/teythoon/kryoptic?branch=justus/workwork#370acda6f74f054b93bae118a1c7605ac9aad71c"
+source = "git+https://github.com/latchset/kryoptic#41a3887c97a7daf5a905f50fccb5d909607f90ee"
 dependencies = [
  "bindgen 0.71.1",
  "cfg-if",
