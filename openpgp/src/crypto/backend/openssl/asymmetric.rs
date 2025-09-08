@@ -286,9 +286,9 @@ impl Asymmetric for super::Backend {
 
         let mut secret = Protected::from(vec![0; 64]);
         let mut public = [0; 32];
-        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(secret.len(), secret_params.private_key()?.len());
         debug_assert_eq!(public.len(), public_params.public_key()?.len());
-        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        secret[..].copy_from_slice(secret_params.private_key()?);
         public[..].copy_from_slice(public_params.public_key()?);
 
         Ok((secret, public))
@@ -340,9 +340,9 @@ impl Asymmetric for super::Backend {
 
         let mut secret = Protected::from(vec![0; 64]);
         let mut public = [0; 32];
-        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(secret.len(), secret_params.private_key()?.len());
         debug_assert_eq!(public.len(), public_params.public_key()?.len());
-        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        secret[..].copy_from_slice(secret_params.private_key()?);
         public[..].copy_from_slice(public_params.public_key()?);
 
         Ok((secret, public))
@@ -392,11 +392,11 @@ impl Asymmetric for super::Backend {
         let public_params = PKeySlhDsaParams::<Public>::from_pkey(&key)?;
         let secret_params = PKeySlhDsaParams::<Private>::from_pkey(&key)?;
 
-        let mut secret = Protected::from(vec![0; 64]);
+        let mut secret = Protected::from(vec![0; 128]);
         let mut public = Box::new([0; 64]);
-        debug_assert_eq!(secret.len(), secret_params.private_key_seed()?.len());
+        debug_assert_eq!(secret.len(), secret_params.private_key()?.len());
         debug_assert_eq!(public.len(), public_params.public_key()?.len());
-        secret[..].copy_from_slice(secret_params.private_key_seed()?);
+        secret[..].copy_from_slice(secret_params.private_key()?);
         public[..].copy_from_slice(public_params.public_key()?);
 
         Ok((secret, public))
