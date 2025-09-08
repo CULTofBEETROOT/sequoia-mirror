@@ -34,3 +34,16 @@ doc:
     - !reference [.after_script, end]
   rules:
     - !reference [.default_rules, rules]
+
+.local:
+  linux:
+    before_script:
+      - |
+          if lsb_release -i | grep -q Fedora
+          then
+            # Fabio's build for Fedora 42
+            sudo dnf --assumeyes copr enable decathorpe/openssl-3.5.0-for-testing-only
+            sudo dnf --assumeyes upgrade openssl*
+            sudo dnf --assumeyes install openssl-devel
+            OPENSSL_FEATURES=dynamic
+          fi
