@@ -28,7 +28,9 @@
    - crypto::aead::Encryptor
    - crypto::aead::Decryptor
    - Key6::generate_mldsa65_ed25519
+   - Key6::import_public_mldsa65_ed25519
    - Key6::generate_mldsa87_ed448
+   - Key6::import_public_mldsa87_ed448
    - mpi::PublicKey::MLDSA65_Ed25519
    - mpi::PublicKey::MLDSA87_Ed448
    - mpi::SecretKeyMaterial::MLDSA65_Ed25519
