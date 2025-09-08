@@ -1013,6 +1013,9 @@ mod tests {
             })).chain([
                 (PublicKeyAlgorithm::MLDSA65_Ed25519, Key6::generate_mldsa65_ed25519 as fn() -> Result<_>),
                 (PublicKeyAlgorithm::MLDSA87_Ed448, Key6::generate_mldsa87_ed448),
+                (PublicKeyAlgorithm::SLHDSA128s, Key6::generate_slhdsa128s),
+                (PublicKeyAlgorithm::SLHDSA128f, Key6::generate_slhdsa128f),
+                (PublicKeyAlgorithm::SLHDSA256s, Key6::generate_slhdsa256s),
             ].into_iter().filter_map(|(algo, gen)| {
                 if algo.is_supported() {
                     Some(gen().expect(&format!("{} is supported", algo)))
