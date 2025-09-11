@@ -87,6 +87,7 @@ impl OpenSslMode {
         use SymmetricAlgorithm::*;
         use AEADAlgorithm::*;
         use BlockCipherMode::*;
+        #[allow(deprecated)]
         let (alg, aead) = match (algo, mode.into()) {
             (AES128, OsslMode::Unauthenticated(CFB)) =>
                 (EncAlg::AesCfb128(AesSize::Aes128), None),
@@ -94,6 +95,8 @@ impl OpenSslMode {
                 (EncAlg::AesCfb128(AesSize::Aes192), None),
             (AES256, OsslMode::Unauthenticated(CFB)) =>
                 (EncAlg::AesCfb128(AesSize::Aes256), None),
+            (TripleDES, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::TripleDesCfb, None),
 
             (AES128, OsslMode::Unauthenticated(CBC)) =>
                 (EncAlg::AesCbc(AesSize::Aes128), None),
@@ -101,6 +104,8 @@ impl OpenSslMode {
                 (EncAlg::AesCbc(AesSize::Aes192), None),
             (AES256, OsslMode::Unauthenticated(CBC)) =>
                 (EncAlg::AesCbc(AesSize::Aes256), None),
+            (TripleDES, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::TripleDesCbc, None),
 
             (AES128, OsslMode::Unauthenticated(ECB)) =>
                 (EncAlg::AesEcb(AesSize::Aes128), None),
@@ -108,6 +113,8 @@ impl OpenSslMode {
                 (EncAlg::AesEcb(AesSize::Aes192), None),
             (AES256, OsslMode::Unauthenticated(ECB)) =>
                 (EncAlg::AesEcb(AesSize::Aes256), None),
+            (TripleDES, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::TripleDesEcb, None),
 
             (AES128, OsslMode::Authenticated(OCB, aad)) =>
                 (EncAlg::AesOcb(AesSize::Aes128), Some(AeadParams::new(Some(aad), OCB.digest_size()?, 0))),
