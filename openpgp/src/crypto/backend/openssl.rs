@@ -76,3 +76,9 @@ impl From<&Protected> for ossl::OsslSecret {
         ossl::OsslSecret::from_slice(v.as_ref())
     }
 }
+
+impl From<&ProtectedMPI> for ossl::OsslSecret {
+    fn from(v: &ProtectedMPI) -> Self {
+        ossl::OsslSecret::from_slice(v.value())
+    }
+}

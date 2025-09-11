@@ -2185,7 +2185,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 [[package]]
 name = "ossl"
 version = "1.2.0"
-source = "git+https://github.com/latchset/kryoptic#41a3887c97a7daf5a905f50fccb5d909607f90ee"
+source = "git+https://github.com/latchset/kryoptic#86d708b21e36c6e77cb748b7188fa7c668b77092"
 dependencies = [
  "bindgen 0.71.1",
  "cfg-if",
