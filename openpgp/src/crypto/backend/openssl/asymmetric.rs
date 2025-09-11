@@ -4,7 +4,7 @@ use crate::crypto::asymmetric::KeyPair;
 use crate::crypto::backend::interface::Asymmetric;
 use crate::crypto::backend::openssl::der;
 use crate::crypto::mpi;
-use crate::crypto::mpi::MPI;
+use crate::crypto::mpi::{ProtectedMPI, MPI};
 use crate::crypto::mem::Protected;
 use crate::crypto::SessionKey;
 use crate::packet::key::{Key4, SecretParts};
@@ -14,7 +14,7 @@ use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
 
 use ossl::{
-    pkey::{EccData, EvpPkey, EvpPkeyType, PkeyData, RsaData},
+    pkey::{EccData, EvpPkey, EvpPkeyType, DsaData, PkeyData, RsaData},
     asymcipher::{EncAlg, EncOp, OsslAsymcipher},
     signature::{OsslSignature, SigAlg, SigOp},
 };
@@ -45,7 +45,7 @@ impl Asymmetric for super::Backend {
             X25519 | Ed25519 |
             X448 | Ed448 |
             RSAEncryptSign | RSAEncrypt | RSASign => true,
-            DSA => false,
+            DSA => true,
             ECDH | ECDSA | EdDSA => true,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
@@ -316,6 +316,76 @@ impl Asymmetric for super::Backend {
         let mut verifier = OsslSignature::new(
             &ctx, SigOp::Verify, SigAlg::Ed448, &mut key, None)?;
         Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
+    }
+
+    fn dsa_generate_key(p_bits: usize)
+                        -> Result<(MPI, MPI, MPI, MPI, ProtectedMPI)>
+    {
+        let ctx = super::context();
+
+        let key = EvpPkey::generate(&ctx, EvpPkeyType::Dsa(p_bits))?;
+        match key.export()? {
+            PkeyData::Dsa(key) => {
+                Ok((key.p.into(), key.q.into(), key.g.into(),
+                    key.pub_key.into(), key.priv_key.expect("to be set").into()))
+            },
+            _ => Err(wrong_key()),
+        }
+    }
+
+    fn dsa_sign(x: &ProtectedMPI,
+                p: &MPI, q: &MPI, g: &MPI, y: &MPI,
+                digest: &[u8])
+                -> Result<(MPI, MPI)>
+    {
+        let ctx = super::context();
+
+        let pbits = p.bits();
+        let mut key = EvpPkey::import(
+            &ctx, EvpPkeyType::Dsa(pbits),
+            PkeyData::Dsa(DsaData {
+                p: p.value().into(),
+                q: q.value().into(),
+                g: g.value().into(),
+                priv_key: Some(x.into()),
+                pub_key: y.value().into(),
+            }),
+        )?;
+
+        let mut signer = OsslSignature::new(
+            &ctx, SigOp::Sign, SigAlg::Dsa, &mut key, None)?;
+        let sig_len = signer.sign(digest, None)?;
+        let mut signature = vec![0u8; sig_len];
+        let sig_len = signer.sign(digest, Some(&mut signature))?;
+        signature.truncate(sig_len);
+        let (r, s) = der::parse_sig_r_s(&signature)?;
+        Ok((MPI::new(r), MPI::new(s)))
+    }
+
+    fn dsa_verify(p: &MPI, q: &MPI, g: &MPI, y: &MPI,
+                  digest: &[u8],
+                  r: &MPI, s: &MPI)
+                  -> Result<bool>
+    {
+        let ctx = super::context();
+
+        let pbits = p.bits();
+        let mut key = EvpPkey::import(
+            &ctx, EvpPkeyType::Dsa(pbits),
+            PkeyData::Dsa(DsaData {
+                p: p.value().into(),
+                q: q.value().into(),
+                g: g.value().into(),
+                priv_key: None,
+                pub_key: y.value().into(),
+            }),
+        )?;
+
+        let mut signature = Vec::new();
+        der::encode_sig_r_s(&mut signature, r.value(), s.value())?;
+        let mut verifier = OsslSignature::new(
+            &ctx, SigOp::Verify, SigAlg::Dsa, &mut key, None)?;
+        Ok(verifier.verify(digest, Some(&signature)).is_ok())
     }
 }
 
