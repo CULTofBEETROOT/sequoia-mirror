@@ -500,6 +500,54 @@ impl<R> Key4<key::PublicParts, R>
                 n: mpi::MPI::new(n),
             })
     }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM768+X25519 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an X25519 key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM768 keys must be exactly 1184 bytes, and X25519 keys
+    /// must be exactly 32 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem768_x25519<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key4::new(ctime.into().unwrap_or_else(crate::now),
+                     PublicKeyAlgorithm::MLKEM768_X25519,
+                     mpi::PublicKey::MLKEM768_X25519 {
+                         ecdh: Box::new(ecdh.try_into()?),
+                         mlkem: Box::new(mlkem.try_into()?),
+                     })?)
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM1024+X448 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an X448 key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM1024 keys must be exactly 1568 bytes, and X448 keys must
+    /// be exactly 56 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem1024_x448<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key4::new(ctime.into().unwrap_or_else(crate::now),
+                     PublicKeyAlgorithm::MLKEM1024_X448,
+                     mpi::PublicKey::MLKEM1024_X448 {
+                         ecdh: Box::new(ecdh.try_into()?),
+                         mlkem: Box::new(mlkem.try_into()?),
+                     })?)
+    }
 }
 
 impl<R> Key4<SecretParts, R>
