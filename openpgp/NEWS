@@ -79,6 +79,9 @@
    - policy::AsymmetricAlgorithm::MLKEM1024_X448
    - CipherSuite::MLDSA65
    - CipherSuite::MLDSA87
+   - Key4::import_public_ed448
+   - Key4::import_public_x25519
+   - Key4::import_public_x448
 
 * Changes in 2.0.0
 ** Notable changes
