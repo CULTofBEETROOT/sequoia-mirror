@@ -45,8 +45,8 @@ sha1collisiondetection = { version = "0.3.1", default-features = false, features
 thiserror = ">=1, <3"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
-ossl = { git = "https://github.com/latchset/kryoptic", features = ["dynamic", "rfc9580", "legacy"], optional = true }
-#ossl = { path = "../../kryoptic/ossl", features = ["dynamic", "rfc9580", "legacy"], optional = true }
+ossl = { git = "https://github.com/latchset/kryoptic", features = ["dynamic", "rfc9580"], optional = true }
+#ossl = { path = "../../kryoptic/ossl", features = ["dynamic", "rfc9580"], optional = true }
 
 # Botan.
 botan = { version = ">= 0.10.6, < 0.12", optional = true }
