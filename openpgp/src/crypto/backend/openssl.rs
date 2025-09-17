@@ -44,7 +44,14 @@ pub fn context() -> &'static ossl::OsslContext {
     static OSSL_CONTEXT: OnceLock<ossl::OsslContext> =
         OnceLock::new();
 
-    OSSL_CONTEXT.get_or_init(|| ossl::OsslContext::new_lib_ctx())
+    OSSL_CONTEXT.get_or_init(|| {
+        let mut context = ossl::OsslContext::new_lib_ctx();
+        // Try to load legacy provider. Ignore the failures as the worst
+        // what could happen is that we won't support some of the legacy
+        // algorithms.
+        let _ = context.load_legacy_provider();
+        context
+    })
 }
 
 impl From<ossl::OsslSecret> for Protected {

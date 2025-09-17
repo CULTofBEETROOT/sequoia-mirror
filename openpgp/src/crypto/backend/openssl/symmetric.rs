@@ -13,6 +13,7 @@ use crate::crypto::{
 use ossl::cipher::{
     AeadParams,
     AesSize,
+    CamelliaSize,
     EncAlg,
     OsslCipher,
 };
@@ -97,6 +98,18 @@ impl OpenSslMode {
                 (EncAlg::AesCfb128(AesSize::Aes256), None),
             (TripleDES, OsslMode::Unauthenticated(CFB)) =>
                 (EncAlg::TripleDesCfb, None),
+            (IDEA, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::IdeaCfb, None),
+            (Camellia128, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::CamelliaCfb(CamelliaSize::Camellia128), None),
+            (Camellia192, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::CamelliaCfb(CamelliaSize::Camellia192), None),
+            (Camellia256, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::CamelliaCfb(CamelliaSize::Camellia256), None),
+            (Blowfish, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::BlowfishCfb, None),
+            (CAST5, OsslMode::Unauthenticated(CFB)) =>
+                (EncAlg::Cast5Cfb, None),
 
             (AES128, OsslMode::Unauthenticated(CBC)) =>
                 (EncAlg::AesCbc(AesSize::Aes128), None),
@@ -106,6 +119,18 @@ impl OpenSslMode {
                 (EncAlg::AesCbc(AesSize::Aes256), None),
             (TripleDES, OsslMode::Unauthenticated(CBC)) =>
                 (EncAlg::TripleDesCbc, None),
+            (IDEA, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::IdeaCbc, None),
+            (Camellia128, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::CamelliaCbc(CamelliaSize::Camellia128), None),
+            (Camellia192, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::CamelliaCbc(CamelliaSize::Camellia192), None),
+            (Camellia256, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::CamelliaCbc(CamelliaSize::Camellia256), None),
+            (Blowfish, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::BlowfishCbc, None),
+            (CAST5, OsslMode::Unauthenticated(CBC)) =>
+                (EncAlg::Cast5Cbc, None),
 
             (AES128, OsslMode::Unauthenticated(ECB)) =>
                 (EncAlg::AesEcb(AesSize::Aes128), None),
@@ -115,6 +140,18 @@ impl OpenSslMode {
                 (EncAlg::AesEcb(AesSize::Aes256), None),
             (TripleDES, OsslMode::Unauthenticated(ECB)) =>
                 (EncAlg::TripleDesEcb, None),
+            (IDEA, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::IdeaEcb, None),
+            (Camellia128, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::CamelliaEcb(CamelliaSize::Camellia128), None),
+            (Camellia192, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::CamelliaEcb(CamelliaSize::Camellia192), None),
+            (Camellia256, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::CamelliaEcb(CamelliaSize::Camellia256), None),
+            (Blowfish, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::BlowfishEcb, None),
+            (CAST5, OsslMode::Unauthenticated(ECB)) =>
+                (EncAlg::Cast5Ecb, None),
 
             (AES128, OsslMode::Authenticated(OCB, aad)) =>
                 (EncAlg::AesOcb(AesSize::Aes128), Some(AeadParams::new(Some(aad), OCB.digest_size()?, 0))),
