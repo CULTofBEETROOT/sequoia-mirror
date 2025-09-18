@@ -8,6 +8,7 @@ impl TryFrom<HashAlgorithm> for DigestAlg {
     type Error = crate::Error;
     fn try_from(a: HashAlgorithm) -> std::result::Result<Self, Self::Error> {
         match a {
+            HashAlgorithm::MD5 => Ok(DigestAlg::Md5),
             HashAlgorithm::SHA1 => Ok(DigestAlg::Sha1),
             HashAlgorithm::SHA256 => Ok(DigestAlg::Sha2_256),
             HashAlgorithm::SHA384 => Ok(DigestAlg::Sha2_384),
@@ -17,7 +18,6 @@ impl TryFrom<HashAlgorithm> for DigestAlg {
             HashAlgorithm::SHA3_512 => Ok(DigestAlg::Sha3_512),
             HashAlgorithm::Private(_)
                 | HashAlgorithm::Unknown (_)
-                | HashAlgorithm::MD5
                 | HashAlgorithm::RipeMD
                 => Err(crate::Error::UnsupportedHashAlgorithm(a)),
         }
