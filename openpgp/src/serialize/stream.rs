@@ -4408,4 +4408,143 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_pqc_certificates() -> Result<()> {
+        use crate::policy::StandardPolicy;
+        use crate::parse::stream::{
+            DecryptorBuilder,
+            test::VHelper,
+        };
+        use crate::tests::PQC_CERT_PAIRS;
+
+        let test_message = b"Hello World";
+
+        let p = &StandardPolicy::new();
+        for (_, cert_file, key_file) in PQC_CERT_PAIRS {
+
+            eprintln!("Roundtrip\n- key: {}\n- cert: {}", key_file, cert_file);
+
+            // encrypt
+            let enc_cert = Cert::from_bytes(crate::tests::file(cert_file))?;
+
+            if let Some(unknown) = enc_cert.keys().find_map(|ka| {
+                if ka.key().pk_algo().is_supported() {
+                    None
+                } else {
+                    Some(ka.key().pk_algo())
+                }
+            })
+            {
+                eprintln!("{}: {} is not supported, skipping.",
+                          cert_file, unknown);
+                continue;
+            }
+
+            let vc = enc_cert.with_policy(p, None)?;
+
+            let keys: Vec<_> = vc
+                .keys()
+                .supported()
+                .alive()
+                .revoked(false)
+                .for_transport_encryption()
+                .collect();
+
+            let mut encrypted = Vec::new();
+            let message = Message::new(&mut encrypted);
+            let message = Encryptor::for_recipients(message, keys).build()?;
+            let mut message = LiteralWriter::new(message).build()?;
+
+            message.write_all(test_message)?;
+            message.finalize()?;
+
+            assert_ne!(test_message, encrypted.as_slice());
+
+            // decrypt
+            let dec_cert = Cert::from_bytes(crate::tests::file(key_file))?;
+            let vhelper = VHelper::for_decryption(
+                0, 0, 0, 0, Vec::new(), vec![dec_cert], Vec::new());
+            let mut decryptor = DecryptorBuilder::from_bytes(&encrypted)?
+                .with_policy(p, None, vhelper)?;
+            assert!(decryptor.message_processed());
+
+            let mut decrypted = Vec::new();
+            decryptor.read_to_end(&mut decrypted).unwrap();
+            assert_eq!(test_message, decrypted.as_slice());
+
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_pqc_signatures() -> Result<()> {
+        use crate::policy::StandardPolicy;
+        use crate::tests::PQC_CERT_PAIRS;
+        use crate::parse::stream::{
+            VerifierBuilder,
+            test::VHelper,
+        };
+
+        let test_message = b"Hello World";
+        let p = &StandardPolicy::new();
+        for (algo, _,  key_file) in PQC_CERT_PAIRS {
+            eprintln!("Signature test\n- key: {}", key_file);
+
+            let cert = Cert::from_bytes(crate::tests::file(key_file))?;
+
+            if let Some(unknown) = cert.keys().find_map(|ka| {
+                if ka.key().pk_algo().is_supported() {
+                    None
+                } else {
+                    Some(ka.key().pk_algo())
+                }
+            })
+            {
+                eprintln!("{}: {} is not supported, skipping.",
+                          key_file, unknown);
+                continue;
+            }
+
+            let vc = cert.with_policy(p, None)?;
+
+            let key_pair = vc
+                .keys()
+                .secret()
+                .supported()
+                .alive()
+                .revoked(false)
+                .for_signing()
+                .nth(0).unwrap()
+                .key().clone().into_keypair()?;
+
+            let mut sink = Vec::new();
+            let message = Message::new(&mut sink);
+            let message = Signer::new(message, key_pair)?
+                .build()?;
+            let mut message = LiteralWriter::new(message).build()?;
+            message.write_all(test_message)?;
+            message.finalize()?;
+
+            let pp = crate::PacketPile::from_bytes(&sink)?;
+            for packet in pp.children() {
+                match packet {
+                    Packet::Signature(sig) => {
+                        assert_eq!(sig.pk_algo(), *algo);
+                    },
+                    _ => { }
+                }
+            }
+
+            let vhelper = VHelper::new(1, 0, 0, 0, vec![cert]);
+            let mut verifier = VerifierBuilder::from_bytes(&sink)?
+                .with_policy(p, None, vhelper)?;
+            assert!(verifier.message_processed());
+
+            let mut content = Vec::new();
+            verifier.read_to_end(&mut content).unwrap();
+            assert_eq!(test_message, content.as_slice());
+        }
+        Ok(())
+    }
 }
