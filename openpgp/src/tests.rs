@@ -83,6 +83,48 @@ pub const PQC_CERT_PAIRS: &[(PublicKeyAlgorithm, &str, &str)] = &[
     "pqc/ietf/v4-eddsa-sample-pk.pgp",
     "pqc/ietf/v4-eddsa-sample-sk.pgp"
     ),
+    //
+    // rpgp artifacts
+    //
+    (PublicKeyAlgorithm::Ed25519,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::Ed25519,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::MLDSA65_Ed25519,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::MLDSA87_Ed448,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::SLHDSA128f,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::SLHDSA128s,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::SLHDSA256s,
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_pk.pgp",
+    "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_sk.pgp"
+    ),
+    //
+    // gopenpgp artifacts
+    //
+    (PublicKeyAlgorithm::MLDSA65_Ed25519,
+    "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_pk.pgp",
+    "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_sk.pgp"
+    ),
+    (PublicKeyAlgorithm::MLDSA87_Ed448,
+    "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_pk.pgp",
+    "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_sk.pgp"
+    ),
 ];
 
 /// Returns the content of the given file below `openpgp/tests/data`.
