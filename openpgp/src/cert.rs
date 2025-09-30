@@ -7667,4 +7667,264 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
         Ok(())
     }
+
+    //
+    // consume rsop/rpgp artifacts
+    //
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v4_ed25519_mlkem768x25519() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::Ed25519);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v6_ed25519_mlkem768x25519() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::Ed25519);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v6_mldsa65ed25519_mlkem768x25519() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::MLDSA65_Ed25519);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v6_mldsa87ed448_mlkem1024x448() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::MLDSA87_Ed448);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v6_slhdsashake128f_mlkem768x25519() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::SLHDSA128f);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v6_slhdsashake128s_mlkem768x25519() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::SLHDSA128s);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn rsop_draft_ietf_openpgp_pqc_08_v6_slhdsashake256s_mlkem1024x448() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::SLHDSA256s);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    //
+    // consume gosop/gopenpgp artifacts
+    //
+
+    #[test]
+    fn gosop_draft_ietf_openpgp_pqc_09() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::MLDSA65_Ed25519);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn gosop_draft_ietf_openpgp_pqc_09_high_security() -> Result<()> {
+        skip_unless_supported!(PublicKeyAlgorithm::MLDSA87_Ed448);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file("pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_pk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file("pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_sk.pgp"))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
 }
