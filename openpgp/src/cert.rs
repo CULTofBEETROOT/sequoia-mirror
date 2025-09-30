@@ -7494,7 +7494,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let p = &crate::policy::StandardPolicy::new();
         let t = None;
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-mldsa-65-sample-pk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-mldsa-65-sample-pk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7504,7 +7504,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
 
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-mldsa-65-sample-sk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-mldsa-65-sample-sk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7523,7 +7523,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let p = &crate::policy::StandardPolicy::new();
         let t = None;
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-mldsa-87-sample-pk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-mldsa-87-sample-pk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7533,7 +7533,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
 
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-mldsa-87-sample-sk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-mldsa-87-sample-sk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7552,7 +7552,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let p = &crate::policy::StandardPolicy::new();
         let t = None;
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-slhdsa-128s-sample-pk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-slhdsa-128s-sample-pk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7562,7 +7562,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
 
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-slhdsa-128s-sample-sk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-slhdsa-128s-sample-sk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7581,7 +7581,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let p = &crate::policy::StandardPolicy::new();
         let t = None;
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-slhdsa-128f-sample-pk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-slhdsa-128f-sample-pk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7591,7 +7591,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
 
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-slhdsa-128f-sample-sk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-slhdsa-128f-sample-sk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7610,7 +7610,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let p = &crate::policy::StandardPolicy::new();
         let t = None;
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-slhdsa-256s-sample-pk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-slhdsa-256s-sample-pk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7620,7 +7620,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
 
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v6-slhdsa-256s-sample-sk.pgp"))?;
+            crate::tests::file("pqc/ietf/v6-slhdsa-256s-sample-sk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7639,7 +7639,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let p = &crate::policy::StandardPolicy::new();
         let t = None;
         let cert = Cert::from_bytes(
-        crate::tests::file("pqc/v4-eddsa-sample-pk.pgp"))?;
+        crate::tests::file("pqc/ietf/v4-eddsa-sample-pk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
@@ -7649,7 +7649,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
 
         let cert = Cert::from_bytes(
-            crate::tests::file("pqc/v4-eddsa-sample-sk.pgp"))?;
+            crate::tests::file("pqc/ietf/v4-eddsa-sample-sk.pgp"))?;
         assert_eq!(cert.userids().count(), 1);
         let vcert = cert.with_policy(p, t)?;
         assert_eq!(vcert.keys().count(), 2);
