@@ -52,6 +52,9 @@ for PROFILE in $PROFILES ; do
 
   echo -n " encrypt"
   echo $MESSAGE | $RSOP encrypt --sign-with $WORKDIR/$SUBDIRECTORY/rsop_${PROFILE}_alice_sk.pgp $WORKDIR/$SUBDIRECTORY/rsop_${PROFILE}_bob_pk.pgp > $WORKDIR/$SUBDIRECTORY/rsop_${PROFILE}_message.pgp
+
+  echo -n " sign-detached"
+  echo $MESSAGE | $RSOP sign $WORKDIR/$SUBDIRECTORY/rsop_${PROFILE}_alice_sk.pgp > $WORKDIR/$SUBDIRECTORY/rsop_${PROFILE}_detached_sig.pgp
   echo " done."
 done
 
@@ -79,6 +82,9 @@ for PROFILE in $PROFILES ; do
   
   echo -n " encrypt"
   echo $MESSAGE | $GOSOP encrypt --sign-with $WORKDIR/$SUBDIRECTORY/gosop_${PROFILE}_alice_sk.pgp $WORKDIR/$SUBDIRECTORY/gosop_${PROFILE}_bob_pk.pgp > $WORKDIR/$SUBDIRECTORY/gosop_${PROFILE}_message.pgp
+
+  echo -n " sign-detached"
+  echo $MESSAGE | $GOSOP sign $WORKDIR/$SUBDIRECTORY/gosop_${PROFILE}_alice_sk.pgp > $WORKDIR/$SUBDIRECTORY/gosop_${PROFILE}_detached_sig.pgp
   echo " done."
 done
 
