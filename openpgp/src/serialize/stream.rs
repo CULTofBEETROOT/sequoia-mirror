@@ -4408,4 +4408,56 @@ mod test {
 
         Ok(())
     }
+
+    #[test]
+    fn test_pqc_certificates() -> Result<()> {
+        use crate::policy::StandardPolicy;
+        use crate::parse::stream::{
+            DecryptorBuilder,
+            test::VHelper,
+        };
+        use crate::tests::PQC_CERT_PAIRS;
+
+        let test_message = b"Hello World";
+
+        let p = &StandardPolicy::new();
+        for (_, cert_file, key_file) in PQC_CERT_PAIRS {
+
+            eprintln!("Roundtrip\n- key: {}\n- cert: {}", key_file, cert_file);
+
+            // encrypt
+            let enc_cert = Cert::from_bytes(crate::tests::file(cert_file))?;
+            let vc = enc_cert.with_policy(p, None)?;
+
+            let keys: Vec<_> = vc
+                .keys()
+                .supported()
+                .alive()
+                .revoked(false)
+                .for_transport_encryption()
+                .collect();
+
+            let mut encrypted = Vec::new();
+            let message = Message::new(&mut encrypted);
+            let message = Encryptor::for_recipients(message, keys).build()?;
+            let mut message = LiteralWriter::new(message).build()?;
+
+            message.write_all(test_message)?;
+            message.finalize()?;
+
+            // decrypt
+            let dec_cert = Cert::from_bytes(crate::tests::file(key_file))?;
+            let vhelper = VHelper::for_decryption(0, 0, 0, 0, Vec::new(),
+                                            vec![dec_cert], Vec::new());
+            let mut decryptor = DecryptorBuilder::from_bytes(&encrypted)?
+                .with_policy(p, None, vhelper)?;
+            assert!(decryptor.message_processed());
+
+            let mut decrypted = Vec::new();
+            decryptor.read_to_end(&mut decrypted).unwrap();
+            assert_eq!(test_message, decrypted.as_slice());
+
+        }
+        Ok(())
+    }
 }

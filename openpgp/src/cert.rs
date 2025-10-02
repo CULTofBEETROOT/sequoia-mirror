@@ -7527,80 +7527,10 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
     #[test]
     fn parse_certificates() -> Result<()> {
 
-        let certificates = vec![
-            //
-            // artifacts/ test vectors from ietf draft
-            //
-            (PublicKeyAlgorithm::MLDSA65_Ed25519,
-            "pqc/ietf/v6-mldsa-65-sample-pk.pgp",
-            "pqc/ietf/v6-mldsa-65-sample-sk.pgp"
-            ),
-            (PublicKeyAlgorithm::MLDSA87_Ed448,
-            "pqc/ietf/v6-mldsa-87-sample-pk.pgp",
-            "pqc/ietf/v6-mldsa-87-sample-sk.pgp"
-            ),
-            (PublicKeyAlgorithm::SLHDSA128s,
-            "pqc/ietf/v6-slhdsa-128s-sample-pk.pgp",
-            "pqc/ietf/v6-slhdsa-128s-sample-sk.pgp"
-            ),
-            (PublicKeyAlgorithm::SLHDSA128f,
-            "pqc/ietf/v6-slhdsa-128f-sample-pk.pgp",
-            "pqc/ietf/v6-slhdsa-128f-sample-sk.pgp"
-            ),
-            (PublicKeyAlgorithm::SLHDSA256s,
-            "pqc/ietf/v6-slhdsa-256s-sample-pk.pgp",
-            "pqc/ietf/v6-slhdsa-256s-sample-sk.pgp"
-            ),
-            (PublicKeyAlgorithm::Ed25519,
-            "pqc/ietf/v4-eddsa-sample-pk.pgp",
-            "pqc/ietf/v4-eddsa-sample-sk.pgp"
-            ),
-            //
-            // rpgp artifacts
-            //
-            (PublicKeyAlgorithm::Ed25519,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::Ed25519,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::MLDSA65_Ed25519,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::MLDSA87_Ed448,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::SLHDSA128f,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::SLHDSA128s,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::SLHDSA256s,
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_pk.pgp",
-            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_sk.pgp"
-            ),
-            //
-            // gopenpgp artifacts
-            //
-            (PublicKeyAlgorithm::MLDSA65_Ed25519,
-            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_pk.pgp",
-            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_sk.pgp"
-            ),
-            (PublicKeyAlgorithm::MLDSA87_Ed448,
-            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_pk.pgp",
-            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_sk.pgp"
-            ),
-        ];
+        use crate::tests::PQC_CERT_PAIRS;
 
-        for (algo, cert_file, key_file) in certificates {
-            assert!(test_parse_certificate(algo, cert_file, key_file).is_ok());
+        for (algo, cert_file, key_file) in PQC_CERT_PAIRS {
+            assert!(test_parse_certificate(*algo, cert_file, key_file).is_ok());
         }
         Ok(())
     }
