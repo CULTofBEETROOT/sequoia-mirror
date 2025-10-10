@@ -85,9 +85,16 @@ pub enum CipherSuite {
     /// KEM MLKEM768+X25519.
     MLDSA65_Ed25519,
 
-    /// Composite signature algorithm MLDSA78+Ed448, and composite
+    /// Composite signature algorithm MLDSA87+Ed448, and composite
     /// KEM MLKEM1024+X448.
     MLDSA87_Ed448,
+
+    /// Signature SLH-DSA-SHAKE-128s, and composite KEM MLKEM768+X25519.
+    SLHDSA128s,
+    /// Signature SLH-DSA-SHAKE-128f, and composite KEM MLKEM768+X25519.
+    SLHDSA128f,
+    /// Signature SLH-DSA-SHAKE-256s, and composite KEM MLKEM1024+X448.
+    SLHDSA256s,
 
     // If you add a variant here, be sure to update
     // CipherSuite::variants below.
@@ -106,7 +113,8 @@ impl CipherSuite {
         use CipherSuite::*;
 
         [ Cv25519, RSA3k, P256, P384, P521, RSA2k, RSA4k,
-          MLDSA65_Ed25519, MLDSA87_Ed448 ]
+          MLDSA65_Ed25519, MLDSA87_Ed448,
+          SLHDSA128s, SLHDSA128f, SLHDSA256s ]
             .into_iter()
     }
 
@@ -166,6 +174,18 @@ impl CipherSuite {
             }
             MLDSA87_Ed448 => {
                 check_pk!(PublicKeyAlgorithm::MLDSA87_Ed448);
+                check_pk!(PublicKeyAlgorithm::MLKEM1024_X448);
+            },
+            SLHDSA128s => {
+                check_pk!(PublicKeyAlgorithm::SLHDSA128s);
+                check_pk!(PublicKeyAlgorithm::MLKEM768_X25519);
+            },
+            SLHDSA128f => {
+                check_pk!(PublicKeyAlgorithm::SLHDSA128f);
+                check_pk!(PublicKeyAlgorithm::MLKEM768_X25519);
+            },
+            SLHDSA256s => {
+                check_pk!(PublicKeyAlgorithm::SLHDSA256s);
                 check_pk!(PublicKeyAlgorithm::MLKEM1024_X448);
             }
         }
@@ -230,7 +250,12 @@ impl CipherSuite {
                 }
             },
 
-            CipherSuite::MLDSA65_Ed25519 | CipherSuite::MLDSA87_Ed448 =>
+            CipherSuite::MLDSA65_Ed25519
+            | CipherSuite::MLDSA87_Ed448
+            | CipherSuite::SLHDSA128s
+            | CipherSuite::SLHDSA128f
+            | CipherSuite::SLHDSA256s
+            =>
                 Err(Error::InvalidOperation(
                     "can't use algorithms for v4 keys".into())
                     .into()),
@@ -297,17 +322,37 @@ impl CipherSuite {
                 }
             },
 
-            a @ CipherSuite::MLDSA65_Ed25519 | a @ CipherSuite::MLDSA87_Ed448 =>
+            a @ CipherSuite::MLDSA65_Ed25519
+            | a @ CipherSuite::MLDSA87_Ed448
+            | a @ CipherSuite::SLHDSA128s
+            | a @ CipherSuite::SLHDSA128f
+            | a @ CipherSuite::SLHDSA256s =>
                 match (sign, encrypt, a) {
                     (true, false, CipherSuite::MLDSA65_Ed25519) =>
                         Key6::generate_mldsa65_ed25519(),
                     (true, false, CipherSuite::MLDSA87_Ed448) =>
                         Key6::generate_mldsa87_ed448(),
-                    (true, false, _) => unreachable!(),
                     (false, true, CipherSuite::MLDSA65_Ed25519) =>
                         Key6::generate_mlkem768_x25519(),
                     (false, true, CipherSuite::MLDSA87_Ed448) =>
                         Key6::generate_mlkem1024_x448(),
+
+                    (true, false, CipherSuite::SLHDSA128s) =>
+                        Key6::generate_slhdsa128s(),
+                    (false, true, CipherSuite::SLHDSA128s) =>
+                        Key6::generate_mlkem768_x25519(),
+
+                    (true, false, CipherSuite::SLHDSA128f) =>
+                        Key6::generate_slhdsa128f(),
+                    (false, true, CipherSuite::SLHDSA128f) =>
+                        Key6::generate_mlkem768_x25519(),
+
+                    (true, false, CipherSuite::SLHDSA256s) =>
+                        Key6::generate_slhdsa256s(),
+                    (false, true, CipherSuite::SLHDSA256s) =>
+                        Key6::generate_mlkem1024_x448(),
+
+                    (true, false, _) => unreachable!(),
                     (false, true, _) => unreachable!(),
                     (true, true, _) =>
                         Err(Error::InvalidOperation(
@@ -2336,6 +2381,48 @@ mod tests {
         // Armored TSK:
         check!(cert.as_tsk().armored(), export, 1);
         check!(cert.as_tsk().armored(), serialize, 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pqc_gen_v6_certs() -> Result<()> {
+
+        for (suite, pk_algo, sig_algo) in [
+            (CipherSuite::MLDSA65_Ed25519,
+             PublicKeyAlgorithm::MLDSA65_Ed25519,
+             PublicKeyAlgorithm::MLKEM768_X25519),
+            (CipherSuite::MLDSA87_Ed448,
+             PublicKeyAlgorithm::MLDSA87_Ed448,
+             PublicKeyAlgorithm::MLKEM1024_X448),
+            (CipherSuite::SLHDSA128s,
+             PublicKeyAlgorithm::SLHDSA128s,
+             PublicKeyAlgorithm::MLKEM768_X25519),
+            (CipherSuite::SLHDSA128f,
+             PublicKeyAlgorithm::SLHDSA128f,
+             PublicKeyAlgorithm::MLKEM768_X25519),
+            (CipherSuite::SLHDSA256s,
+             PublicKeyAlgorithm::SLHDSA256s,
+             PublicKeyAlgorithm::MLKEM1024_X448) ] {
+
+            eprintln!("Suite: {:?}", suite);
+
+            // build primary key and subkeys with `suite`.
+            // Note: these are not combinations used in the draft.
+            let (cert, _) = CertBuilder::new()
+                .set_profile(crate::Profile::RFC9580).unwrap()
+                .set_cipher_suite(suite)
+                .add_subkey(KeyFlags::empty().set_transport_encryption(),
+                        None, None)
+                .add_subkey(KeyFlags::empty().set_signing(),
+                        None, None)
+                .generate()?;
+
+            assert_eq!(cert.primary_key().key().pk_algo(), pk_algo);
+            assert_eq!(cert.subkeys().nth(0).unwrap().key().pk_algo(), pk_algo);
+            assert!(cert.subkeys().nth(1).unwrap().key().has_secret());
+            assert_eq!(cert.subkeys().nth(1).unwrap().key().pk_algo(), sig_algo);
+        }
 
         Ok(())
     }
