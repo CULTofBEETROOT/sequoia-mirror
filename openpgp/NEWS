@@ -68,6 +68,9 @@
    - policy::AsymmetricAlgorithm::MLKEM1024_X448
    - CipherSuite::MLDSA65_Ed25519
    - CipherSuite::MLDSA87_Ed448
+   - CipherSuite::SLHDSA128s
+   - CipherSuite::SLHDSA128f
+   - CipherSuite::SLHDSA256s
 
 * Changes in 2.1.0
 ** Notable fixes
