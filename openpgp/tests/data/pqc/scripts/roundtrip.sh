@@ -29,7 +29,14 @@ MESSAGE="Hello World"
 # 
 
 # sqop list-profiles generate-key (only PQC profiles)
-PROFILES="draft-ietf-openpgp-pqc-12"
+PROFILES="draft-ietf-openpgp-pqc-12
+draft-ietf-openpgp-pqc-12-v4-ed25519-mlkem768x25519
+draft-ietf-openpgp-pqc-12-v6-ed25519-mlkem768x25519
+draft-ietf-openpgp-pqc-12-v6-mldsa65ed25519-mlkem768x25519
+draft-ietf-openpgp-pqc-12-v6-mldsa87ed448-mlkem1024x448
+draft-ietf-openpgp-pqc-12-v6-slhdsashake128s-mlkem768x25519
+draft-ietf-openpgp-pqc-12-v6-slhdsashake128f-mlkem768x25519
+draft-ietf-openpgp-pqc-12-v6-slhdsashake256s-mlkem1024x448"
 
 for PROFILE in $PROFILES ; do
   echo -n "sqop: Profile $PROFILE..."
