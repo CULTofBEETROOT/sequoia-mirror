@@ -230,6 +230,7 @@ impl CipherSuite {
                             "No key flags set".into())
                             .into());
                     }
+
                     CipherSuite::P256 => Curve::NistP256,
                     CipherSuite::P384 => Curve::NistP384,
                     CipherSuite::P521 => Curve::NistP521,
@@ -250,8 +251,31 @@ impl CipherSuite {
                 }
             },
 
-            CipherSuite::MLDSA65_Ed25519
-            | CipherSuite::MLDSA87_Ed448
+            CipherSuite::MLDSA65_Ed25519 => {
+                let flags = flags.as_ref();
+                let sign = flags.for_certification() || flags.for_signing()
+                    || flags.for_authentication();
+                let encrypt = flags.for_transport_encryption()
+                    || flags.for_storage_encryption();
+                match (sign, encrypt) {
+                    (true, false) => {
+                        Key4::generate_ed25519()
+                    },
+                    (false, true) => {
+                        Key4::generate_mlkem768_x25519()
+                    },
+                    (true, true) =>
+                        Err(Error::InvalidOperation(
+                            "Can't use key for encryption and signing".into())
+                            .into()),
+                    (false, false) =>
+                        Err(Error::InvalidOperation(
+                            "No key flags set".into())
+                            .into()),
+                }
+            }
+
+            CipherSuite::MLDSA87_Ed448
             | CipherSuite::SLHDSA128s
             | CipherSuite::SLHDSA128f
             | CipherSuite::SLHDSA256s
