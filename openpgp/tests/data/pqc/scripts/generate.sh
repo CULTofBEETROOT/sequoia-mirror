@@ -1,23 +1,47 @@
 #!/usr/bin/bash
 
-#
-# generate artifacts
-# USAGE: bash generate.sh $TARGET_DIRECTORY
-#
+###
+### generate artifacts
+### USAGE: bash generate.sh $TARGET_DIRECTORY
+### -
+### Make sure that both `rsop` and `gosop` are
+### either in your $PATH or are accessible via
+### the environment variables $RSOP and $GOSOP
+### respectively.
+###
 
 WORKDIR=$1
 
+usage() { # message_string
+  echo "Error: " $1
+  echo
+  sed -n 's/^### //p' $0
+  exit 1
+}
+
 if [ "$WORKDIR" == "" ] ; then
-  echo "Usage: $0 [target-directory]"
-  exit 0
+  usage "target directory missing"
 fi
 
 if ! [ -d $WORKDIR ] ; then
   mkdir -p $WORKDIR
 fi
 
-RSOP=/home/malte/src/rsop/target/release/rsop
-GOSOP=/home/malte/src/gosop/gosop
+if [ -z $RSOP ] ; then
+  RSOP=$(which rsop)
+fi
+
+if [ -z $GOSOP ] ; then
+  GOSOP=$(which gosop)
+fi
+
+if [ -z $RSOP ] ; then
+  usage "Cannot find rsop binary"
+fi
+
+if [ -z $GOSOP ] ; then
+  usage "Cannot find gosop binary"
+fi
 
 USER_ALICE="Alice <alice@example.com>"
 USER_BOB="Bob <bob@example.com>"
