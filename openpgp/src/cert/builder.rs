@@ -81,6 +81,9 @@ pub enum CipherSuite {
     /// 4096 bit RSA with SHA512 and AES256
     RSA4k,
 
+    /// Ed25519 with MLKEM768+X25519
+    Ed25519_MLKEM768,
+
     /// Composite signature algorithm MLDSA65+Ed25519, and composite
     /// KEM MLKEM768+X25519.
     MLDSA65_Ed25519,
@@ -168,10 +171,15 @@ impl CipherSuite {
                 check_curve!(Curve::NistP521);
                 check_pk!(PublicKeyAlgorithm::ECDH);
             },
+            Ed25519_MLKEM768 => {
+                check_pk!(PublicKeyAlgorithm::EdDSA);
+                check_curve!(Curve::Ed25519);
+                check_pk!(PublicKeyAlgorithm::MLKEM768_X25519);
+            },
             MLDSA65_Ed25519 => {
                 check_pk!(PublicKeyAlgorithm::MLDSA65_Ed25519);
                 check_pk!(PublicKeyAlgorithm::MLKEM768_X25519);
-            }
+            },
             MLDSA87_Ed448 => {
                 check_pk!(PublicKeyAlgorithm::MLDSA87_Ed448);
                 check_pk!(PublicKeyAlgorithm::MLKEM1024_X448);
@@ -199,6 +207,27 @@ impl CipherSuite {
         match profile {
             Profile::RFC9580 => Ok(self.generate_v6_key(flags)?.into()),
             Profile::RFC4880 => Ok(self.generate_v4_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V4_Ed25519_MLKEM768x25519 =>
+                Ok(CipherSuite::Ed25519_MLKEM768.generate_v4_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_Ed25519_MLKEM768x25519 =>
+                Ok(CipherSuite::Ed25519_MLKEM768.generate_v6_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA65Ed25519_MLKEM768x25519 =>
+                Ok(CipherSuite::MLDSA65_Ed25519.generate_v6_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA87Ed448_MLKEM1024x448 =>
+                Ok(CipherSuite::MLDSA87_Ed448.generate_v6_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128s =>
+                Ok(CipherSuite::SLHDSA128s.generate_v6_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128f =>
+                Ok(CipherSuite::SLHDSA128f.generate_v6_key(flags)?.into()),
+
+            Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA256s =>
+                Ok(CipherSuite::SLHDSA256s.generate_v6_key(flags)?.into()),
         }
     }
 
@@ -251,7 +280,7 @@ impl CipherSuite {
                 }
             },
 
-            CipherSuite::MLDSA65_Ed25519 => {
+            CipherSuite::Ed25519_MLKEM768 => {
                 let flags = flags.as_ref();
                 let sign = flags.for_certification() || flags.for_signing()
                     || flags.for_authentication();
@@ -273,9 +302,10 @@ impl CipherSuite {
                             "No key flags set".into())
                             .into()),
                 }
-            }
+            },
 
-            CipherSuite::MLDSA87_Ed448
+            CipherSuite::MLDSA65_Ed25519
+            | CipherSuite::MLDSA87_Ed448
             | CipherSuite::SLHDSA128s
             | CipherSuite::SLHDSA128f
             | CipherSuite::SLHDSA256s
@@ -346,7 +376,8 @@ impl CipherSuite {
                 }
             },
 
-            a @ CipherSuite::MLDSA65_Ed25519
+            a @ CipherSuite::Ed25519_MLKEM768
+            | a @ CipherSuite::MLDSA65_Ed25519
             | a @ CipherSuite::MLDSA87_Ed448
             | a @ CipherSuite::SLHDSA128s
             | a @ CipherSuite::SLHDSA128f
@@ -360,6 +391,11 @@ impl CipherSuite {
                         Key6::generate_mlkem768_x25519(),
                     (false, true, CipherSuite::MLDSA87_Ed448) =>
                         Key6::generate_mlkem1024_x448(),
+
+                    (true, false, CipherSuite::Ed25519_MLKEM768) =>
+                        Key6::generate_ed25519(),
+                    (false, true, CipherSuite::Ed25519_MLKEM768) =>
+                        Key6::generate_mlkem768_x25519(),
 
                     (true, false, CipherSuite::SLHDSA128s) =>
                         Key6::generate_slhdsa128s(),
@@ -2410,8 +2446,9 @@ mod tests {
              PublicKeyAlgorithm::MLKEM768_X25519),
             (CipherSuite::SLHDSA256s,
              PublicKeyAlgorithm::SLHDSA256s,
-             PublicKeyAlgorithm::MLKEM1024_X448) ] {
-
+             PublicKeyAlgorithm::MLKEM1024_X448)
+        ]
+        {
             eprintln!("Suite: {:?}", suite);
 
             // build primary key and subkeys with `suite`.
@@ -2431,6 +2468,29 @@ mod tests {
             assert_eq!(cert.subkeys().nth(1).unwrap().key().pk_algo(), sig_algo);
         }
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_pqc_profiles() -> Result<()> {
+        use crate::Profile::*;
+
+        for (profile, algo) in [
+            (DRAFT_IETF_OPENPGP_PQC_12_V4_Ed25519_MLKEM768x25519, PublicKeyAlgorithm::Ed25519),
+            (DRAFT_IETF_OPENPGP_PQC_12_V6_Ed25519_MLKEM768x25519, PublicKeyAlgorithm::Ed25519),
+            (DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA65Ed25519_MLKEM768x25519, PublicKeyAlgorithm::MLDSA65_Ed25519),
+            (DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA87Ed448_MLKEM1024x448, PublicKeyAlgorithm::MLDSA87_Ed448),
+            (DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128s, PublicKeyAlgorithm::SLHDSA128s),
+            (DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128f, PublicKeyAlgorithm::SLHDSA128f),
+            (DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA256s, PublicKeyAlgorithm::SLHDSA256s)
+            ] {
+
+            let (cert, _) = CertBuilder::new()
+                .set_profile(profile).unwrap()
+                .generate()?;
+
+            assert_eq!(cert.primary_key().key().pk_algo(), algo);
+        }
         Ok(())
     }
 }
