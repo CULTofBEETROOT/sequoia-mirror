@@ -443,6 +443,175 @@ where R: KeyRole,
             common: Key4::import_public_rsa(e, n, ctime)?,
         })
     }
+
+    /// Creates an OpenPGP public key packet from existing ML-DSA-65
+    /// and Ed25519 key material.
+    ///
+    /// Note: in OpenPGP, ML-DSA keys are composite keys and include
+    /// an EdDSA key to provide a pre-quantum security fallback.
+    ///
+    /// The ML-DSA-65 public key must be exactly 1952 bytes.  The
+    /// Ed25519 public key must be exactly 32 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mldsa65_ed25519<T>(
+        mldsa: &[u8], eddsa: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLDSA65_Ed25519,
+                              mpi::PublicKey::MLDSA65_Ed25519 {
+                                  eddsa: Box::new(eddsa.try_into()?),
+                                  mldsa: Box::new(mldsa.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing ML-DSA-87
+    /// and Ed448 key material.
+    ///
+    /// Note: in OpenPGP, ML-DSA keys are composite keys and include
+    /// an EdDSA key to provide a pre-quantum security fallback.
+    ///
+    /// The ML-DSA-87 public key must be exactly 2592 bytes.  The
+    /// Ed448 public key must be exactly 57 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mldsa87_ed448<T>(
+        mldsa: &[u8], eddsa: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLDSA87_Ed448,
+                              mpi::PublicKey::MLDSA87_Ed448 {
+                                  eddsa: Box::new(eddsa.try_into()?),
+                                  mldsa: Box::new(mldsa.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// SLH-DSA-128s key material.
+    ///
+    /// SLH-DSA-128s keys must be exactly 32 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_slhdsa128s<T>(public: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::SLHDSA128s,
+                              mpi::PublicKey::SLHDSA128s {
+                                  public: public.try_into()?,
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// SLH-DSA-128f key material.
+    ///
+    /// SLH-DSA-128f keys must be exactly 32 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_slhdsa128f<T>(public: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::SLHDSA128f,
+                              mpi::PublicKey::SLHDSA128f {
+                                  public: public.try_into()?,
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// SLH-DSA-256s key material.
+    ///
+    /// SLH-DSA-256s keys must be exactly 64 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_slhdsa256s<T>(public: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::SLHDSA256s,
+                              mpi::PublicKey::SLHDSA256s {
+                                  public: Box::new(public.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM768+X25519 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an X25519 key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM768 keys must be exactly 1184 bytes, and X25519 keys
+    /// must be exactly 32 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem768_x25519<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLKEM768_X25519,
+                              mpi::PublicKey::MLKEM768_X25519 {
+                                  ecdh: Box::new(ecdh.try_into()?),
+                                  mlkem: Box::new(mlkem.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM1024+X448 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an X448 key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM1024 keys must be exactly 1568 bytes, and X448 keys must
+    /// be exactly 56 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem1024_x448<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLKEM1024_X448,
+                              mpi::PublicKey::MLKEM1024_X448 {
+                                  ecdh: Box::new(ecdh.try_into()?),
+                                  mlkem: Box::new(mlkem.try_into()?),
+                              })?,
+        })
+    }
 }
 
 impl<R> Key6<SecretParts, R>
@@ -928,6 +1097,15 @@ mod tests {
                 Key6::generate_ecc(false, cv).ok()
             }).chain(vec![1024, 2048, 3072, 4096].into_iter().filter_map(|b| {
                 Key6::generate_rsa(b).ok()
+            })).chain([
+                (PublicKeyAlgorithm::MLKEM768_X25519, Key6::generate_mlkem768_x25519 as fn() -> Result<_>),
+                (PublicKeyAlgorithm::MLKEM1024_X448, Key6::generate_mlkem1024_x448),
+            ].into_iter().filter_map(|(algo, gen)| {
+                if algo.is_supported() {
+                    Some(gen().expect(&format!("{} is supported", algo)))
+                } else {
+                    None
+                }
             }));
 
         for key in keys.into_iter() {
@@ -956,6 +1134,18 @@ mod tests {
                 Key6::generate_ecc(true, cv).ok()
             }).chain(vec![1024, 2048, 3072, 4096].into_iter().filter_map(|b| {
                 Key6::generate_rsa(b).ok()
+            })).chain([
+                (PublicKeyAlgorithm::MLDSA65_Ed25519, Key6::generate_mldsa65_ed25519 as fn() -> Result<_>),
+                (PublicKeyAlgorithm::MLDSA87_Ed448, Key6::generate_mldsa87_ed448),
+                (PublicKeyAlgorithm::SLHDSA128s, Key6::generate_slhdsa128s),
+                (PublicKeyAlgorithm::SLHDSA128f, Key6::generate_slhdsa128f),
+                (PublicKeyAlgorithm::SLHDSA256s, Key6::generate_slhdsa256s),
+            ].into_iter().filter_map(|(algo, gen)| {
+                if algo.is_supported() {
+                    Some(gen().expect(&format!("{} is supported", algo)))
+                } else {
+                    None
+                }
             }));
 
         for key in keys.into_iter() {
@@ -1178,6 +1368,173 @@ JC6thFQ9+JWj
         assert_eq!(k.fingerprint().to_string(),
                    "4EADF309C6BC874AE04702451548F93F\
                     96FA7A01D0A33B5AF7D4E379E0F9F8EE".to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn import_public_mldsa() -> Result<()> {
+        if PublicKeyAlgorithm::MLDSA65_Ed25519.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mldsa65_ed25519()
+                .expect("failed to generate MLDSA65 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA65_Ed25519);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLDSA65_Ed25519 {
+                eddsa,
+                mldsa,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mldsa65_ed25519(
+                &mldsa[..], &eddsa[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLDSA87_Ed448.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mldsa87_ed448()
+                .expect("failed to generate MLDSA87 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA87_Ed448);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLDSA87_Ed448 {
+                eddsa,
+                mldsa,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mldsa87_ed448(
+                &mldsa[..], &eddsa[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        Ok(())
+    }
+
+
+    #[test]
+    fn import_public_slhdsa() -> Result<()> {
+        if PublicKeyAlgorithm::SLHDSA128s.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_slhdsa128s()
+                .expect("failed to generate SLHDSA128s key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::SLHDSA128s);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::SLHDSA128s {
+                public,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_slhdsa128s(
+                &public[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::SLHDSA128f.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_slhdsa128f()
+                .expect("failed to generate SLHDSA128f key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::SLHDSA128f);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::SLHDSA128f {
+                public,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_slhdsa128f(
+                &public[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::SLHDSA256s.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_slhdsa256s()
+                .expect("failed to generate SLHDSA256s key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::SLHDSA256s);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::SLHDSA256s {
+                public,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_slhdsa256s(
+                &public[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn import_public_mlkem() -> Result<()> {
+        if PublicKeyAlgorithm::MLKEM768_X25519.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mlkem768_x25519()
+                .expect("failed to generate ML-KEM768 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLKEM768_X25519);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLKEM768_X25519 {
+                ecdh,
+                mlkem,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mlkem768_x25519(
+                &mlkem[..], &ecdh[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLKEM1024_X448.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mlkem1024_x448()
+                .expect("failed to generate ML-KEM1024 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLKEM1024_X448);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLKEM1024_X448 {
+                ecdh,
+                mlkem,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mlkem1024_x448(
+                &mlkem[..], &ecdh[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
         Ok(())
     }
 }

@@ -231,6 +231,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// deployed.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
+#[allow(non_camel_case_types)]
 pub enum Profile {
     /// RFC9580, published in 2024, defines "v6" OpenPGP.
     RFC9580,
@@ -238,6 +239,27 @@ pub enum Profile {
     /// RFC4880, published in 2007, defines "v4" OpenPGP.
     #[default]
     RFC4880,
+
+    /// draft-ietf-openpgp: use Ed25519 and composite KEM MLKEM768+X25519 (OpenPGP v4).
+    DRAFT_IETF_OPENPGP_PQC_12_V4_Ed25519_MLKEM768x25519,
+
+    /// draft-ietf-openpgp: use Ed25519 and composite KEM MLKEM768+X25519 (OpenPGP v6).
+    DRAFT_IETF_OPENPGP_PQC_12_V6_Ed25519_MLKEM768x25519,
+
+    /// draft-ietf-openpgp: Composite signature algorithm MLDSA65+Ed25519, and composite KEM MLKEM768+X25519 (OpenPGP v6).
+    DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA65Ed25519_MLKEM768x25519,
+
+    /// draft-ietf-openpgp: Composite signature algorithm MLDSA87+Ed448, and composite KEM MLKEM1024+X448 (OpenPGP v6).
+    DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA87Ed448_MLKEM1024x448,
+
+    /// draft-ietf-openpgp: SLH-DSA-SHAKE-128s with ML-KEM-768+X25519.
+    DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128s,
+
+    /// draft-ietf-openpgp: SLH-DSA-SHAKE-128f with ML-KEM-768+X25519.
+    DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128f,
+
+    /// draft-ietf-openpgp: SLH-DSA-SHAKE-256s with ML-KEM-1024+X448.
+    DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA256s,
 }
 
 /// Crate result specialization.

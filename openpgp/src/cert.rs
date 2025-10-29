@@ -4382,6 +4382,7 @@ impl<'a> Preferences<'a> for ValidCert<'a>
 mod test {
     use std::convert::TryInto;
 
+    use crate::crypto::PublicKeyAlgorithm;
     use crate::serialize::Serialize;
     use crate::policy::StandardPolicy as P;
     use crate::types::Curve;
@@ -7491,6 +7492,46 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
             skb.key().secret().clone().decrypt(skb.key(), &password)?;
         }
 
+        Ok(())
+    }
+
+    fn test_parse_certificate(algo: PublicKeyAlgorithm, cert_file: &str, key_file: &str) -> Result<()> {
+        skip_unless_supported!(algo);
+
+        eprintln!("Test {}\n-  {}\n-  {}", algo, cert_file, key_file);
+
+        let p = &crate::policy::StandardPolicy::new();
+        let t = None;
+        let cert = Cert::from_bytes(
+        crate::tests::file(cert_file))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+
+        let cert = Cert::from_bytes(
+            crate::tests::file(key_file))?;
+        assert_eq!(cert.userids().count(), 1);
+        let vcert = cert.with_policy(p, t)?;
+        assert_eq!(vcert.keys().count(), 2);
+        assert_eq!(vcert.keys().encrypted_secret().count(), 0);
+        assert_eq!(vcert.keys().unencrypted_secret().count(), 2);
+        assert_eq!(vcert.keys().for_signing().count(), 1);
+        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn parse_certificates() -> Result<()> {
+
+        use crate::tests::PQC_CERT_PAIRS;
+
+        for (algo, cert_file, key_file) in PQC_CERT_PAIRS {
+            assert!(test_parse_certificate(*algo, cert_file, key_file).is_ok());
+        }
         Ok(())
     }
 }

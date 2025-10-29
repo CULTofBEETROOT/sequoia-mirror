@@ -451,7 +451,9 @@ impl<W: Write> Writer<W> {
         }
 
         match self.profile {
-            None | Some(Profile::RFC4880) => {
+            None 
+            | Some(Profile::RFC4880) 
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V4_Ed25519_MLKEM768x25519) => {
                 // 24-bit CRC
                 let crc = self.crc.finalize();
                 let bytes = &crc.to_be_bytes()[1..4];
@@ -461,7 +463,13 @@ impl<W: Write> Writer<W> {
                        base64nopad.encode(&bytes), LINE_ENDING)?;
             },
 
-            Some(Profile::RFC9580) => (),
+            Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_Ed25519_MLKEM768x25519)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA65Ed25519_MLKEM768x25519)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA87Ed448_MLKEM1024x448)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128s)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128f)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA256s)
+            | Some(Profile::RFC9580) => (),
         }
 
         // Finally, emit the footer.
@@ -489,12 +497,21 @@ impl<W: Write> Write for Writer<W> {
         assert!(self.dirty);
 
         match self.profile {
-            None | Some(Profile::RFC4880) => {
+            None 
+            | Some(Profile::RFC4880) 
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V4_Ed25519_MLKEM768x25519) => {
                 // Update CRC on the unencoded data.
                 self.crc.update(buf);
             },
 
-            Some(Profile::RFC9580) => (),
+            Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_Ed25519_MLKEM768x25519)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA65Ed25519_MLKEM768x25519)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_MLDSA87Ed448_MLKEM1024x448)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128s)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA128f)
+            | Some(Profile::DRAFT_IETF_OPENPGP_PQC_12_V6_SLHDSA256s)
+            | Some(Profile::RFC9580) => (),
+
         }
 
         let mut input = buf;

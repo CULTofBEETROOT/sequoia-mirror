@@ -3454,6 +3454,57 @@ pub(crate) mod test {
             ("messages/encrypted/x448.sec.pgp",
              "messages/encrypted/x448.msg.pgp",
              "Hello World!\n"),
+
+            ("pqc/ietf/v6-eddsa-sample-sk.pgp",
+             "pqc/ietf/v6-eddsa-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/ietf/v4-eddsa-sample-sk.pgp",
+             "pqc/ietf/v4-eddsa-sample-message-v1.pgp",
+             "Testing\n"),
+            ("pqc/ietf/v4-eddsa-sample-sk.pgp",
+             "pqc/ietf/v4-eddsa-sample-message-v2.pgp",
+             "Testing\n"),
+            ("pqc/ietf/v6-mldsa-65-sample-sk.pgp",
+             "pqc/ietf/v6-mldsa-65-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/ietf/v6-mldsa-87-sample-sk.pgp",
+             "pqc/ietf/v6-mldsa-87-sample-message.pgp",
+             "Testing\n"),
+            ("pqc/ietf/v6-slhdsa-128s-sample-sk.pgp",
+             "pqc/ietf/v6-slhdsa-128s-sample-message.pgp",
+             "Testing\n"),
+
+            // rpgp artifacts
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_message.pgp",
+             "Hello World\n"),
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_message.pgp",
+             "Hello World\n"),
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_message.pgp",
+             "Hello World\n"),
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_message.pgp",
+             "Hello World\n"),
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_message.pgp",
+             "Hello World\n"),
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_message.pgp",
+             "Hello World\n"),
+            ("pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_bob_sk.pgp",
+             "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_message.pgp",
+             "Hello World\n"),
+
+            // gopenpgp artifacts
+            ("pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_bob_sk.pgp",
+             "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_message.pgp",
+             "Hello World\n"),
+            ("pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_bob_sk.pgp",
+             "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_message.pgp",
+             "Hello World\n"),
+
         ] {
             eprintln!("Test vector {:?}...", key_file);
             let key = Cert::from_bytes(crate::tests::file(key_file))?;
@@ -4297,6 +4348,118 @@ xHUDBRY0WIQ+50WENDPP";
         d.read_to_end(&mut content).unwrap();
         assert_eq!(&content, plaintext);
 
+        Ok(())
+    }
+
+    fn sample_detached_sig(cert: &str, sig: &str, data: &[u8])
+                           -> Result<()>
+    {
+        eprintln!("Test vector {}/{}...", cert, sig);
+
+        let cert = Cert::from_bytes(crate::tests::file(cert))?;
+        skip_unless_supported!(cert.primary_key().key().pk_algo());
+
+        eprintln!("Cert: {:?}", cert.fingerprint());
+
+        let h = VHelper::new(0, 0, 0, 0, vec![cert]);
+        let p = &P::new();
+        let mut v = DetachedVerifierBuilder::from_bytes(
+            crate::tests::file(sig))?
+            .with_policy(p, None, h)?;
+
+        let result = v.verify_bytes(data);
+        eprintln!("Result: {:?}", result);
+
+        assert!(result.is_ok());
+
+        let h = v.into_helper();
+        assert_eq!(h.good, 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_detached_sigs() -> Result<()> {
+
+        let detached_sigs = vec![
+            // ietf draft test vectors
+            (
+            "pqc/ietf/v6-mldsa-65-sample-pk.pgp",
+            "pqc/ietf/v6-mldsa-65-sample-signature.pgp",
+            "Testing\n"
+            ),
+            (
+            "pqc/ietf/v6-mldsa-87-sample-pk.pgp",
+            "pqc/ietf/v6-mldsa-87-sample-signature.pgp",
+            "Testing\n"
+            ),
+            (
+            "pqc/ietf/v6-slhdsa-128s-sample-pk.pgp",
+            "pqc/ietf/v6-slhdsa-128s-sample-signature.pgp",
+            "Testing\n"
+            ),
+            (
+            "pqc/ietf/v6-slhdsa-128f-sample-pk.pgp",
+            "pqc/ietf/v6-slhdsa-128f-sample-signature.pgp",
+            "Testing\n"
+            ),
+            (
+            "pqc/ietf/v6-slhdsa-256s-sample-pk.pgp",
+            "pqc/ietf/v6-slhdsa-256s-sample-signature.pgp",
+            "Testing\n"
+            ),
+            // rpgp artifacts
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v4-ed25519-mlkem768x25519_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-ed25519-mlkem768x25519_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa65ed25519-mlkem768x25519_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-mldsa87ed448-mlkem1024x448_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128f-mlkem768x25519_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake128s-mlkem768x25519_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_alice_pk.pgp",
+            "pqc/rpgp/rsop_draft-ietf-openpgp-pqc-08-v6-slhdsashake256s-mlkem1024x448_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            // gopenpgp artifacts
+            (
+            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_alice_pk.pgp",
+            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09_detached_sig.pgp",
+            "Hello World\n"
+            ),
+            (
+            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_pk.pgp",
+            "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_detached_sig.pgp",
+            "Hello World\n"
+            ),
+        ];
+
+        for (cert_file, detached_sig, data) in detached_sigs {
+            assert!(sample_detached_sig(cert_file, detached_sig, data.as_bytes()).is_ok());
+        }
         Ok(())
     }
 }
