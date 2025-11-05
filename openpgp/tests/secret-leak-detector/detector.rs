@@ -273,6 +273,12 @@ fn test_symmetric_encryptor() {
     let _ = enc.finalize().unwrap();
 }
 
+fn test_mpi() {
+    use sequoia_openpgp::crypto::mpi::MPI;
+
+    let _mpi = MPI::from(NEEDLE.to_vec());
+}
+
 type Test = fn() -> ();
 
 fn main() {
@@ -291,6 +297,7 @@ fn main() {
         ("test_aes_256_decryption", test_aes_256_decryption as Test),
         ("test_aead", test_aead as Test),
         ("test_symmetric_encryptor", test_symmetric_encryptor as Test),
+        ("test_mpi", test_mpi as Test),
     ].into_iter().collect();
 
     let test = if let Some(t) = std::env::args().nth(1) {
