@@ -211,4 +211,5 @@ mod leak_tests {
     make_test!(test_aes_256_encryption);
     #[cfg(not(feature = "crypto-rust"))]
     make_test!(test_aes_256_decryption);
+    make_test!(test_aead);
 }

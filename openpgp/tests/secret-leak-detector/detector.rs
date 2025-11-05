@@ -221,6 +221,34 @@ fn aes_256_decryption(ciphertext: &[u8]) -> Result<()> {
     Ok(())
 }
 
+fn test_aead() {
+    use sequoia_openpgp::crypto::aead::{Encryptor, SEIPv2Schedule};
+    use sequoia_openpgp::types::AEADAlgorithm;
+
+    const CHUNK: usize = 64;
+
+    let session_key = SessionKey::from(&[0x42; 16][..]);
+    let salt = vec![0xAA; 32];
+    let schedule = SEIPv2Schedule::new(
+        &session_key,
+        SymmetricAlgorithm::AES128,
+        AEADAlgorithm::OCB,
+        CHUNK,
+        &salt,
+    ).unwrap();
+
+    let sink = Vec::new();
+    let mut encryptor = Encryptor::new(
+        SymmetricAlgorithm::AES128,
+        AEADAlgorithm::OCB,
+        CHUNK,
+        schedule,
+        sink,
+    ).unwrap();
+
+    encryptor.write_all(NEEDLE).unwrap();
+}
+
 type Test = fn() -> ();
 
 fn main() {
@@ -237,6 +265,7 @@ fn main() {
         ("test_ed25519", test_ed25519 as Test),
         ("test_aes_256_encryption", test_aes_256_encryption as Test),
         ("test_aes_256_decryption", test_aes_256_decryption as Test),
+        ("test_aead", test_aead as Test),
     ].into_iter().collect();
 
     let test = if let Some(t) = std::env::args().nth(1) {
