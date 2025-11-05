@@ -249,6 +249,30 @@ fn test_aead() {
     encryptor.write_all(NEEDLE).unwrap();
 }
 
+fn test_symmetric_encryptor() {
+    use sequoia_openpgp::crypto::symmetric::{
+        BlockCipherMode, Encryptor, PaddingMode,
+    };
+
+    let key = SessionKey::from(vec![0x42; 16]);
+    let sink = Vec::new();
+
+    let mut enc = Encryptor::new(
+        SymmetricAlgorithm::AES128,
+        BlockCipherMode::CFB,
+        PaddingMode::None,
+        &key,
+        None,
+        sink,
+    ).unwrap();
+
+    // 15-byte tail leaves the trailing plaintext sitting in `buffer`.
+    enc.write_all(NEEDLE).unwrap();
+    // Add a tail.  Without it, the leak detector doesn't trigger.
+    enc.write_all(&NEEDLE[0..15]).unwrap();
+    let _ = enc.finalize().unwrap();
+}
+
 type Test = fn() -> ();
 
 fn main() {
@@ -266,6 +290,7 @@ fn main() {
         ("test_aes_256_encryption", test_aes_256_encryption as Test),
         ("test_aes_256_decryption", test_aes_256_decryption as Test),
         ("test_aead", test_aead as Test),
+        ("test_symmetric_encryptor", test_symmetric_encryptor as Test),
     ].into_iter().collect();
 
     let test = if let Some(t) = std::env::args().nth(1) {
