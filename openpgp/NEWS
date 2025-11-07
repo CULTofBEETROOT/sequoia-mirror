@@ -5,6 +5,9 @@
 
 
 * Changes in 2.1.0
+** Notable changes
+   - Our MSRV is now 1.85.
+
 ** Notable fixes
    - When using the OpenSSL backend, we now check at runtime what AEAD
      modes are available.  This fixes a severe bug that rendered the
