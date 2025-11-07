@@ -214,4 +214,5 @@ mod leak_tests {
     make_test!(test_aead);
     make_test!(test_symmetric_encryptor);
     make_test!(test_mpi);
+    make_test!(test_streaming_decryptor);
 }

@@ -279,6 +279,44 @@ fn test_mpi() {
     let _mpi = MPI::from(NEEDLE.to_vec());
 }
 
+fn test_streaming_decryptor() {
+    use sequoia_openpgp::crypto::symmetric::{
+        BlockCipherMode, Decryptor, Encryptor, PaddingMode, UnpaddingMode,
+    };
+
+    let key = SessionKey::from(vec![0x47; 16]);
+
+    // Produce a ciphertext containing the secret bytes.
+    let ciphertext = {
+        let mut enc = Encryptor::new(
+            SymmetricAlgorithm::AES128,
+            BlockCipherMode::CFB,
+            PaddingMode::None,
+            &key,
+            None,
+            Vec::new(),
+        ).unwrap();
+        enc.write_all(NEEDLE).unwrap();
+        // Returns the sink.
+        enc.finalize().unwrap()
+    };
+
+    let reader = buffered_reader::Memory::with_cookie(
+        &ciphertext, Default::default());
+    let mut dec = Decryptor::new(
+        SymmetricAlgorithm::AES128,
+        BlockCipherMode::CFB,
+        UnpaddingMode::None,
+        &key,
+        None,
+        reader,
+    ).unwrap();
+
+    let mut byte = [0u8; 1];
+    // Leaves the rest of the block in dec.buffer.
+    dec.read_exact(&mut byte).unwrap();
+}
+
 type Test = fn() -> ();
 
 fn main() {
@@ -298,6 +336,7 @@ fn main() {
         ("test_aead", test_aead as Test),
         ("test_symmetric_encryptor", test_symmetric_encryptor as Test),
         ("test_mpi", test_mpi as Test),
+        ("test_streaming_decryptor", test_streaming_decryptor as Test),
     ].into_iter().collect();
 
     let test = if let Some(t) = std::env::args().nth(1) {
