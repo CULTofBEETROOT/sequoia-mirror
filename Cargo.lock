@@ -2853,7 +2853,7 @@ dependencies = [
 
 [[package]]
 name = "sequoia-ipc"
-version = "0.36.0"
+version = "0.37.0-pqc.1"
 dependencies = [
  "anyhow",
  "capnp",
