@@ -17,12 +17,12 @@ pub struct Backend(());
 
 impl super::interface::Backend for Backend {
     fn backend() -> String {
-        std::ffi::CStr::from_bytes_with_nul(
-            ossl::bindings::OPENSSL_FULL_VERSION_STR)
-            .expect("version to be 0-terminated")
-            .to_str()
-            .expect("version to be valid UTF-8")
-            .into()
+        format!("OpenSSL {}",
+                std::ffi::CStr::from_bytes_with_nul(
+                    ossl::bindings::OPENSSL_FULL_VERSION_STR)
+                .expect("version to be 0-terminated")
+                .to_str()
+                .expect("version to be valid UTF-8"))
     }
 
     fn random(buf: &mut [u8]) -> crate::Result<()> {
