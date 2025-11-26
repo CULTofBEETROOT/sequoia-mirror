@@ -7,6 +7,9 @@
 * Changes in 2.4.0
 ** New functionality
    - types::PublicKeyAlgorithmSpecification
+** New functionality
+   - CertBuilder::set_encryption_algorithm
+   - CertBuilder::set_signing_algorithm
 
 * Changes in 2.3.0
 ** Notable changes
@@ -14,6 +17,8 @@
      FnOnce closures (relaxed from FnMut).
    - ValidBindingSignature::map now accepts FnMut closures (relaxed
      from Fn).
+   - It is possible to use arbitrary algorithms with `CertBuilder`,
+     not just the pairs of algorithms defined by `CipherSuite`.
 
 ** New functionality
    - The RustCrypto backend now supports X448 and Ed448.
