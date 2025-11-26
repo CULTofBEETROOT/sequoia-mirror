@@ -25,9 +25,10 @@ use crate::types::{
     Features,
     HashAlgorithm,
     KeyFlags,
+    PublicKeyAlgorithmSpecification,
+    RevocationKey,
     SignatureType,
     SymmetricAlgorithm,
-    RevocationKey,
 };
 
 mod key;
@@ -321,6 +322,8 @@ pub struct KeyBlueprint {
     // If not None, uses the specified ciphersuite.  Otherwise, uses
     // CertBuilder::ciphersuite.
     ciphersuite: Option<CipherSuite>,
+    for_signing: Option<PublicKeyAlgorithmSpecification>,
+    for_encryption: Option<PublicKeyAlgorithmSpecification>,
 }
 assert_send_and_sync!(KeyBlueprint);
 
@@ -391,6 +394,8 @@ assert_send_and_sync!(KeyBlueprint);
 pub struct CertBuilder<'a> {
     creation_time: Option<std::time::SystemTime>,
     ciphersuite: CipherSuite,
+    for_encryption: Option<PublicKeyAlgorithmSpecification>,
+    for_signing: Option<PublicKeyAlgorithmSpecification>,
     profile: Profile,
 
     /// Advertised features.
@@ -447,12 +452,16 @@ impl CertBuilder<'_> {
         CertBuilder {
             creation_time: None,
             ciphersuite: CipherSuite::default(),
+            for_encryption: None,
+            for_signing: None,
             profile: Default::default(),
             features: Features::sequoia(),
-            primary: KeyBlueprint{
+            primary: KeyBlueprint {
                 flags: KeyFlags::empty().set_certification(),
                 validity: None,
                 ciphersuite: None,
+                for_encryption: None,
+                for_signing: None,
             },
             subkeys: vec![],
             userids: vec![],
@@ -613,6 +622,12 @@ impl CertBuilder<'_> {
     ///
     /// This method controls the set of algorithms that is used to
     /// generate the certificate's keys.
+    ///
+    /// The set of cipher suites represent reasonable defaults and
+    /// combinations.  You can set a particular encryption algorithm
+    /// using [`CertBuilder::set_encryption_algorithm`], and a
+    /// particular signing algorithm using
+    /// [`CertBuilder::set_signing_algorithm`].
     ///
     /// # Examples
     ///
@@ -1321,6 +1336,8 @@ impl CertBuilder<'_> {
             flags,
             validity: validity.into(),
             ciphersuite: cs.into(),
+            for_encryption: None,
+            for_signing: None,
         }));
         self
     }
@@ -1399,6 +1416,8 @@ impl CertBuilder<'_> {
                     flags,
                     validity: validity.into(),
                     ciphersuite: cs.into(),
+                    for_encryption: None,
+                    for_signing: None,
                 }));
                 Ok(self)
             },
@@ -1559,6 +1578,93 @@ impl CertBuilder<'_> {
         self
     }
 
+    /// Set the algorithm used for encryption.
+    ///
+    /// This is a separate, higher-priority parameter from the [cipher
+    /// suite](CertBuilder::set_cipher_suite) parameter.  When
+    /// generating a key that will be used for signing (certification,
+    /// data signing or authentication), this parameter is first
+    /// considered.  If it is unset, then the algorithm selection
+    /// falls back to using the cipher suite parameter.  Note: if the
+    /// key flags indicate that the key should be used for both
+    /// signing and encryption, then we also fall back to the cipher
+    /// suite parameter.
+    ///
+    /// ```
+    /// use sequoia_openpgp as openpgp;
+    /// # use openpgp::Result;
+    /// use openpgp::cert::prelude::*;
+    /// # use openpgp::policy::StandardPolicy;
+    /// # use openpgp::types::PublicKeyAlgorithm;
+    /// use openpgp::types::PublicKeyAlgorithmSpecification;
+    ///
+    /// # fn main() -> Result<()> {
+    /// # let p = &StandardPolicy::new();
+    /// let (alice, _) =
+    ///     CertBuilder::general_purpose(Some("alice@example.org"))
+    ///         .set_encryption_algorithm(PublicKeyAlgorithmSpecification::rsa(4096))
+    ///         .generate()?;
+    /// # alice
+    /// #   .with_policy(p, None).expect("valid cert")
+    /// #   .keys()
+    /// #   .for_transport_encryption()
+    /// #   .for_storage_encryption()
+    /// #   .for_each(|k| assert_eq!(k.key().pk_algo(),
+    /// #             PublicKeyAlgorithm::RSAEncryptSign));
+    /// # Ok(()) }
+    /// ```
+    pub fn set_encryption_algorithm(
+        mut self, spec: PublicKeyAlgorithmSpecification)
+        -> Self
+    {
+        self.for_encryption = Some(spec);
+        self
+    }
+
+    /// Set the algorithm used for signing.
+    ///
+    /// This is a separate, higher-priority parameter from the [cipher
+    /// suite](CertBuilder::set_cipher_suite) parameter.  When
+    /// generating a key that will be used for signing (certification,
+    /// data signing or authentication), this parameter is first
+    /// considered.  If it is unset, then the algorithm selection
+    /// falls back to using the cipher suite parameter.  Note: if the
+    /// key flags indicate that the key should be used for both
+    /// signing and encryption, then we also fall back to the cipher
+    /// suite parameter.
+    ///
+    /// ```
+    /// use sequoia_openpgp as openpgp;
+    /// # use openpgp::Result;
+    /// use openpgp::cert::prelude::*;
+    /// # use openpgp::policy::StandardPolicy;
+    /// # use openpgp::types::PublicKeyAlgorithm;
+    /// use openpgp::types::PublicKeyAlgorithmSpecification;
+    ///
+    /// # fn main() -> Result<()> {
+    /// # let p = &StandardPolicy::new();
+    /// let (alice, _) =
+    ///     CertBuilder::general_purpose(Some("alice@example.org"))
+    ///         .set_signing_algorithm(PublicKeyAlgorithmSpecification::rsa(4096))
+    ///         .generate()?;
+    /// # alice
+    /// #   .with_policy(p, None).expect("valid cert")
+    /// #   .keys()
+    /// #   .for_signing()
+    /// #   .for_certification()
+    /// #   .for_authentication()
+    /// #   .for_each(|k| assert_eq!(k.key().pk_algo(),
+    /// #             PublicKeyAlgorithm::RSAEncryptSign));
+    /// # Ok(()) }
+    /// ```
+    pub fn set_signing_algorithm(
+        mut self, spec: PublicKeyAlgorithmSpecification)
+        -> Self
+    {
+        self.for_signing = Some(spec);
+        self
+    }
+
     /// Generates a certificate.
     ///
     /// # Examples
@@ -1690,10 +1796,43 @@ impl CertBuilder<'_> {
         // Sign subkeys.
         for (template, blueprint) in self.subkeys {
             let flags = &blueprint.flags;
-            let mut subkey = blueprint.ciphersuite
-                .unwrap_or(self.ciphersuite)
-                .generate_key(flags, self.profile)?
-                .role_into_subordinate();
+
+            let for_signing = flags.for_signing()
+                || flags.for_certification()
+                || flags.for_authentication();
+            let for_encryption = flags.for_transport_encryption()
+                || flags.for_storage_encryption();
+
+            let subkey = match (for_signing, for_encryption) {
+                (true, false) => if let Some(spec) = blueprint.for_signing {
+                    spec.generate_key_for(self.profile, flags)?
+                } else if let Some(ciphersuite) = blueprint.ciphersuite {
+                    ciphersuite.generate_key(flags, self.profile)?
+                } else if let Some(ref spec) = self.for_signing {
+                    spec.generate_key_for(self.profile, flags)?
+                } else {
+                    self.ciphersuite.generate_key(flags, self.profile)?
+                },
+                (false, true) => if let Some(spec) = blueprint.for_encryption {
+                    spec.generate_key_for(self.profile, flags)?
+                } else if let Some(ciphersuite) = blueprint.ciphersuite {
+                    ciphersuite.generate_key(flags, self.profile)?
+                } else if let Some(ref spec) = self.for_encryption {
+                    spec.generate_key_for(self.profile, flags)?
+                } else {
+                    self.ciphersuite.generate_key(flags, self.profile)?
+                },
+                (_, _) => {
+                    // Either the key should be used for encryption
+                    // and signing or neither.  In either case, fall
+                    // back to the ciphersuite parameter.
+                    blueprint.ciphersuite
+                        .unwrap_or(self.ciphersuite)
+                        .generate_key(flags, self.profile)?
+                }
+            };
+
+            let mut subkey = subkey.role_into_subordinate();
             subkey.set_creation_time(creation_time)?;
 
             let sig = template.unwrap_or_else(
@@ -1750,11 +1889,17 @@ impl CertBuilder<'_> {
     fn primary_key(&self, creation_time: std::time::SystemTime)
         -> Result<(KeySecretKey, Signature, Box<dyn Signer>)>
     {
-        let mut key = self.primary.ciphersuite
-            .unwrap_or(self.ciphersuite)
-            .generate_key(KeyFlags::empty().set_certification(),
-                          self.profile)?
-            .role_into_primary();
+        let key_flags = KeyFlags::empty().set_certification();
+        let key = if let Some(algo) = self.primary.for_signing.as_ref() {
+            algo.generate_key_for(self.profile, key_flags)?
+        } else if let Some(ciphersuite) = self.primary.ciphersuite {
+            ciphersuite.generate_key(key_flags, self.profile)?
+        } else if let Some(algo) = self.for_signing.as_ref() {
+            algo.generate_key_for(self.profile, key_flags)?
+        } else {
+            self.ciphersuite.generate_key(key_flags, self.profile)?
+        };
+        let mut key = key.role_into_primary();
         key.set_creation_time(creation_time)?;
         let sig = SignatureBuilder::new(SignatureType::DirectKey);
         let sig = Self::signature_common(
@@ -1824,6 +1969,7 @@ mod tests {
     use crate::parse::Parse;
     use crate::policy::StandardPolicy as P;
     use crate::serialize::Serialize;
+    use crate::types::PublicKeyAlgorithmSpecification;
 
     #[test]
     fn all_opts() {
@@ -2485,5 +2631,72 @@ mod tests {
                                .join(", ")
                        });
         }
+    }
+
+    #[test]
+    fn for_encryption_for_signing() {
+        // Override the algorithm using `PublicKeyAlgorithmSpecification`s..
+        let p = &P::new();
+
+        // Try a few combinations.
+        let rsa = PublicKeyAlgorithmSpecification::rsa(4096);
+        let nist_signing = PublicKeyAlgorithmSpecification::nistp256_for_signing();
+        let ed25519 = PublicKeyAlgorithmSpecification::ed25519();
+
+        let cv25519 = PublicKeyAlgorithmSpecification::legacy_cv25519();
+        let bp_encryption = PublicKeyAlgorithmSpecification::brainpoolp256_for_encryption();
+
+        for signing in [ rsa.clone(), nist_signing.clone(), ed25519.clone() ] {
+            for encryption in [ rsa.clone(), cv25519.clone(), bp_encryption.clone() ] {
+                if ! signing.is_supported() && ! encryption.is_supported() {
+                    continue;
+                }
+
+                let (cert, _) = CertBuilder::general_purpose(Some("alice@example.org"))
+                    .set_encryption_algorithm(encryption.clone())
+                    .set_signing_algorithm(signing.clone())
+                    // Add some extra subkeys.
+                    .add_signing_subkey()
+                    .add_transport_encryption_subkey()
+                    .generate()
+                    .expect("can create key");
+
+                cert
+                    .with_policy(p, None).expect("valid cert")
+                    .keys()
+                    .for_each(|k| {
+                        let flags = k.key_flags().expect("non-empty key flags");
+
+                        let for_signing = flags.for_signing()
+                            || flags.for_certification()
+                            || flags.for_authentication();
+                        let for_encryption = flags.for_transport_encryption()
+                            || flags.for_storage_encryption();
+
+                        // One or the other, but not both.
+                        assert_eq!(for_signing, ! for_encryption);
+
+                        if for_signing {
+                            assert_eq!(k.key().pk_algo(),
+                                       signing.pk_algo());
+                        } else {
+                            assert_eq!(k.key().pk_algo(),
+                                       encryption.pk_algo());
+                        }
+                    })
+            }
+        }
+
+        CertBuilder::general_purpose(Some("alice@example.org"))
+            .set_encryption_algorithm(cv25519.clone())
+            .set_signing_algorithm(cv25519.clone())
+            .generate()
+            .expect_err("can't use encryption algorithm for signing keys");
+
+        CertBuilder::general_purpose(Some("alice@example.org"))
+            .set_encryption_algorithm(ed25519.clone())
+            .set_signing_algorithm(ed25519.clone())
+            .generate()
+            .expect_err("can't use signing algorithm for encryption keys");
     }
 }
