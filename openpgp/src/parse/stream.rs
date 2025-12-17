@@ -332,7 +332,23 @@ impl<'a> std::fmt::Display for VerificationError<'a> {
     }
 }
 
-impl<'a> std::error::Error for VerificationError<'a> {}
+impl<'a> std::error::Error for VerificationError<'a> {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        use self::VerificationError::*;
+        match self {
+            MissingKey { .. } => None,
+            UnboundKey { error, .. } =>
+                Some(error.as_ref()),
+            BadKey { error, .. } =>
+                Some(error.as_ref()),
+            BadSignature { error, .. } =>
+                Some(error.as_ref()),
+            MalformedSignature { error, .. } =>
+                Some(error.as_ref()),
+            UnknownSignature { .. } => None,
+        }
+    }
+}
 
 impl<'a> From<VerificationError<'a>> for Error {
     fn from(e: VerificationError<'a>) -> Self {
