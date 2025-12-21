@@ -1857,6 +1857,8 @@ impl<P, R> Key<P, R>
 
             RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448
                 | MLDSA65_Ed25519 | MLDSA87_Ed448
+                | MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512
                 | SLHDSA128s | SLHDSA128f | SLHDSA256s =>
                 Err(Error::InvalidOperation(
                     format!("{} is not an encryption algorithm", self.pk_algo())
@@ -1889,6 +1891,10 @@ impl<P, R> Key<P, R>
             ElGamalEncrypt | ElGamalEncryptSign |
             ECDH |
             Private(_) | Unknown(_) => self.encrypt_backend(data),
+
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 |
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 =>
+            Err(Error::UnsupportedPublicKeyAlgorithm(self.pk_algo()).into()),
         }
     }
 

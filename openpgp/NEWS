@@ -4,6 +4,49 @@
 #+STARTUP: content hidestars
 
 
+* Changes in 2.5.0
+** New functionality
+   - PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384
+   - PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521
+   - PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384
+   - PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512
+   - PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384
+   - PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521
+   - PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384
+   - PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::PublicKey::MLDSA65_ECDSA_NISTP384
+   - crypto::mpi::PublicKey::MLDSA87_ECDSA_NISTP521
+   - crypto::mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384
+   - crypto::mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512
+   - crypto::mpi::PublicKey::MLKEM768_ECDH_NISTP384
+   - crypto::mpi::PublicKey::MLKEM1024_ECDH_NISTP521
+   - crypto::mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384
+   - crypto::mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::SecretKeyMaterial::MLDSA65_ECDSA_NISTP384
+   - crypto::mpi::SecretKeyMaterial::MLDSA87_ECDSA_NISTP521
+   - crypto::mpi::SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384
+   - crypto::mpi::SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512
+   - crypto::mpi::SecretKeyMaterial::MLKEM768_ECDH_NISTP384
+   - crypto::mpi::SecretKeyMaterial::MLKEM1024_ECDH_NISTP521
+   - crypto::mpi::SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384
+   - crypto::mpi::SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::CipherText::MLKEM768_ECDH_NISTP384
+   - crypto::mpi::CipherText::MLKEM1024_ECDH_NISTP521
+   - crypto::mpi::CipherText::MLKEM768_ECDH_BrainpoolP384
+   - crypto::mpi::CipherText::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::Signature::MLDSA65_ECDSA_NISTP384
+   - crypto::mpi::Signature::MLDSA87_ECDSA_NISTP521
+   - crypto::mpi::Signature::MLDSA65_ECDSA_BrainpoolP384
+   - crypto::mpi::Signature::MLDSA87_ECDSA_BrainpoolP512
+   - policy::AsymmetricAlgorithm::MLDSA65_ECDSA_NISTP384,
+   - policy::AsymmetricAlgorithm::MLDSA87_ECDSA_NISTP521,
+   - policy::AsymmetricAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+   - policy::AsymmetricAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+   - policy::AsymmetricAlgorithm::MLKEM768_ECDH_NISTP384,
+   - policy::AsymmetricAlgorithm::MLKEM1024_ECDH_NISTP521,
+   - policy::AsymmetricAlgorithm::MLKEM768_ECDH_BrainpoolP384,
+   - policy::AsymmetricAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
+
 * Changes in 2.4.1
 ** Notable fixes
    - When compiling against OpenSSL v3, configure the OpenSSL library

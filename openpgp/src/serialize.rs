@@ -1017,6 +1017,26 @@ impl Marshal for crypto::mpi::PublicKey {
                 w.write_all(mldsa.as_ref())?;
             },
 
+            MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
+            MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
+            MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
+            MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
             SLHDSA128s { public } => {
                 w.write_all(public)?;
             },
@@ -1035,6 +1055,26 @@ impl Marshal for crypto::mpi::PublicKey {
             },
 
             MLKEM1024_X448 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM768_ECDH_NISTP384 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM1024_ECDH_NISTP521 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem } => {
                 w.write_all(ecdh.as_ref())?;
                 w.write_all(mlkem.as_ref())?;
             },
@@ -1088,12 +1128,22 @@ impl MarshalInto for crypto::mpi::PublicKey {
             MLDSA65_Ed25519 { .. } => 32 + 1952,
             MLDSA87_Ed448 { .. } => 57 + 2592,
 
+            MLDSA65_ECDSA_NISTP384 { .. } => 97 + 1952,
+            MLDSA87_ECDSA_NISTP521 { .. } => 133 + 2592,
+            MLDSA65_ECDSA_BrainpoolP384 { .. } => 97 + 1952,
+            MLDSA87_ECDSA_BrainpoolP512 { .. } => 129 + 2592,
+
             SLHDSA128s { .. } => 32,
             SLHDSA128f { .. } => 32,
             SLHDSA256s { .. } => 64,
 
             MLKEM768_X25519 { .. } => 32 + 1184,
             MLKEM1024_X448 { .. } => 56 + 1568,
+
+            MLKEM768_ECDH_NISTP384 { .. } => 97 + 1184,
+            MLKEM1024_ECDH_NISTP521 { .. } => 133 + 1568,
+            MLKEM768_ECDH_BrainpoolP384 { .. } => 97 + 1184,
+            MLKEM1024_ECDH_BrainpoolP512 { .. } => 129 + 1568,
 
             Unknown { ref mpis, ref rest } => {
                 mpis.iter().map(|mpi| mpi.serialized_len()).sum::<usize>()
@@ -1155,6 +1205,26 @@ impl Marshal for crypto::mpi::SecretKeyMaterial {
                 w.write_all(mldsa.as_ref())?;
             },
 
+            MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
+            MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
+            MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
+            MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa } => {
+                w.write_all(ecdsa.as_ref())?;
+                w.write_all(mldsa.as_ref())?;
+            },
+
             SLHDSA128s { secret } => {
                 w.write_all(secret.as_ref())?;
             },
@@ -1173,6 +1243,26 @@ impl Marshal for crypto::mpi::SecretKeyMaterial {
             },
 
             MLKEM1024_X448 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM768_ECDH_NISTP384 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM1024_ECDH_NISTP521 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem } => {
                 w.write_all(ecdh.as_ref())?;
                 w.write_all(mlkem.as_ref())?;
             },
@@ -1226,12 +1316,22 @@ impl MarshalInto for crypto::mpi::SecretKeyMaterial {
             MLDSA65_Ed25519 { .. } => 32 + 32,
             MLDSA87_Ed448 { .. } => 57 + 32,
 
+            MLDSA65_ECDSA_NISTP384 { .. } => 48 + 32,
+            MLDSA87_ECDSA_NISTP521 { .. } => 66 + 32,
+            MLDSA65_ECDSA_BrainpoolP384 { .. } => 48 + 32,
+            MLDSA87_ECDSA_BrainpoolP512 { .. } => 64 + 32,
+
             SLHDSA128s { .. } => 64,
             SLHDSA128f { .. } => 64,
             SLHDSA256s { .. } => 128,
 
             MLKEM768_X25519 { .. } => 32 + 64,
             MLKEM1024_X448 { .. } => 56 + 64,
+
+            MLKEM768_ECDH_NISTP384 { .. } => 48 + 64,
+            MLKEM1024_ECDH_NISTP521 { .. } => 66 + 64,
+            MLKEM768_ECDH_BrainpoolP384 { .. } => 48 + 64,
+            MLKEM1024_ECDH_BrainpoolP512 { .. } => 64 + 64,
 
             Unknown { ref mpis, ref rest } => {
                 mpis.iter().map(|mpi| mpi.serialized_len()).sum::<usize>()
@@ -1318,6 +1418,30 @@ impl Marshal for crypto::mpi::Ciphertext {
                 write_field_with_u8_size(w, "ESK", esk)?;
             },
 
+            MLKEM768_ECDH_NISTP384 { ecdh, mlkem, esk } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+                write_field_with_u8_size(w, "ESK", esk)?;
+            },
+
+            MLKEM1024_ECDH_NISTP521 { ecdh, mlkem, esk } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+                write_field_with_u8_size(w, "ESK", esk)?;
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem, esk } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+                write_field_with_u8_size(w, "ESK", esk)?;
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem, esk } => {
+                w.write_all(ecdh.as_ref())?;
+                w.write_all(mlkem.as_ref())?;
+                write_field_with_u8_size(w, "ESK", esk)?;
+            },
+
             Unknown { ref mpis, ref rest } => {
                 for mpi in mpis.iter() {
                     mpi.serialize(w)?;
@@ -1359,6 +1483,18 @@ impl MarshalInto for crypto::mpi::Ciphertext {
 
             MLKEM1024_X448 { esk, .. } =>
                 56 + 1568 + 1 + esk.len(),
+
+            MLKEM768_ECDH_NISTP384 { esk, .. } =>
+                97 + 1088 + 1 + esk.len(),
+
+            MLKEM1024_ECDH_NISTP521 { esk, .. } =>
+                133 + 1568 + 1 + esk.len(),
+
+            MLKEM768_ECDH_BrainpoolP384 { esk, .. } =>
+                97 + 1088 + 1 + esk.len(),
+
+            MLKEM1024_ECDH_BrainpoolP512 { esk, .. } =>
+                129 + 1568 + 1 + esk.len(),
 
             Unknown { ref mpis, ref rest } => {
                 mpis.iter().map(|mpi| mpi.serialized_len()).sum::<usize>()
@@ -1413,7 +1549,6 @@ impl Marshal for crypto::mpi::Signature {
                 w.write_all(sig.as_ref())?;
             },
 
-
             MLDSA65_Ed25519 { eddsa, mldsa } => {
                 w.write_all(&eddsa[..])?;
                 w.write_all(&mldsa[..])?;
@@ -1421,6 +1556,26 @@ impl Marshal for crypto::mpi::Signature {
 
             MLDSA87_Ed448 { eddsa, mldsa } => {
                 w.write_all(&eddsa[..])?;
+                w.write_all(&mldsa[..])?;
+            },
+
+            MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa } => {
+                w.write_all(&ecdsa[..])?;
+                w.write_all(&mldsa[..])?;
+            },
+
+            MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa } => {
+                w.write_all(&ecdsa[..])?;
+                w.write_all(&mldsa[..])?;
+            },
+
+            MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa } => {
+                w.write_all(&ecdsa[..])?;
+                w.write_all(&mldsa[..])?;
+            },
+
+            MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa } => {
+                w.write_all(&ecdsa[..])?;
                 w.write_all(&mldsa[..])?;
             },
 
@@ -1461,6 +1616,11 @@ impl MarshalInto for crypto::mpi::Signature {
 
             MLDSA65_Ed25519 { .. } => 64 + 3309,
             MLDSA87_Ed448 { .. } => 114 + 4627,
+
+            MLDSA65_ECDSA_NISTP384 { .. } => 96 + 3309,
+            MLDSA87_ECDSA_NISTP521 { .. } => 132 + 4627,
+            MLDSA65_ECDSA_BrainpoolP384 { .. } => 96 + 3309,
+            MLDSA87_ECDSA_BrainpoolP512 { .. } => 128 + 4627,
 
             SLHDSA128s { .. } => 7856,
             SLHDSA128f { .. } => 17088,
