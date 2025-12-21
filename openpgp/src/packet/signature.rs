@@ -3723,6 +3723,14 @@ impl ArbitraryBounded for Signature4 {
                 mldsa: Box::new(arbitrarize(g, [0; 4627])),
             },
 
+            MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512 =>
+            {
+                unreachable!();
+            },
+
             SLHDSA128s => mpi::Signature::SLHDSA128s {
                 sig: arbitrarize(g, vec![0; 7856]).try_into().unwrap(),
             },
@@ -3740,6 +3748,8 @@ impl ArbitraryBounded for Signature4 {
             X25519 | X448 |
             MLKEM768_X25519 |
             MLKEM1024_X448 |
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 |
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 |
             Private(_) | Unknown(_) => unreachable!(),
         };
 
@@ -3812,6 +3822,14 @@ impl ArbitraryBounded for Signature3 {
                 eddsa: Box::new(arbitrarize(g, [0; 114])),
                 mldsa: Box::new(arbitrarize(g, [0; 4627])),
             },
+
+            MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512 =>
+            {
+                unreachable!();
+            }
 
             SLHDSA128s => mpi::Signature::SLHDSA128s {
                 sig: arbitrarize(g, vec![0; 7856]).try_into().unwrap(),

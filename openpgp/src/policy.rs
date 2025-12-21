@@ -1605,6 +1605,15 @@ impl<'a> Policy for StandardPolicy<'a> {
                 AsymmetricAlgorithm::MLDSA65_Ed25519,
             (PublicKeyAlgorithm::MLDSA87_Ed448, _) =>
                 AsymmetricAlgorithm::MLDSA87_Ed448,
+            (PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384, _) =>
+                AsymmetricAlgorithm::Unknown,
+            (PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521, _) =>
+                AsymmetricAlgorithm::Unknown,
+            (PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384, _) =>
+                AsymmetricAlgorithm::Unknown,
+            (PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512, _) =>
+                AsymmetricAlgorithm::Unknown,
+
 
             (PublicKeyAlgorithm::SLHDSA128s, _) =>
                 AsymmetricAlgorithm::SLHDSA128s,
@@ -1617,6 +1626,15 @@ impl<'a> Policy for StandardPolicy<'a> {
                 AsymmetricAlgorithm::MLKEM768_X25519,
             (PublicKeyAlgorithm::MLKEM1024_X448, _) =>
                 AsymmetricAlgorithm::MLKEM1024_X448,
+            (PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384, _) =>
+                AsymmetricAlgorithm::Unknown,
+            (PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521, _) =>
+                AsymmetricAlgorithm::Unknown,
+            (PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384, _) =>
+                AsymmetricAlgorithm::Unknown,
+            (PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512, _) =>
+                AsymmetricAlgorithm::Unknown,
+
 
             (PublicKeyAlgorithm::Private(_), _)
                 | (PublicKeyAlgorithm::Unknown(_), _)

@@ -61,8 +61,12 @@ impl Asymmetric for super::Backend {
             DSA
                 => true,
             MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
+            MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521 => false,
+            MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512 => false,
             SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
             MLKEM768_X25519 | MLKEM1024_X448 => false,
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 => false,
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 => false,
             X448 | Ed448 |
             ElGamalEncrypt | ElGamalEncryptSign | Private(_) | Unknown(_)
                 => false,
@@ -442,6 +446,8 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
 
             RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448
                 | MLDSA65_Ed25519 | MLDSA87_Ed448
+                | MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512
                 | SLHDSA128s | SLHDSA128f | SLHDSA256s =>
                 Err(Error::InvalidOperation(
                     format!("{} is not an encryption algorithm", self.pk_algo())
@@ -452,6 +458,8 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
             ElGamalEncrypt | ElGamalEncryptSign |
             MLKEM768_X25519 | // Handled in common code.
             MLKEM1024_X448 | // Handled in common code.
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 | // Handled in common code.
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 | // Handled in common code.
             Private(_) | Unknown(_) =>
                 Err(Error::UnsupportedPublicKeyAlgorithm(self.pk_algo()).into()),
         }

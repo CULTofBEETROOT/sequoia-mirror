@@ -1499,6 +1499,18 @@ impl SecretKeyMaterial {
                 mlkem: arbitrarize(g, vec![0; 64]).into(),
             }),
 
+            MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512
+                | MLKEM768_ECDH_NISTP384
+                | MLKEM1024_ECDH_NISTP521
+                | MLKEM768_ECDH_BrainpoolP384
+                | MLKEM1024_ECDH_BrainpoolP512 =>
+            {
+                Err(Error::UnsupportedPublicKeyAlgorithm(pk).into())
+            }
+
             Private(_) | Unknown(_) =>
                 Err(Error::UnsupportedPublicKeyAlgorithm(pk).into()),
         }

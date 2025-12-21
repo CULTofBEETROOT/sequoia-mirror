@@ -69,6 +69,15 @@
    - CipherSuite::MLDSA65_Ed25519
    - CipherSuite::MLDSA87_Ed448
 
+   - PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384
+   - PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521
+   - PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384
+   - PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512
+   - PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384
+   - PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521
+   - PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384
+   - PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512
+
 * Changes in 2.1.0
 ** Notable fixes
    - When using the OpenSSL backend, we now check at runtime what AEAD

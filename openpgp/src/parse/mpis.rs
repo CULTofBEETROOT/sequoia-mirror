@@ -223,6 +223,18 @@ impl mpi::PublicKey {
                 Ok(mpi::PublicKey::MLKEM1024_X448 { ecdh, mlkem })
             },
 
+            MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512
+                | MLKEM768_ECDH_NISTP384
+                | MLKEM1024_ECDH_NISTP521
+                | MLKEM768_ECDH_BrainpoolP384
+                | MLKEM1024_ECDH_BrainpoolP512 =>
+            {
+                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
+            }
+
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
                 while let Ok(mpi) = MPI::parse("unknown_len",
@@ -447,6 +459,18 @@ impl mpi::SecretKeyMaterial {
                 Ok(mpi::SecretKeyMaterial::MLKEM1024_X448 { ecdh, mlkem })
             },
 
+            MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512
+                | MLKEM768_ECDH_NISTP384
+                | MLKEM1024_ECDH_NISTP521
+                | MLKEM768_ECDH_BrainpoolP384
+                | MLKEM1024_ECDH_BrainpoolP512 =>
+            {
+                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
+            }
+
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
                 while let Ok(mpi) = ProtectedMPI::parse("unknown_len",
@@ -623,6 +647,14 @@ impl mpi::Ciphertext {
                 Ok(mpi::Ciphertext::MLKEM1024_X448 { ecdh, mlkem, esk })
             },
 
+            MLKEM768_ECDH_NISTP384
+                | MLKEM1024_ECDH_NISTP521
+                | MLKEM768_ECDH_BrainpoolP384
+                | MLKEM1024_ECDH_BrainpoolP512 =>
+            {
+                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
+            }
+
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
                 while let Ok(mpi) = MPI::parse("unknown_len",
@@ -640,6 +672,10 @@ impl mpi::Ciphertext {
             RSASign | DSA | EdDSA | ECDSA | Ed25519 | Ed448
                 | MLDSA65_Ed25519 | MLDSA87_Ed448
                 | SLHDSA128s | SLHDSA128f | SLHDSA256s
+                | MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512
                 => Err(Error::InvalidArgument(
                     format!("not an encryption algorithm: {:?}", algo)).into()),
         }
@@ -793,6 +829,14 @@ impl mpi::Signature {
                 },
             }),
 
+            MLDSA65_ECDSA_NISTP384
+                | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384
+                | MLDSA87_ECDSA_BrainpoolP512 =>
+            {
+                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
+            }
+
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
                 while let Ok(mpi) = MPI::parse("unknown_len",
@@ -810,6 +854,10 @@ impl mpi::Signature {
             RSAEncrypt | ElGamalEncrypt | ECDH | X25519 | X448
                 | MLKEM768_X25519
                 | MLKEM1024_X448
+                | MLKEM768_ECDH_NISTP384
+                | MLKEM1024_ECDH_NISTP521
+                | MLKEM768_ECDH_BrainpoolP384
+                | MLKEM1024_ECDH_BrainpoolP512
                 => Err(Error::InvalidArgument(
                     format!("not a signature algorithm: {:?}", algo)).into()),
         }

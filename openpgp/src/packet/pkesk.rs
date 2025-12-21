@@ -161,9 +161,17 @@ fn classify_pk_algo(algo: PublicKeyAlgorithm, seipdv1: bool)
         a @ PublicKeyAlgorithm::Ed448 |
         a @ PublicKeyAlgorithm::MLDSA65_Ed25519 |
         a @ PublicKeyAlgorithm::MLDSA87_Ed448 |
+        a @ PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384 |
+        a @ PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521 |
+        a @ PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384 |
+        a @ PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512 |
         a @ PublicKeyAlgorithm::SLHDSA128s |
         a @ PublicKeyAlgorithm::SLHDSA128f |
         a @ PublicKeyAlgorithm::SLHDSA256s |
+        a @ PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384 |
+        a @ PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521 |
+        a @ PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384 |
+        a @ PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512 |
         a @ PublicKeyAlgorithm::Private(_) |
         a @ PublicKeyAlgorithm::Unknown(_) =>
             Err(Error::UnsupportedPublicKeyAlgorithm(a).into()),
