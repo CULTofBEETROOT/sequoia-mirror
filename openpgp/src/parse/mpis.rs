@@ -183,6 +183,58 @@ impl mpi::PublicKey {
                 },
             }),
 
+            MLDSA65_ECDSA_NISTP384 => Ok(mpi::PublicKey::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: {
+                    let mut a = Box::new([0; 97]);
+                    php.parse_bytes_into("ecdsa_nistp384_public", &mut a[..])?;
+                    a
+                },
+                mldsa: {
+                    let mut a = Box::new([0; 1952]);
+                    php.parse_bytes_into("mldsa65_public", &mut a[..])?;
+                    a
+                },
+            }),
+
+            MLDSA87_ECDSA_NISTP521 => Ok(mpi::PublicKey::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: {
+                    let mut a = Box::new([0; 133]);
+                    php.parse_bytes_into("ecdsa_nistp521_public", &mut a[..])?;
+                    a
+                },
+                mldsa: {
+                    let mut a = Box::new([0; 2592]);
+                    php.parse_bytes_into("mldsa87_public", &mut a[..])?;
+                    a
+                },
+            }),
+
+            MLDSA65_ECDSA_BrainpoolP384 => Ok(mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: {
+                    let mut a = Box::new([0; 97]);
+                    php.parse_bytes_into("ecdsa_brainpoolp384r1_public", &mut a[..])?;
+                    a
+                },
+                mldsa: {
+                    let mut a = Box::new([0; 1952]);
+                    php.parse_bytes_into("mldsa65_public", &mut a[..])?;
+                    a
+                },
+            }),
+
+            MLDSA87_ECDSA_BrainpoolP512 => Ok(mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: {
+                    let mut a = Box::new([0; 129]);
+                    php.parse_bytes_into("ecdsa_brainpoolp512r1_public", &mut a[..])?;
+                    a
+                },
+                mldsa: {
+                    let mut a = Box::new([0; 2592]);
+                    php.parse_bytes_into("mldsa87_public", &mut a[..])?;
+                    a
+                },
+            }),
+
             SLHDSA128s => Ok(mpi::PublicKey::SLHDSA128s {
                 public: {
                     let mut a = [0; 32];
@@ -223,17 +275,37 @@ impl mpi::PublicKey {
                 Ok(mpi::PublicKey::MLKEM1024_X448 { ecdh, mlkem })
             },
 
-            MLDSA65_ECDSA_NISTP384
-                | MLDSA87_ECDSA_NISTP521
-                | MLDSA65_ECDSA_BrainpoolP384
-                | MLDSA87_ECDSA_BrainpoolP512
-                | MLKEM768_ECDH_NISTP384
-                | MLKEM1024_ECDH_NISTP521
-                | MLKEM768_ECDH_BrainpoolP384
-                | MLKEM1024_ECDH_BrainpoolP512 =>
-            {
-                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
-            }
+            MLKEM768_ECDH_NISTP384 => {
+                let mut ecdh = Box::new([0; 97]);
+                php.parse_bytes_into("ecdh_nistp384_public", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1184]);
+                php.parse_bytes_into("mlkem768_public", mlkem.as_mut())?;
+                Ok(mpi::PublicKey::MLKEM768_ECDH_NISTP384 { ecdh, mlkem })
+            },
+
+            MLKEM1024_ECDH_NISTP521 => {
+                let mut ecdh = Box::new([0; 133]);
+                php.parse_bytes_into("ecdh_nistp521_public", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1568]);
+                php.parse_bytes_into("mlkem1024_public", mlkem.as_mut())?;
+                Ok(mpi::PublicKey::MLKEM1024_ECDH_NISTP521 { ecdh, mlkem })
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 => {
+                let mut ecdh = Box::new([0; 97]);
+                php.parse_bytes_into("ecdh_brainpoolp384r1_public", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1184]);
+                php.parse_bytes_into("mlkem768_public", mlkem.as_mut())?;
+                Ok(mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem })
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 => {
+                let mut ecdh = Box::new([0; 129]);
+                php.parse_bytes_into("ecdh_brainpoolp512r1_public", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1568]);
+                php.parse_bytes_into("mlkem1024_public", mlkem.as_mut())?;
+                Ok(mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem })
+            },
 
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
@@ -419,6 +491,38 @@ impl mpi::SecretKeyMaterial {
                 Ok(mpi::SecretKeyMaterial::MLDSA87_Ed448 { eddsa, mldsa })
             },
 
+            MLDSA65_ECDSA_NISTP384 => {
+                let mut ecdsa: Protected = vec![0; 48].into();
+                php.parse_bytes_into("ecdsa_nistp384_secret", &mut ecdsa)?;
+                let mut mldsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("mldsa_secret", &mut mldsa)?;
+                Ok(mpi::SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa })
+            },
+
+            MLDSA87_ECDSA_NISTP521 => {
+                let mut ecdsa: Protected = vec![0; 66].into();
+                php.parse_bytes_into("ecdsa_nistp521_secret", &mut ecdsa)?;
+                let mut mldsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("mldsa_secret", &mut mldsa)?;
+                Ok(mpi::SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa })
+            },
+
+            MLDSA65_ECDSA_BrainpoolP384 => {
+                let mut ecdsa: Protected = vec![0; 48].into();
+                php.parse_bytes_into("ecdsa_brainpoolp384r1_secret", &mut ecdsa)?;
+                let mut mldsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("mldsa_secret", &mut mldsa)?;
+                Ok(mpi::SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa })
+            },
+
+            MLDSA87_ECDSA_BrainpoolP512 => {
+                let mut ecdsa: Protected = vec![0; 64].into();
+                php.parse_bytes_into("ecdsa_brainpoolp512r1_secret", &mut ecdsa)?;
+                let mut mldsa: Protected = vec![0; 32].into();
+                php.parse_bytes_into("mldsa_secret", &mut mldsa)?;
+                Ok(mpi::SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa })
+            },
+
             SLHDSA128s => Ok(mpi::SecretKeyMaterial::SLHDSA128s {
                 secret: {
                     let mut a: Protected = vec![0; 64].into();
@@ -459,17 +563,37 @@ impl mpi::SecretKeyMaterial {
                 Ok(mpi::SecretKeyMaterial::MLKEM1024_X448 { ecdh, mlkem })
             },
 
-            MLDSA65_ECDSA_NISTP384
-                | MLDSA87_ECDSA_NISTP521
-                | MLDSA65_ECDSA_BrainpoolP384
-                | MLDSA87_ECDSA_BrainpoolP512
-                | MLKEM768_ECDH_NISTP384
-                | MLKEM1024_ECDH_NISTP521
-                | MLKEM768_ECDH_BrainpoolP384
-                | MLKEM1024_ECDH_BrainpoolP512 =>
-            {
-                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
-            }
+            MLKEM768_ECDH_NISTP384 => {
+                let mut ecdh: Protected = vec![0; 48].into();
+                php.parse_bytes_into("ecdh_nistp384_secret", &mut ecdh)?;
+                let mut mlkem: Protected = vec![0; 64].into();
+                php.parse_bytes_into("mlkem_secret", &mut mlkem)?;
+                Ok(mpi::SecretKeyMaterial::MLKEM768_ECDH_NISTP384 { ecdh, mlkem })
+            },
+
+            MLKEM1024_ECDH_NISTP521 => {
+                let mut ecdh: Protected = vec![0; 66].into();
+                php.parse_bytes_into("ecdh_nistp521_secret", &mut ecdh)?;
+                let mut mlkem: Protected = vec![0; 64].into();
+                php.parse_bytes_into("mlkem_secret", &mut mlkem)?;
+                Ok(mpi::SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 { ecdh, mlkem })
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 => {
+                let mut ecdh: Protected = vec![0; 48].into();
+                php.parse_bytes_into("ecdh_brainpoolp384r1_secret", &mut ecdh)?;
+                let mut mlkem: Protected = vec![0; 64].into();
+                php.parse_bytes_into("mlkem_secret", &mut mlkem)?;
+                Ok(mpi::SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem })
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 => {
+                let mut ecdh: Protected = vec![0; 64].into();
+                php.parse_bytes_into("ecdh_brainpoolp512r1_secret", &mut ecdh)?;
+                let mut mlkem: Protected = vec![0; 64].into();
+                php.parse_bytes_into("mlkem_secret", &mut mlkem)?;
+                Ok(mpi::SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem })
+            },
 
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
@@ -647,13 +771,49 @@ impl mpi::Ciphertext {
                 Ok(mpi::Ciphertext::MLKEM1024_X448 { ecdh, mlkem, esk })
             },
 
-            MLKEM768_ECDH_NISTP384
-                | MLKEM1024_ECDH_NISTP521
-                | MLKEM768_ECDH_BrainpoolP384
-                | MLKEM1024_ECDH_BrainpoolP512 =>
-            {
-                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
-            }
+            MLKEM768_ECDH_NISTP384 => {
+                let mut ecdh = Box::new([0; 97]);
+                php.parse_bytes_into("ecdh_nistp384_ciphertext", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1088]);
+                php.parse_bytes_into("mlkem768_ciphertext", mlkem.as_mut())?;
+                let esk_len = php.parse_u8("esk_len")? as usize;
+                let esk = Vec::from(&php.parse_bytes("esk", esk_len)?
+                                    [..esk_len]).into();
+                Ok(mpi::Ciphertext::MLKEM768_ECDH_NISTP384 { ecdh, mlkem, esk })
+            },
+
+            MLKEM1024_ECDH_NISTP521 => {
+                let mut ecdh = Box::new([0; 133]);
+                php.parse_bytes_into("ecdh_nistp521_ciphertext", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1568]);
+                php.parse_bytes_into("mlkem1024_ciphertext", mlkem.as_mut())?;
+                let esk_len = php.parse_u8("esk_len")? as usize;
+                let esk = Vec::from(&php.parse_bytes("esk", esk_len)?
+                                    [..esk_len]).into();
+                Ok(mpi::Ciphertext::MLKEM1024_ECDH_NISTP521 { ecdh, mlkem, esk })
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 => {
+                let mut ecdh = Box::new([0; 97]);
+                php.parse_bytes_into("ecdh_brainpoolp384r1_ciphertext", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1088]);
+                php.parse_bytes_into("mlkem768_ciphertext", mlkem.as_mut())?;
+                let esk_len = php.parse_u8("esk_len")? as usize;
+                let esk = Vec::from(&php.parse_bytes("esk", esk_len)?
+                                    [..esk_len]).into();
+                Ok(mpi::Ciphertext::MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem, esk })
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 => {
+                let mut ecdh = Box::new([0; 129]);
+                php.parse_bytes_into("ecdh_brainpoolp512r1_ciphertext", ecdh.as_mut())?;
+                let mut mlkem = Box::new([0; 1568]);
+                php.parse_bytes_into("mlkem1024_ciphertext", mlkem.as_mut())?;
+                let esk_len = php.parse_u8("esk_len")? as usize;
+                let esk = Vec::from(&php.parse_bytes("esk", esk_len)?
+                                    [..esk_len]).into();
+                Ok(mpi::Ciphertext::MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem, esk })
+            },
 
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
@@ -671,11 +831,9 @@ impl mpi::Ciphertext {
 
             RSASign | DSA | EdDSA | ECDSA | Ed25519 | Ed448
                 | MLDSA65_Ed25519 | MLDSA87_Ed448
+                | MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512
                 | SLHDSA128s | SLHDSA128f | SLHDSA256s
-                | MLDSA65_ECDSA_NISTP384
-                | MLDSA87_ECDSA_NISTP521
-                | MLDSA65_ECDSA_BrainpoolP384
-                | MLDSA87_ECDSA_BrainpoolP512
                 => Err(Error::InvalidArgument(
                     format!("not an encryption algorithm: {:?}", algo)).into()),
         }
@@ -805,6 +963,58 @@ impl mpi::Signature {
                 },
             }),
 
+            MLDSA65_ECDSA_NISTP384 => Ok(mpi::Signature::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: {
+                    let mut s = Box::new([0; 96]);
+                    php.parse_bytes_into("ecdsa_nistp384_sig", &mut s[..])?;
+                    s
+                },
+                mldsa: {
+                    let mut s = Box::new([0; 3309]);
+                    php.parse_bytes_into("mldsa65_sig", &mut s[..])?;
+                    s
+                },
+            }),
+
+            MLDSA87_ECDSA_NISTP521 => Ok(mpi::Signature::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: {
+                    let mut s = Box::new([0; 132]);
+                    php.parse_bytes_into("ecdsa_nistp521_sig", &mut s[..])?;
+                    s
+                },
+                mldsa: {
+                    let mut s = Box::new([0; 4627]);
+                    php.parse_bytes_into("mldsa87_sig", &mut s[..])?;
+                    s
+                },
+            }),
+
+            MLDSA65_ECDSA_BrainpoolP384 => Ok(mpi::Signature::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: {
+                    let mut s = Box::new([0; 96]);
+                    php.parse_bytes_into("ecdsa_brainpoolp384r1_sig", &mut s[..])?;
+                    s
+                },
+                mldsa: {
+                    let mut s = Box::new([0; 3309]);
+                    php.parse_bytes_into("mldsa65_sig", &mut s[..])?;
+                    s
+                },
+            }),
+
+            MLDSA87_ECDSA_BrainpoolP512 => Ok(mpi::Signature::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: {
+                    let mut s = Box::new([0; 128]);
+                    php.parse_bytes_into("ecdsa_brainpoolp512r1_sig", &mut s[..])?;
+                    s
+                },
+                mldsa: {
+                    let mut s = Box::new([0; 4627]);
+                    php.parse_bytes_into("mldsa87_sig", &mut s[..])?;
+                    s
+                },
+            }),
+
             SLHDSA128s => Ok(mpi::Signature::SLHDSA128s {
                 sig: {
                     let mut a = Box::new([0; 7856]);
@@ -829,14 +1039,6 @@ impl mpi::Signature {
                 },
             }),
 
-            MLDSA65_ECDSA_NISTP384
-                | MLDSA87_ECDSA_NISTP521
-                | MLDSA65_ECDSA_BrainpoolP384
-                | MLDSA87_ECDSA_BrainpoolP512 =>
-            {
-                Err(Error::UnsupportedPublicKeyAlgorithm(algo).into())
-            }
-
             Unknown(_) | Private(_) => {
                 let mut mpis = Vec::new();
                 while let Ok(mpi) = MPI::parse("unknown_len",
@@ -854,10 +1056,8 @@ impl mpi::Signature {
             RSAEncrypt | ElGamalEncrypt | ECDH | X25519 | X448
                 | MLKEM768_X25519
                 | MLKEM1024_X448
-                | MLKEM768_ECDH_NISTP384
-                | MLKEM1024_ECDH_NISTP521
-                | MLKEM768_ECDH_BrainpoolP384
-                | MLKEM1024_ECDH_BrainpoolP512
+                | MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521
+                | MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512
                 => Err(Error::InvalidArgument(
                     format!("not a signature algorithm: {:?}", algo)).into()),
         }

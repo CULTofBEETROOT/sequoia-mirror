@@ -714,7 +714,7 @@ a_cutoff_list!(SubpacketTagCutoffList, SubpacketTag, 40,
                    ACCEPT,                 // 39. PreferredAEADCiphersuites.
                ]);
 
-a_cutoff_list!(AsymmetricAlgorithmCutoffList, AsymmetricAlgorithm, 31,
+a_cutoff_list!(AsymmetricAlgorithmCutoffList, AsymmetricAlgorithm, 39,
                [
                    Some(Timestamp::Y2014M2), // 0. RSA1024.
                    ACCEPT,                   // 1. RSA2048.
@@ -747,6 +747,14 @@ a_cutoff_list!(AsymmetricAlgorithmCutoffList, AsymmetricAlgorithm, 31,
                    ACCEPT,                   // 28. SLHDSA256s.
                    ACCEPT,                   // 29. MLKEM768_X25519.
                    ACCEPT,                   // 30. MLKEM1024_X448.
+                   ACCEPT,                   // 31. MLDSA65_ECDSA_NISTP384.
+                   ACCEPT,                   // 32. MLDSA87_ECDSA_NISTP521.
+                   ACCEPT,                   // 33. MLDSA65_ECDSA_BrainpoolP384.
+                   ACCEPT,                   // 34. MLDSA87_ECDSA_BrainpoolP512.
+                   ACCEPT,                   // 35. MLKEM768_ECDH_NISTP384.
+                   ACCEPT,                   // 36. MLKEM1024_ECDH_NISTP521.
+                   ACCEPT,                   // 37. MLKEM768_ECDH_BrainpoolP384.
+                   ACCEPT,                   // 38. MLKEM1024_ECDH_BrainpoolP512.
                ]);
 
 a_cutoff_list!(SymmetricAlgorithmCutoffList, SymmetricAlgorithm, 14,
@@ -1606,13 +1614,14 @@ impl<'a> Policy for StandardPolicy<'a> {
             (PublicKeyAlgorithm::MLDSA87_Ed448, _) =>
                 AsymmetricAlgorithm::MLDSA87_Ed448,
             (PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLDSA65_ECDSA_NISTP384,
             (PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLDSA87_ECDSA_NISTP521,
             (PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
             (PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+
 
 
             (PublicKeyAlgorithm::SLHDSA128s, _) =>
@@ -1627,13 +1636,14 @@ impl<'a> Policy for StandardPolicy<'a> {
             (PublicKeyAlgorithm::MLKEM1024_X448, _) =>
                 AsymmetricAlgorithm::MLKEM1024_X448,
             (PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLKEM768_ECDH_NISTP384,
             (PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLKEM1024_ECDH_NISTP521,
             (PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLKEM768_ECDH_BrainpoolP384,
             (PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512, _) =>
-                AsymmetricAlgorithm::Unknown,
+                AsymmetricAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
+
 
 
             (PublicKeyAlgorithm::Private(_), _)
@@ -1780,6 +1790,18 @@ pub enum AsymmetricAlgorithm {
     /// Composite signature algorithm using ML-DSA-87 and Ed448.
     MLDSA87_Ed448,
 
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over NIST P-384.
+    MLDSA65_ECDSA_NISTP384,
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over NIST P-521.
+    MLDSA87_ECDSA_NISTP521,
+
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over brainpoolP384r1.
+    MLDSA65_ECDSA_BrainpoolP384,
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over brainpoolP512r1.
+    MLDSA87_ECDSA_BrainpoolP512,
+
     /// SLH-DSA signature algorithm 128 bit, small signatures.
     SLHDSA128s,
 
@@ -1795,12 +1817,24 @@ pub enum AsymmetricAlgorithm {
     /// Composite KEM using ML-KEM-1024 and X448.
     MLKEM1024_X448,
 
+    /// Composite KEM using ML-KEM-768 and ECDH over NIST P-384.
+    MLKEM768_ECDH_NISTP384,
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over NIST P-521.
+    MLKEM1024_ECDH_NISTP521,
+
+    /// Composite KEM using ML-KEM-768 and ECDH over brainpoolP384r1.
+    MLKEM768_ECDH_BrainpoolP384,
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over brainpoolP512r1.
+    MLKEM1024_ECDH_BrainpoolP512,
+
     /// Unknown algorithm.
     Unknown,
 }
 assert_send_and_sync!(AsymmetricAlgorithm);
 
-const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 31] = [
+const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 39] = [
     AsymmetricAlgorithm::RSA1024,
     AsymmetricAlgorithm::RSA2048,
     AsymmetricAlgorithm::RSA3072,
@@ -1827,11 +1861,19 @@ const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 31] = [
     AsymmetricAlgorithm::EdDSA,
     AsymmetricAlgorithm::MLDSA65_Ed25519,
     AsymmetricAlgorithm::MLDSA87_Ed448,
+    AsymmetricAlgorithm::MLDSA65_ECDSA_NISTP384,
+    AsymmetricAlgorithm::MLDSA87_ECDSA_NISTP521,
+    AsymmetricAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+    AsymmetricAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
     AsymmetricAlgorithm::SLHDSA128s,
     AsymmetricAlgorithm::SLHDSA128f,
     AsymmetricAlgorithm::SLHDSA256s,
     AsymmetricAlgorithm::MLKEM768_X25519,
     AsymmetricAlgorithm::MLKEM1024_X448,
+    AsymmetricAlgorithm::MLKEM768_ECDH_NISTP384,
+    AsymmetricAlgorithm::MLKEM1024_ECDH_NISTP521,
+    AsymmetricAlgorithm::MLKEM768_ECDH_BrainpoolP384,
+    AsymmetricAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
 ];
 
 impl AsymmetricAlgorithm {
@@ -1885,6 +1927,14 @@ impl From<AsymmetricAlgorithm> for u8 {
             SLHDSA256s => 28,
             MLKEM768_X25519 => 29,
             MLKEM1024_X448 => 30,
+            MLDSA65_ECDSA_NISTP384 => 31,
+            MLDSA87_ECDSA_NISTP521 => 32,
+            MLDSA65_ECDSA_BrainpoolP384 => 33,
+            MLDSA87_ECDSA_BrainpoolP512 => 34,
+            MLKEM768_ECDH_NISTP384 => 35,
+            MLKEM1024_ECDH_NISTP521 => 36,
+            MLKEM768_ECDH_BrainpoolP384 => 37,
+            MLKEM1024_ECDH_BrainpoolP512 => 38,
             Unknown => 255,
         }
     }

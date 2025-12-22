@@ -628,6 +628,42 @@ pub enum PublicKey {
         mldsa: Box<[u8; 2592]>,
     },
 
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over NIST P-384.
+    MLDSA65_ECDSA_NISTP384 {
+        /// The NIST P-384 public key, an opaque string.
+        ecdsa: Box<[u8; 97]>,
+
+        /// The ML-DSA public key, an opaque string.
+        mldsa: Box<[u8; 1952]>,
+    },
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over NIST P-521.
+    MLDSA87_ECDSA_NISTP521 {
+        /// The NIST P-521 public key, an opaque string.
+        ecdsa: Box<[u8; 133]>,
+
+        /// The ML-DSA public key, an opaque string.
+        mldsa: Box<[u8; 2592]>,
+    },
+
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over brainpooolP384r1.
+    MLDSA65_ECDSA_BrainpoolP384 {
+        /// The brainpoolP384r1 public key, an opaque string.
+        ecdsa: Box<[u8; 97]>,
+
+        /// The ML-DSA public key, an opaque string.
+        mldsa: Box<[u8; 1952]>,
+    },
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over brainpoolP512r1.
+    MLDSA87_ECDSA_BrainpoolP512 {
+        /// The brainpoolP512r1 public key, an opaque string.
+        ecdsa: Box<[u8; 129]>,
+
+        /// The ML-DSA public key, an opaque string.
+        mldsa: Box<[u8; 2592]>,
+    },
+
     /// SLH-DSA-SHAKE-128s public key.
     SLHDSA128s {
         /// The public key, an opaque string.
@@ -659,6 +695,42 @@ pub enum PublicKey {
     MLKEM1024_X448 {
         /// The X448 public key, an opaque string.
         ecdh: Box<[u8; 56]>,
+
+        /// The ML-KEM public key, an opaque string.
+        mlkem: Box<[u8; 1568]>,
+    },
+
+    /// Composite KEM using ML-KEM-768 and ECDH over NIST P-384.
+    MLKEM768_ECDH_NISTP384 {
+        /// The NIST P-384 public key, an opaque string.
+        ecdh: Box<[u8; 97]>,
+
+        /// The ML-KEM public key, an opaque string.
+        mlkem: Box<[u8; 1184]>,
+    },
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over NIST P-521.
+    MLKEM1024_ECDH_NISTP521 {
+        /// The NIST P-521 public key, an opaque string.
+        ecdh: Box<[u8; 133]>,
+
+        /// The ML-KEM public key, an opaque string.
+        mlkem: Box<[u8; 1568]>,
+    },
+
+    /// Composite KEM using ML-KEM-768 and ECDH over brainpoolP384r1.
+    MLKEM768_ECDH_BrainpoolP384 {
+        /// The brainpoolP384r1 public key, an opaque string.
+        ecdh: Box<[u8; 97]>,
+
+        /// The ML-KEM public key, an opaque string.
+        mlkem: Box<[u8; 1184]>,
+    },
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over brainpoolP512r1.
+    MLKEM1024_ECDH_BrainpoolP512 {
+        /// The brainpoolP512r1 public key, an opaque string.
+        ecdh: Box<[u8; 129]>,
 
         /// The ML-KEM public key, an opaque string.
         mlkem: Box<[u8; 1568]>,
@@ -750,6 +822,30 @@ impl fmt::Debug for PublicKey {
                 .field("mldsa", &hex::encode(mldsa.as_ref()))
                 .finish(),
 
+            PublicKey::MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA65_ECDSA_NISTP384")
+                .field("ecdsa", &hex::encode(ecdsa.as_ref()))
+                .field("mldsa", &hex::encode(mldsa.as_ref()))
+                .finish(),
+
+            PublicKey::MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA87_ECDSA_NISTP521")
+                .field("ecdsa", &hex::encode(ecdsa.as_ref()))
+                .field("mldsa", &hex::encode(mldsa.as_ref()))
+                .finish(),
+
+            PublicKey::MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA65_ECDSA_BrainpoolP384")
+                .field("ecdsa", &hex::encode(ecdsa.as_ref()))
+                .field("mldsa", &hex::encode(mldsa.as_ref()))
+                .finish(),
+
+            PublicKey::MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA87_ECDSA_BrainpoolP512")
+                .field("ecdsa", &hex::encode(ecdsa.as_ref()))
+                .field("mldsa", &hex::encode(mldsa.as_ref()))
+                .finish(),
+
             PublicKey::SLHDSA128s { public } =>
                 f.debug_struct("SLHDSA128s")
                 .field("public", &hex::encode(public))
@@ -773,6 +869,30 @@ impl fmt::Debug for PublicKey {
 
             PublicKey::MLKEM1024_X448 { ecdh, mlkem } =>
                 f.debug_struct("MLKEM1024_X448")
+                .field("ecdh", &hex::encode(ecdh.as_ref()))
+                .field("mlkem", &hex::encode(mlkem.as_ref()))
+                .finish(),
+
+            PublicKey::MLKEM768_ECDH_NISTP384 { ecdh, mlkem } =>
+                f.debug_struct("MLKEM768_ECDH_NISTP384")
+                .field("ecdh", &hex::encode(ecdh.as_ref()))
+                .field("mlkem", &hex::encode(mlkem.as_ref()))
+                .finish(),
+
+            PublicKey::MLKEM1024_ECDH_NISTP521 { ecdh, mlkem } =>
+                f.debug_struct("MLKEM1024_ECDH_NISTP521")
+                .field("ecdh", &hex::encode(ecdh.as_ref()))
+                .field("mlkem", &hex::encode(mlkem.as_ref()))
+                .finish(),
+
+            PublicKey::MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem } =>
+                f.debug_struct("MLKEM768_ECDH_BrainpoolP384")
+                .field("ecdh", &hex::encode(ecdh.as_ref()))
+                .field("mlkem", &hex::encode(mlkem.as_ref()))
+                .finish(),
+
+            PublicKey::MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem } =>
+                f.debug_struct("MLKEM1024_ECDH_BrainpoolP512")
                 .field("ecdh", &hex::encode(ecdh.as_ref()))
                 .field("mlkem", &hex::encode(mlkem.as_ref()))
                 .finish(),
@@ -812,11 +932,19 @@ impl PublicKey {
             Ed448 { .. } => Some(456),
             MLDSA65_Ed25519 { .. } => None,
             MLDSA87_Ed448 { .. } => None,
+            MLDSA65_ECDSA_NISTP384 { .. } => None,
+            MLDSA87_ECDSA_NISTP521 { .. } => None,
+            MLDSA65_ECDSA_BrainpoolP384 { .. } => None,
+            MLDSA87_ECDSA_BrainpoolP512 { .. } => None,
             SLHDSA128s { .. } => None,
             SLHDSA128f { .. } => None,
             SLHDSA256s { .. } => None,
             MLKEM768_X25519 { .. } => None,
             MLKEM1024_X448 { .. } => None,
+            MLKEM768_ECDH_NISTP384 { .. } => None,
+            MLKEM1024_ECDH_NISTP521 { .. } => None,
+            MLKEM768_ECDH_BrainpoolP384 { .. } => None,
+            MLKEM1024_ECDH_BrainpoolP512 { .. } => None,
             Unknown { .. } => None,
         }
     }
@@ -841,6 +969,14 @@ impl PublicKey {
                 Some(PublicKeyAlgorithm::MLDSA65_Ed25519),
             MLDSA87_Ed448 { .. } =>
                 Some(PublicKeyAlgorithm::MLDSA87_Ed448),
+            MLDSA65_ECDSA_NISTP384 { .. } =>
+                Some(PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384),
+            MLDSA87_ECDSA_NISTP521 { .. } =>
+                Some(PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521),
+            MLDSA65_ECDSA_BrainpoolP384 { .. } =>
+                Some(PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384),
+            MLDSA87_ECDSA_BrainpoolP512 { .. } =>
+                Some(PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512),
             SLHDSA128s { .. } => Some(PublicKeyAlgorithm::SLHDSA128s),
             SLHDSA128f { .. } => Some(PublicKeyAlgorithm::SLHDSA128f),
             SLHDSA256s { .. } => Some(PublicKeyAlgorithm::SLHDSA256s),
@@ -848,6 +984,14 @@ impl PublicKey {
                 Some(PublicKeyAlgorithm::MLKEM768_X25519),
             MLKEM1024_X448 { .. } =>
                 Some(PublicKeyAlgorithm::MLKEM1024_X448),
+            MLKEM768_ECDH_NISTP384 { .. } =>
+                Some(PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384),
+            MLKEM1024_ECDH_NISTP521 { .. } =>
+                Some(PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521),
+            MLKEM768_ECDH_BrainpoolP384 { .. } =>
+                Some(PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384),
+            MLKEM1024_ECDH_BrainpoolP512 { .. } =>
+                Some(PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512),
             Unknown { .. } => None,
         }
     }
@@ -865,7 +1009,7 @@ impl Arbitrary for PublicKey {
         use self::PublicKey::*;
         use crate::arbitrary_helper::gen_arbitrary_from_range;
 
-        match gen_arbitrary_from_range(0..17, g) {
+        match gen_arbitrary_from_range(0..25, g) {
             0 => RSA {
                 e: MPI::arbitrary(g),
                 n: MPI::arbitrary(g),
@@ -935,6 +1079,46 @@ impl Arbitrary for PublicKey {
 
             16 => MLKEM1024_X448 {
                 ecdh: Box::new(arbitrarize(g, [0; 56])),
+                mlkem: Box::new(arbitrarize(g, [0; 1568])),
+            },
+
+            17 => MLDSA65_ECDSA_NISTP384 {
+                ecdsa: Box::new(arbitrarize(g, [0; 97])),
+                mldsa: Box::new(arbitrarize(g, [0; 1952])),
+            },
+
+            18 => MLDSA87_ECDSA_NISTP521 {
+                ecdsa: Box::new(arbitrarize(g, [0; 133])),
+                mldsa: Box::new(arbitrarize(g, [0; 2592])),
+            },
+
+            19 => MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: Box::new(arbitrarize(g, [0; 97])),
+                mldsa: Box::new(arbitrarize(g, [0; 1952])),
+            },
+
+            20 => MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: Box::new(arbitrarize(g, [0; 129])),
+                mldsa: Box::new(arbitrarize(g, [0; 2592])),
+            },
+
+            21 => MLKEM768_ECDH_NISTP384 {
+                ecdh: Box::new(arbitrarize(g, [0; 97])),
+                mlkem: Box::new(arbitrarize(g, [0; 1184])),
+            },
+
+            22 => MLKEM1024_ECDH_NISTP521 {
+                ecdh: Box::new(arbitrarize(g, [0; 133])),
+                mlkem: Box::new(arbitrarize(g, [0; 1568])),
+            },
+
+            23 => MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: Box::new(arbitrarize(g, [0; 97])),
+                mlkem: Box::new(arbitrarize(g, [0; 1184])),
+            },
+
+            24 => MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: Box::new(arbitrarize(g, [0; 129])),
                 mlkem: Box::new(arbitrarize(g, [0; 1568])),
             },
 
@@ -1055,6 +1239,42 @@ pub enum SecretKeyMaterial {
         mldsa: Protected,
     },
 
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over NIST P-384.
+    MLDSA65_ECDSA_NISTP384 {
+        /// The NIST P-384 secret key, an opaque string.
+        ecdsa: Protected,
+
+        /// The ML-DSA secret key, an opaque string.
+        mldsa: Protected,
+    },
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over NIST P-521.
+    MLDSA87_ECDSA_NISTP521 {
+        /// The NIST P-521 secret key, an opaque string.
+        ecdsa: Protected,
+
+        /// The ML-DSA secret key, an opaque string.
+        mldsa: Protected,
+    },
+
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over brainpoolP384r1.
+    MLDSA65_ECDSA_BrainpoolP384 {
+        /// The brainpoolP384r1 secret key, an opaque string.
+        ecdsa: Protected,
+
+        /// The ML-DSA secret key, an opaque string.
+        mldsa: Protected,
+    },
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over brainpoolP512r1.
+    MLDSA87_ECDSA_BrainpoolP512 {
+        /// The brainpoolP512r1 secret key, an opaque string.
+        ecdsa: Protected,
+
+        /// The ML-DSA secret key, an opaque string.
+        mldsa: Protected,
+    },
+
     /// SLH-DSA-SHAKE-128s secret key.
     SLHDSA128s {
         /// The secret key, an opaque string.
@@ -1085,6 +1305,42 @@ pub enum SecretKeyMaterial {
     /// Composite KEM using ML-KEM-1024 and X448.
     MLKEM1024_X448 {
         /// The X448 secret key, an opaque string.
+        ecdh: Protected,
+
+        /// The ML-KEM secret key, an opaque string.
+        mlkem: Protected,
+    },
+
+    /// Composite KEM using ML-KEM-768 and ECDH over NIST P-384.
+    MLKEM768_ECDH_NISTP384 {
+        /// The NIST P-384 secret key, an opaque string.
+        ecdh: Protected,
+
+        /// The ML-KEM secret key, an opaque string.
+        mlkem: Protected,
+    },
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over NIST P-521.
+    MLKEM1024_ECDH_NISTP521 {
+        /// The NIST P-521 secret key, an opaque string.
+        ecdh: Protected,
+
+        /// The ML-KEM secret key, an opaque string.
+        mlkem: Protected,
+    },
+
+    /// Composite KEM using ML-KEM-768 and ECDH over brainpoolP384r1.
+    MLKEM768_ECDH_BrainpoolP384 {
+        /// The brainpoolP384r1 secret key, an opaque string.
+        ecdh: Protected,
+
+        /// The ML-KEM secret key, an opaque string.
+        mlkem: Protected,
+    },
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over brainpoolP512r1.
+    MLKEM1024_ECDH_BrainpoolP512 {
+        /// The brainpoolP512r1 secret key, an opaque string.
         ecdh: Protected,
 
         /// The ML-KEM secret key, an opaque string.
@@ -1170,6 +1426,30 @@ impl fmt::Debug for SecretKeyMaterial {
                     .field("mldsa", &hex::encode(mldsa))
                     .finish(),
 
+                SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa } =>
+                    f.debug_struct("MLDSA65_ECDSA_NISTP384")
+                    .field("ecdsa", &hex::encode(ecdsa))
+                    .field("mldsa", &hex::encode(mldsa))
+                    .finish(),
+
+                SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa } =>
+                    f.debug_struct("MLDSA87_ECDSA_NISTP521")
+                    .field("ecdsa", &hex::encode(ecdsa))
+                    .field("mldsa", &hex::encode(mldsa))
+                    .finish(),
+
+                SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa } =>
+                    f.debug_struct("MLDSA65_ECDSA_BrainpoolP384")
+                    .field("ecdsa", &hex::encode(ecdsa))
+                    .field("mldsa", &hex::encode(mldsa))
+                    .finish(),
+
+                SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa } =>
+                    f.debug_struct("MLDSA87_ECDSA_BrainpoolP512")
+                    .field("ecdsa", &hex::encode(ecdsa))
+                    .field("mldsa", &hex::encode(mldsa))
+                    .finish(),
+
                 SecretKeyMaterial::SLHDSA128s { secret } =>
                     f.debug_struct("SLHDSA128s")
                     .field("secret", &hex::encode(secret.as_ref()))
@@ -1193,6 +1473,30 @@ impl fmt::Debug for SecretKeyMaterial {
 
                 SecretKeyMaterial::MLKEM1024_X448 { ecdh, mlkem } =>
                     f.debug_struct("MLKEM1024_X448")
+                    .field("ecdh", &hex::encode(ecdh))
+                    .field("mlkem", &hex::encode(mlkem))
+                    .finish(),
+
+                SecretKeyMaterial::MLKEM768_ECDH_NISTP384 { ecdh, mlkem } =>
+                    f.debug_struct("MLKEM768_ECDH_NISTP384")
+                    .field("ecdh", &hex::encode(ecdh))
+                    .field("mlkem", &hex::encode(mlkem))
+                    .finish(),
+
+                SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 { ecdh, mlkem } =>
+                    f.debug_struct("MLKEM1024_ECDH_NISTP521")
+                    .field("ecdh", &hex::encode(ecdh))
+                    .field("mlkem", &hex::encode(mlkem))
+                    .finish(),
+
+                SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem } =>
+                    f.debug_struct("MLKEM768_ECDH_BrainpoolP384")
+                    .field("ecdh", &hex::encode(ecdh))
+                    .field("mlkem", &hex::encode(mlkem))
+                    .finish(),
+
+                SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem } =>
+                    f.debug_struct("MLKEM1024_ECDH_BrainpoolP512")
                     .field("ecdh", &hex::encode(ecdh))
                     .field("mlkem", &hex::encode(mlkem))
                     .finish(),
@@ -1229,6 +1533,14 @@ impl fmt::Debug for SecretKeyMaterial {
                     f.write_str("MLDSA65_Ed25519 { <Redacted> }"),
                 SecretKeyMaterial::MLDSA87_Ed448 { .. } =>
                     f.write_str("MLDSA87_Ed448 { <Redacted> }"),
+                SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { .. } =>
+                    f.write_str("MLDSA65_ECDSA_NISTP384 { <Redacted> }"),
+                SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { .. } =>
+                    f.write_str("MLDSA87_ECDSA_NISTP521 { <Redacted> }"),
+                SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { .. } =>
+                    f.write_str("MLDSA65_ECDSA_BrainpoolP384 { <Redacted> }"),
+                SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { .. } =>
+                    f.write_str("MLDSA87_ECDSA_BrainpoolP512 { <Redacted> }"),
                 SecretKeyMaterial::SLHDSA128s { .. } =>
                     f.write_str("SLHDSA128s { <Redacted> }"),
                 SecretKeyMaterial::SLHDSA128f { .. } =>
@@ -1239,6 +1551,14 @@ impl fmt::Debug for SecretKeyMaterial {
                     f.write_str("MLKEM768_X25519 { <Redacted> }"),
                 SecretKeyMaterial::MLKEM1024_X448 { .. } =>
                     f.write_str("MLKEM1024_X448 { <Redacted> }"),
+                SecretKeyMaterial::MLKEM768_ECDH_NISTP384 { .. } =>
+                    f.write_str("MLKEM768_ECDH_NISTP384 { <Redacted> }"),
+                SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 { .. } =>
+                    f.write_str("MLKEM1024_ECDH_NISTP521 { <Redacted> }"),
+                SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 { .. } =>
+                    f.write_str("MLKEM768_ECDH_BrainpoolP384 { <Redacted> }"),
+                SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 { .. } =>
+                    f.write_str("MLKEM1024_ECDH_BrainpoolP512 { <Redacted> }"),
                 SecretKeyMaterial::Unknown{ .. } =>
                     f.write_str("Unknown { <Redacted> }"),
             }
@@ -1276,6 +1596,14 @@ impl Ord for SecretKeyMaterial {
                 SecretKeyMaterial::SLHDSA256s { .. } => 15,
                 SecretKeyMaterial::MLKEM768_X25519 { .. } => 16,
                 SecretKeyMaterial::MLKEM1024_X448 { .. } => 17,
+                SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { .. } => 18,
+                SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { .. } => 19,
+                SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { .. } => 20,
+                SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { .. } => 21,
+                SecretKeyMaterial::MLKEM768_ECDH_NISTP384 { .. } => 22,
+                SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 { .. } => 23,
+                SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 { .. } => 24,
+                SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 { .. } => 25,
             }
         }
 
@@ -1333,6 +1661,30 @@ impl Ord for SecretKeyMaterial {
                     .chain(iter::once(m0.cmp(m1)))
                     .fold(Ordering::Equal, |acc, x| acc.then(x)),
 
+            (SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { ecdsa: e0, mldsa: m0 },
+             SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { ecdsa: e1, mldsa: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { ecdsa: e0, mldsa: m0 },
+             SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { ecdsa: e1, mldsa: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { ecdsa: e0, mldsa: m0 },
+             SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { ecdsa: e1, mldsa: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { ecdsa: e0, mldsa: m0 },
+             SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { ecdsa: e1, mldsa: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
             (SecretKeyMaterial::SLHDSA128s { secret: s0 },
              SecretKeyMaterial::SLHDSA128s { secret: s1 }) => s0.cmp(s1),
 
@@ -1350,6 +1702,30 @@ impl Ord for SecretKeyMaterial {
 
             (SecretKeyMaterial::MLKEM1024_X448 { ecdh: e0, mlkem: m0 },
              SecretKeyMaterial::MLKEM1024_X448 { ecdh: e1, mlkem: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLKEM768_ECDH_NISTP384 { ecdh: e0, mlkem: m0 },
+             SecretKeyMaterial::MLKEM768_ECDH_NISTP384 { ecdh: e1, mlkem: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 { ecdh: e0, mlkem: m0 },
+             SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 { ecdh: e1, mlkem: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 { ecdh: e0, mlkem: m0 },
+             SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 { ecdh: e1, mlkem: m1 }) =>
+                iter::once(e0.cmp(e1))
+                    .chain(iter::once(m0.cmp(m1)))
+                    .fold(Ordering::Equal, |acc, x| acc.then(x)),
+
+            (SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 { ecdh: e0, mlkem: m0 },
+             SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 { ecdh: e1, mlkem: m1 }) =>
                 iter::once(e0.cmp(e1))
                     .chain(iter::once(m0.cmp(m1)))
                     .fold(Ordering::Equal, |acc, x| acc.then(x)),
@@ -1405,11 +1781,19 @@ impl SecretKeyMaterial {
             Ed448 { .. } => Some(PublicKeyAlgorithm::Ed448),
             MLDSA65_Ed25519 { .. } => Some(PublicKeyAlgorithm::MLDSA65_Ed25519),
             MLDSA87_Ed448 { .. } => Some(PublicKeyAlgorithm::MLDSA87_Ed448),
+            MLDSA65_ECDSA_NISTP384 { .. } => Some(PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384),
+            MLDSA87_ECDSA_NISTP521 { .. } => Some(PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521),
+            MLDSA65_ECDSA_BrainpoolP384 { .. } => Some(PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384),
+            MLDSA87_ECDSA_BrainpoolP512 { .. } => Some(PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512),
             SLHDSA128s { .. } => Some(PublicKeyAlgorithm::SLHDSA128s),
             SLHDSA128f { .. } => Some(PublicKeyAlgorithm::SLHDSA128f),
             SLHDSA256s { .. } => Some(PublicKeyAlgorithm::SLHDSA256s),
             MLKEM768_X25519 { .. } => Some(PublicKeyAlgorithm::MLKEM768_X25519),
             MLKEM1024_X448 { .. } => Some(PublicKeyAlgorithm::MLKEM1024_X448),
+            MLKEM768_ECDH_NISTP384 { .. } => Some(PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384),
+            MLKEM1024_ECDH_NISTP521 { .. } => Some(PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521),
+            MLKEM768_ECDH_BrainpoolP384 { .. } => Some(PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384),
+            MLKEM1024_ECDH_BrainpoolP512 { .. } => Some(PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512),
             Unknown { .. } => None,
         }
     }
@@ -1477,6 +1861,26 @@ impl SecretKeyMaterial {
                 mldsa: arbitrarize(g, vec![0; 32]).into(),
             }),
 
+            MLDSA65_ECDSA_NISTP384 => Ok(SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: arbitrarize(g, vec![0; 48]).into(),
+                mldsa: arbitrarize(g, vec![0; 32]).into(),
+            }),
+
+            MLDSA87_ECDSA_NISTP521 => Ok(SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: arbitrarize(g, vec![0; 66]).into(),
+                mldsa: arbitrarize(g, vec![0; 32]).into(),
+            }),
+
+            MLDSA65_ECDSA_BrainpoolP384 => Ok(SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: arbitrarize(g, vec![0; 48]).into(),
+                mldsa: arbitrarize(g, vec![0; 32]).into(),
+            }),
+
+            MLDSA87_ECDSA_BrainpoolP512 => Ok(SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: arbitrarize(g, vec![0; 64]).into(),
+                mldsa: arbitrarize(g, vec![0; 32]).into(),
+            }),
+
             SLHDSA128s => Ok(SecretKeyMaterial::SLHDSA128s {
                 secret: arbitrarize(g, [0; 64]).into(),
             }),
@@ -1499,17 +1903,25 @@ impl SecretKeyMaterial {
                 mlkem: arbitrarize(g, vec![0; 64]).into(),
             }),
 
-            MLDSA65_ECDSA_NISTP384
-                | MLDSA87_ECDSA_NISTP521
-                | MLDSA65_ECDSA_BrainpoolP384
-                | MLDSA87_ECDSA_BrainpoolP512
-                | MLKEM768_ECDH_NISTP384
-                | MLKEM1024_ECDH_NISTP521
-                | MLKEM768_ECDH_BrainpoolP384
-                | MLKEM1024_ECDH_BrainpoolP512 =>
-            {
-                Err(Error::UnsupportedPublicKeyAlgorithm(pk).into())
-            }
+            MLKEM768_ECDH_NISTP384 => Ok(SecretKeyMaterial::MLKEM768_ECDH_NISTP384 {
+                ecdh: arbitrarize(g, vec![0; 48]).into(),
+                mlkem: arbitrarize(g, vec![0; 64]).into(),
+            }),
+
+            MLKEM1024_ECDH_NISTP521 => Ok(SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 {
+                ecdh: arbitrarize(g, vec![0; 66]).into(),
+                mlkem: arbitrarize(g, vec![0; 64]).into(),
+            }),
+
+            MLKEM768_ECDH_BrainpoolP384 => Ok(SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: arbitrarize(g, vec![0; 48]).into(),
+                mlkem: arbitrarize(g, vec![0; 64]).into(),
+            }),
+
+            MLKEM1024_ECDH_BrainpoolP512 => Ok(SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: arbitrarize(g, vec![0; 64]).into(),
+                mlkem: arbitrarize(g, vec![0; 64]).into(),
+            }),
 
             Private(_) | Unknown(_) =>
                 Err(Error::UnsupportedPublicKeyAlgorithm(pk).into()),
@@ -1630,6 +2042,54 @@ pub enum Ciphertext {
         esk: Box<[u8]>,
     },
 
+    /// Composite KEM using ML-KEM-768 and ECDH over NIST P-384.
+    MLKEM768_ECDH_NISTP384 {
+        /// The NIST P-384 ciphertext, an opaque string.
+        ecdh: Box<[u8; 97]>,
+
+        /// The ML-KEM ciphertext, an opaque string.
+        mlkem: Box<[u8; 1088]>,
+
+        /// Symmetrically encrypted session key.
+        esk: Box<[u8]>,
+    },
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over NIST P-521.
+    MLKEM1024_ECDH_NISTP521 {
+        /// The NIST P-521 ciphertext, an opaque string.
+        ecdh: Box<[u8; 133]>,
+
+        /// The ML-KEM ciphertext, an opaque string.
+        mlkem: Box<[u8; 1568]>,
+
+        /// Symmetrically encrypted session key.
+        esk: Box<[u8]>,
+    },
+
+    /// Composite KEM using ML-KEM-768 and ECDH over brainpoolP384r1.
+    MLKEM768_ECDH_BrainpoolP384 {
+        /// The brainpoolP384r1 ciphertext, an opaque string.
+        ecdh: Box<[u8; 97]>,
+
+        /// The ML-KEM ciphertext, an opaque string.
+        mlkem: Box<[u8; 1088]>,
+
+        /// Symmetrically encrypted session key.
+        esk: Box<[u8]>,
+    },
+
+    /// Composite KEM using ML-KEM-1024 and ECDH over brainpoolP512r1.
+    MLKEM1024_ECDH_BrainpoolP512 {
+        /// The brainpoolP512r1 ciphertext, an opaque string.
+        ecdh: Box<[u8; 129]>,
+
+        /// The ML-KEM ciphertext, an opaque string.
+        mlkem: Box<[u8; 1568]>,
+
+        /// Symmetrically encrypted session key.
+        esk: Box<[u8]>,
+    },
+
     /// Unknown number of MPIs for an unknown algorithm.
     Unknown {
         /// The successfully parsed MPIs.
@@ -1686,6 +2146,34 @@ impl fmt::Debug for Ciphertext {
                 .field("esk", &hex::encode(esk))
                 .finish(),
 
+            Ciphertext::MLKEM768_ECDH_NISTP384 { ecdh, mlkem, esk } =>
+                f.debug_struct("MLKEM768_ECDH_NISTP384")
+                .field("ecdh", &hex::encode(&ecdh[..]))
+                .field("mlkem", &hex::encode(&mlkem[..]))
+                .field("esk", &hex::encode(esk))
+                .finish(),
+
+            Ciphertext::MLKEM1024_ECDH_NISTP521 { ecdh, mlkem, esk } =>
+                f.debug_struct("MLKEM1024_ECDH_NISTP521")
+                .field("ecdh", &hex::encode(&ecdh[..]))
+                .field("mlkem", &hex::encode(&mlkem[..]))
+                .field("esk", &hex::encode(esk))
+                .finish(),
+
+            Ciphertext::MLKEM768_ECDH_BrainpoolP384 { ecdh, mlkem, esk } =>
+                f.debug_struct("MLKEM768_ECDH_BrainpoolP384")
+                .field("ecdh", &hex::encode(&ecdh[..]))
+                .field("mlkem", &hex::encode(&mlkem[..]))
+                .field("esk", &hex::encode(esk))
+                .finish(),
+
+            Ciphertext::MLKEM1024_ECDH_BrainpoolP512 { ecdh, mlkem, esk } =>
+                f.debug_struct("MLKEM1024_ECDH_BrainpoolP512")
+                .field("ecdh", &hex::encode(&ecdh[..]))
+                .field("mlkem", &hex::encode(&mlkem[..]))
+                .field("esk", &hex::encode(esk))
+                .finish(),
+
             Ciphertext::Unknown { mpis, rest } =>
                 f.debug_struct("Unknown")
                 .field("mpis", mpis)
@@ -1713,6 +2201,10 @@ impl Ciphertext {
             X448 { .. } => Some(PublicKeyAlgorithm::X448),
             MLKEM768_X25519 { .. } => Some(PublicKeyAlgorithm::MLKEM768_X25519),
             MLKEM1024_X448 { .. } => Some(PublicKeyAlgorithm::MLKEM1024_X448),
+            MLKEM768_ECDH_NISTP384 { .. } => Some(PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384),
+            MLKEM1024_ECDH_NISTP521 { .. } => Some(PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521),
+            MLKEM768_ECDH_BrainpoolP384 { .. } => Some(PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384),
+            MLKEM1024_ECDH_BrainpoolP512 { .. } => Some(PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512),
             Unknown { .. } => None,
         }
     }
@@ -1729,7 +2221,7 @@ impl Arbitrary for Ciphertext {
     fn arbitrary(g: &mut Gen) -> Self {
         use crate::arbitrary_helper::gen_arbitrary_from_range;
 
-        match gen_arbitrary_from_range(0..7, g) {
+        match gen_arbitrary_from_range(0..11, g) {
             0 => Ciphertext::RSA {
                 c: MPI::arbitrary(g),
             },
@@ -1778,6 +2270,46 @@ impl Arbitrary for Ciphertext {
 
             6 => Ciphertext::MLKEM1024_X448 {
                 ecdh: Box::new(arbitrarize(g, [0; 56])),
+                mlkem: Box::new(arbitrarize(g, [0; 1568])),
+                esk: {
+                    let mut k = <Vec<u8>>::arbitrary(g);
+                    k.truncate(255);
+                    k.into_boxed_slice()
+                },
+            },
+
+            7 => Ciphertext::MLKEM768_ECDH_NISTP384 {
+                ecdh: Box::new(arbitrarize(g, [0; 97])),
+                mlkem: Box::new(arbitrarize(g, [0; 1088])),
+                esk: {
+                    let mut k = <Vec<u8>>::arbitrary(g);
+                    k.truncate(255);
+                    k.into_boxed_slice()
+                },
+            },
+
+            8 => Ciphertext::MLKEM1024_ECDH_NISTP521 {
+                ecdh: Box::new(arbitrarize(g, [0; 133])),
+                mlkem: Box::new(arbitrarize(g, [0; 1568])),
+                esk: {
+                    let mut k = <Vec<u8>>::arbitrary(g);
+                    k.truncate(255);
+                    k.into_boxed_slice()
+                },
+            },
+
+            9 => Ciphertext::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: Box::new(arbitrarize(g, [0; 97])),
+                mlkem: Box::new(arbitrarize(g, [0; 1088])),
+                esk: {
+                    let mut k = <Vec<u8>>::arbitrary(g);
+                    k.truncate(255);
+                    k.into_boxed_slice()
+                },
+            },
+
+            10 => Ciphertext::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: Box::new(arbitrarize(g, [0; 129])),
                 mlkem: Box::new(arbitrarize(g, [0; 1568])),
                 esk: {
                     let mut k = <Vec<u8>>::arbitrary(g);
@@ -1869,6 +2401,42 @@ pub enum Signature {
         mldsa: Box<[u8; 4627]>,
     },
 
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over NIST P-384.
+    MLDSA65_ECDSA_NISTP384 {
+        /// The ECDSA signature, an opaque string.
+        ecdsa: Box<[u8; 96]>,
+
+        /// The ML-DSA signature, an opaque string.
+        mldsa: Box<[u8; 3309]>,
+    },
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over NIST P-521.
+    MLDSA87_ECDSA_NISTP521 {
+        /// The ECDSA signature, an opaque string.
+        ecdsa: Box<[u8; 132]>,
+
+        /// The ML-DSA signature, an opaque string.
+        mldsa: Box<[u8; 4627]>,
+    },
+
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over brainpoolP384r1.
+    MLDSA65_ECDSA_BrainpoolP384 {
+        /// The ECDSA signature, an opaque string.
+        ecdsa: Box<[u8; 96]>,
+
+        /// The ML-DSA signature, an opaque string.
+        mldsa: Box<[u8; 3309]>,
+    },
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over brainpoolP512r1.
+    MLDSA87_ECDSA_BrainpoolP512 {
+        /// The ECDSA signature, an opaque string.
+        ecdsa: Box<[u8; 128]>,
+
+        /// The ML-DSA signature, an opaque string.
+        mldsa: Box<[u8; 4627]>,
+    },
+
     /// SLH-DSA-SHAKE-128s signature.
     SLHDSA128s {
         /// The signature, an opaque string.
@@ -1951,6 +2519,30 @@ impl fmt::Debug for Signature {
                 .field("mldsa", &hex::encode(&mldsa[..]))
                 .finish(),
 
+            Signature::MLDSA65_ECDSA_NISTP384 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA65_ECDSA_NISTP384")
+                .field("ecdsa", &hex::encode(&ecdsa[..]))
+                .field("mldsa", &hex::encode(&mldsa[..]))
+                .finish(),
+
+            Signature::MLDSA87_ECDSA_NISTP521 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA87_ECDSA_NISTP521")
+                .field("ecdsa", &hex::encode(&ecdsa[..]))
+                .field("mldsa", &hex::encode(&mldsa[..]))
+                .finish(),
+
+            Signature::MLDSA65_ECDSA_BrainpoolP384 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA65_ECDSA_BrainpoolP384")
+                .field("ecdsa", &hex::encode(&ecdsa[..]))
+                .field("mldsa", &hex::encode(&mldsa[..]))
+                .finish(),
+
+            Signature::MLDSA87_ECDSA_BrainpoolP512 { ecdsa, mldsa } =>
+                f.debug_struct("MLDSA87_ECDSA_BrainpoolP512")
+                .field("ecdsa", &hex::encode(&ecdsa[..]))
+                .field("mldsa", &hex::encode(&mldsa[..]))
+                .finish(),
+
             Signature::SLHDSA128s { sig } =>
                 f.debug_struct("SLHDSA128s")
                 .field("sig", &hex::encode(sig.as_ref()))
@@ -1986,7 +2578,7 @@ impl Arbitrary for Signature {
     fn arbitrary(g: &mut Gen) -> Self {
         use crate::arbitrary_helper::gen_arbitrary_from_range;
 
-        match gen_arbitrary_from_range(0..8, g) {
+        match gen_arbitrary_from_range(0..12, g) {
             0 => Signature::RSA  {
                 s: MPI::arbitrary(g),
             },
@@ -2021,6 +2613,26 @@ impl Arbitrary for Signature {
 
             7 => Signature::MLDSA87_Ed448  {
                 eddsa: Box::new(arbitrarize(g, [0; 114])),
+                mldsa: Box::new(arbitrarize(g, [0; 4627])),
+            },
+
+            8 => Signature::MLDSA65_ECDSA_NISTP384  {
+                ecdsa: Box::new(arbitrarize(g, [0; 96])),
+                mldsa: Box::new(arbitrarize(g, [0; 3309])),
+            },
+
+            9 => Signature::MLDSA87_ECDSA_NISTP521  {
+                ecdsa: Box::new(arbitrarize(g, [0; 132])),
+                mldsa: Box::new(arbitrarize(g, [0; 4627])),
+            },
+
+            10 => Signature::MLDSA65_ECDSA_BrainpoolP384  {
+                ecdsa: Box::new(arbitrarize(g, [0; 96])),
+                mldsa: Box::new(arbitrarize(g, [0; 3309])),
+            },
+
+            11 => Signature::MLDSA87_ECDSA_BrainpoolP512  {
+                ecdsa: Box::new(arbitrarize(g, [0; 128])),
                 mldsa: Box::new(arbitrarize(g, [0; 4627])),
             },
 
@@ -2129,6 +2741,15 @@ mod tests {
                     Signature::parse(MLDSA65_Ed25519, cur).unwrap(),
                 Signature::MLDSA87_Ed448 { .. } =>
                     Signature::parse(MLDSA87_Ed448, cur).unwrap(),
+
+                Signature::MLDSA65_ECDSA_NISTP384 { .. } =>
+                    Signature::parse(MLDSA65_ECDSA_NISTP384, cur).unwrap(),
+                Signature::MLDSA87_ECDSA_NISTP521 { .. } =>
+                    Signature::parse(MLDSA87_ECDSA_NISTP521, cur).unwrap(),
+                Signature::MLDSA65_ECDSA_BrainpoolP384 { .. } =>
+                    Signature::parse(MLDSA65_ECDSA_BrainpoolP384, cur).unwrap(),
+                Signature::MLDSA87_ECDSA_BrainpoolP512 { .. } =>
+                    Signature::parse(MLDSA87_ECDSA_BrainpoolP512, cur).unwrap(),
 
                 Signature::SLHDSA128s { .. } =>
                     Signature::parse(SLHDSA128s, cur).unwrap(),
