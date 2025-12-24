@@ -328,6 +328,12 @@ pub trait SerializeInto : MarshalInto {
     }
 
     /// Serializes the packet to a vector.
+    ///
+    /// # Errors
+    ///
+    /// If the packet isn't understood by sequoia, it can't be
+    /// serialized. For example if the packet came from
+    /// deserialization of user supplied data.
     fn to_vec(&self) -> Result<Vec<u8>> {
         MarshalInto::to_vec(self)
     }
@@ -416,6 +422,12 @@ pub trait MarshalInto : seal::Sealed {
     fn serialize_into(&self, buf: &mut [u8]) -> Result<usize>;
 
     /// Serializes the packet to a vector.
+    ///
+    /// # Errors
+    ///
+    /// If the packet isn't understood by sequoia, it can't be
+    /// serialized. For example if the packet came from
+    /// deserialization of user supplied data.
     fn to_vec(&self) -> Result<Vec<u8>> {
         let mut o = vec![0; self.serialized_len()];
         let len = self.serialize_into(&mut o[..])?;
