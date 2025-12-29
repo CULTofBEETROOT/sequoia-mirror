@@ -498,6 +498,114 @@ where R: KeyRole,
         })
     }
 
+    /// Creates an OpenPGP public key packet from existing ML-DSA-65
+    /// and ECDSA NIST P-384 key material.
+    ///
+    /// Note: in OpenPGP, ML-DSA keys are composite keys and include
+    /// an ECDSA key to provide a pre-quantum security fallback.
+    ///
+    /// The ML-DSA-65 public key must be exactly 1952 bytes.  The
+    /// ECDSA NIST P-384 public key must be exactly 97 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mldsa65_ecdsa_nistp384<T>(
+        mldsa: &[u8], ecdsa: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384,
+                              mpi::PublicKey::MLDSA65_ECDSA_NISTP384 {
+                                  ecdsa: Box::new(ecdsa.try_into()?),
+                                  mldsa: Box::new(mldsa.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing ML-DSA-87
+    /// and ECDSA NIST P-521 key material.
+    ///
+    /// Note: in OpenPGP, ML-DSA keys are composite keys and include
+    /// an ECDSA key to provide a pre-quantum security fallback.
+    ///
+    /// The ML-DSA-87 public key must be exactly 2592 bytes.  The
+    /// ECDSA NIST P-521 public key must be exactly 133 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mldsa87_ecdsa_nistp521<T>(
+        mldsa: &[u8], ecdsa: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521,
+                              mpi::PublicKey::MLDSA87_ECDSA_NISTP521 {
+                                  ecdsa: Box::new(ecdsa.try_into()?),
+                                  mldsa: Box::new(mldsa.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing ML-DSA-65
+    /// and ECDSA brainpoolP384r1 key material.
+    ///
+    /// Note: in OpenPGP, ML-DSA keys are composite keys and include
+    /// an ECDSA key to provide a pre-quantum security fallback.
+    ///
+    /// The ML-DSA-65 public key must be exactly 1952 bytes.  The
+    /// ECDSA brainpoolP384r1 public key must be exactly 97 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mldsa65_ecdsa_brainpoolp384<T>(
+        mldsa: &[u8], ecdsa: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+                              mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384 {
+                                  ecdsa: Box::new(ecdsa.try_into()?),
+                                  mldsa: Box::new(mldsa.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing ML-DSA-87
+    /// and ECDSA brainpoolP512r1 key material.
+    ///
+    /// Note: in OpenPGP, ML-DSA keys are composite keys and include
+    /// an ECDSA key to provide a pre-quantum security fallback.
+    ///
+    /// The ML-DSA-87 public key must be exactly 2592 bytes.  The
+    /// ECDSA brainpoolP512r1 public key must be exactly 129 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mldsa87_ecdsa_brainpoolp512<T>(
+        mldsa: &[u8], ecdsa: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+                              mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512 {
+                                  ecdsa: Box::new(ecdsa.try_into()?),
+                                  mldsa: Box::new(mldsa.try_into()?),
+                              })?,
+        })
+    }
+
     /// Creates an OpenPGP public key packet from existing
     /// SLH-DSA-128s key material.
     ///
@@ -1137,6 +1245,10 @@ mod tests {
             })).chain([
                 (PublicKeyAlgorithm::MLDSA65_Ed25519, Key6::generate_mldsa65_ed25519 as fn() -> Result<_>),
                 (PublicKeyAlgorithm::MLDSA87_Ed448, Key6::generate_mldsa87_ed448),
+                (PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384, Key6::generate_mldsa65_ecdsa_nistp384),
+                (PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521, Key6::generate_mldsa87_ecdsa_nistp521),
+                (PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384, Key6::generate_mldsa65_ecdsa_brainpoolp384),
+                (PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512, Key6::generate_mldsa87_ecdsa_brainpoolp512),
                 (PublicKeyAlgorithm::SLHDSA128s, Key6::generate_slhdsa128s),
                 (PublicKeyAlgorithm::SLHDSA128f, Key6::generate_slhdsa128f),
                 (PublicKeyAlgorithm::SLHDSA256s, Key6::generate_slhdsa256s),
@@ -1376,7 +1488,7 @@ JC6thFQ9+JWj
         if PublicKeyAlgorithm::MLDSA65_Ed25519.is_supported() {
             let key: Key6<SecretParts, UnspecifiedRole>
                 = Key6::generate_mldsa65_ed25519()
-                .expect("failed to generate MLDSA65 key, but it is supported.");
+                .expect("failed to generate MLDSA65+Ed25519 key, but it is supported.");
 
             assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA65_Ed25519);
             let creation_time = key.creation_time();
@@ -1385,7 +1497,7 @@ JC6thFQ9+JWj
                 eddsa,
                 mldsa,
             } = &mpis else {
-                panic!("Key generate generated the wrong key");
+                panic!("Key generate MLDSA65+Ed25519 generated the wrong key");
             };
 
             let imported_key = Key6::import_public_mldsa65_ed25519(
@@ -1398,7 +1510,7 @@ JC6thFQ9+JWj
         if PublicKeyAlgorithm::MLDSA87_Ed448.is_supported() {
             let key: Key6<SecretParts, UnspecifiedRole>
                 = Key6::generate_mldsa87_ed448()
-                .expect("failed to generate MLDSA87 key, but it is supported.");
+                .expect("failed to generate MLDSA87+Ed448 key, but it is supported.");
 
             assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA87_Ed448);
             let creation_time = key.creation_time();
@@ -1407,11 +1519,99 @@ JC6thFQ9+JWj
                 eddsa,
                 mldsa,
             } = &mpis else {
-                panic!("Key generate generated the wrong key");
+                panic!("Key generate MLDSA87+Ed448 generated the wrong key");
             };
 
             let imported_key = Key6::import_public_mldsa87_ed448(
                 &mldsa[..], &eddsa[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mldsa65_ecdsa_nistp384()
+                .expect("failed to generate MLDSA65+ECDSA-NISTP384 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLDSA65_ECDSA_NISTP384 {
+                ecdsa,
+                mldsa,
+            } = &mpis else {
+                panic!("Key generate MLDSA65+ECDSA-NISTP384 generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mldsa65_ecdsa_nistp384(
+                &mldsa[..], &ecdsa[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mldsa87_ecdsa_nistp521()
+                .expect("failed to generate MLDSA87+ECDSA-NISTP521 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLDSA87_ECDSA_NISTP521 {
+                ecdsa,
+                mldsa,
+            } = &mpis else {
+                panic!("Key generate MLDSA87+ECDSA-NISTP521 generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mldsa87_ecdsa_nistp521(
+                &mldsa[..], &ecdsa[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mldsa65_ecdsa_brainpoolp384()
+                .expect("failed to generate MLDSA65+ECDSA-BrainpoolP384 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa,
+                mldsa,
+            } = &mpis else {
+                panic!("Key generate MLDSA65+ECDSA-BrainpoolP384 generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mldsa65_ecdsa_brainpoolp384(
+                &mldsa[..], &ecdsa[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mldsa87_ecdsa_brainpoolp512()
+                .expect("failed to generate MLDSA87+ECDSA-BrainpoolP512 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa,
+                mldsa,
+            } = &mpis else {
+                panic!("Key generate MLDSA87+ECDSA-BrainpoolP512 generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mldsa87_ecdsa_brainpoolp512(
+                &mldsa[..], &ecdsa[..], creation_time)
                 .expect("Can import key");
 
             assert_eq!(key.parts_into_public(), imported_key);
