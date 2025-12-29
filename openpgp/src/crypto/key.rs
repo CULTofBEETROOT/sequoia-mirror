@@ -72,6 +72,133 @@ impl<R> Key6<SecretParts, R>
             }.into())
     }
 
+    /// Generates a new MLDSA65+ECDSA-NISTP384 key.
+    pub fn generate_mldsa65_ecdsa_nistp384() -> Result<Self> {
+        let ecdsa = Self::generate_ecc(true, Curve::NistP384)?;
+
+        let mpi::PublicKey::ECDSA { q, .. } = ecdsa.mpis() else { unreachable!() };
+        let ecdsa_public: Box<[u8; 97]> = Box::new(q.value().try_into().unwrap());
+
+        let ecdsa_secret = match ecdsa.secret() {
+            key::SecretKeyMaterial::Unencrypted(m) => m.map(|mpis| match mpis {
+                mpi::SecretKeyMaterial::ECDSA { scalar } => scalar.value_padded(48),
+                o => panic!("unexpected key material: {:?}", o),
+            }),
+            o => panic!("expected unencrypted material: {:?}", o),
+        };
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa65_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384,
+            mpi::PublicKey::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLDSA87+ECDSA-NISTP521 key.
+    pub fn generate_mldsa87_ecdsa_nistp521() -> Result<Self> {
+        let ecdsa = Self::generate_ecc(true, Curve::NistP521)?;
+
+        let mpi::PublicKey::ECDSA { q, .. } = ecdsa.mpis() else { unreachable!() };
+        let ecdsa_public: Box<[u8; 133]> = Box::new(q.value().try_into().unwrap());
+
+        let ecdsa_secret = match ecdsa.secret() {
+            key::SecretKeyMaterial::Unencrypted(m) => m.map(|mpis| match mpis {
+                mpi::SecretKeyMaterial::ECDSA { scalar } => scalar.value_padded(66),
+                o => panic!("unexpected key material: {:?}", o),
+            }),
+            o => panic!("expected unencrypted material: {:?}", o),
+        };
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa87_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521,
+            mpi::PublicKey::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+    /// Generates a new MLDSA65+ECDSA-BrainpoolP384 key.
+    pub fn generate_mldsa65_ecdsa_brainpoolp384() -> Result<Self> {
+        let ecdsa = Self::generate_ecc(true, Curve::BrainpoolP384)?;
+
+        let mpi::PublicKey::ECDSA { q, .. } = ecdsa.mpis() else { unreachable!() };
+        let ecdsa_public: Box<[u8; 97]> = Box::new(q.value().try_into().unwrap());
+
+        let ecdsa_secret = match ecdsa.secret() {
+            key::SecretKeyMaterial::Unencrypted(m) => m.map(|mpis| match mpis {
+                mpi::SecretKeyMaterial::ECDSA { scalar } => scalar.value_padded(48),
+                o => panic!("unexpected key material: {:?}", o),
+            }),
+            o => panic!("expected unencrypted material: {:?}", o),
+        };
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa65_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+            mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLDSA87+ECDSA-BrainpoolP512 key.
+    pub fn generate_mldsa87_ecdsa_brainpoolp512() -> Result<Self> {
+        let ecdsa = Self::generate_ecc(true, Curve::BrainpoolP512)?;
+
+        let mpi::PublicKey::ECDSA { q, .. } = ecdsa.mpis() else { unreachable!() };
+        let ecdsa_public: Box<[u8; 129]> = Box::new(q.value().try_into().unwrap());
+
+        let ecdsa_secret = match ecdsa.secret() {
+            key::SecretKeyMaterial::Unencrypted(m) => m.map(|mpis| match mpis {
+                mpi::SecretKeyMaterial::ECDSA { scalar } => scalar.value_padded(64),
+                o => panic!("unexpected key material: {:?}", o),
+            }),
+            o => panic!("expected unencrypted material: {:?}", o),
+        };
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa87_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+            mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
     /// Generates a new SLHDSA128s key.
     pub fn generate_slhdsa128s() -> Result<Self> {
         let (secret, public) = Backend::slhdsa128s_generate_key()?;
