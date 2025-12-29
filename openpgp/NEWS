@@ -46,6 +46,14 @@
    - policy::AsymmetricAlgorithm::MLKEM1024_ECDH_NISTP521,
    - policy::AsymmetricAlgorithm::MLKEM768_ECDH_BrainpoolP384,
    - policy::AsymmetricAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
+   - Key6::generate_mldsa65_ecdsa_nistp384
+   - Key6::generate_mldsa87_ecdsa_nistp521
+   - Key6::generate_mldsa65_ecdsa_brainpoolp384
+   - Key6::generate_mldsa87_ecdsa_brainpoolp512
+   - Key6::import_public_mldsa65_ecdsa_nistp384
+   - Key6::import_public_mldsa87_ecdsa_nistp521
+   - Key6::import_public_mldsa65_ecdsa_brainpoolp384
+   - Key6::import_public_mldsa87_ecdsa_brainpoolp512
 
 * Changes in 2.4.1
 ** Notable fixes
