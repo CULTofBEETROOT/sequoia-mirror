@@ -4525,4 +4525,105 @@ xHUDBRY0WIQ+50WENDPP";
         }
         Ok(())
     }
+
+    // Check that the `signature` over `data` can be verified using
+    // `cert`.
+    fn check_decrypt_verify_message(message: &str, key: &str, signer: &str,
+                                    plaintext: &[u8])
+        -> Result<()>
+    {
+        eprintln!("Test vector:\n\
+                   Message: {}\n\
+                   Key:     {}\n\
+                   Signer:  {}",
+                  message, key, signer);
+
+        let key = Cert::from_bytes(crate::tests::file(key))?;
+        eprintln!("Key: {:?}", key.fingerprint());
+        assert!(key.is_tsk());
+
+        let signer = Cert::from_bytes(crate::tests::file(signer))?;
+        eprintln!("Signer: {:?}", signer.fingerprint());
+
+        if let Some(unknown) = key.keys().find_map(|ka| {
+            if ka.key().pk_algo().is_supported() {
+                None
+            } else {
+                Some(ka.key().pk_algo())
+            }
+        })
+        {
+            eprintln!("Decryption key {}: {} is not supported, skipping.",
+                      key.fingerprint(), unknown);
+            return Ok(());
+        }
+
+        if let Some(unknown) = signer.keys().find_map(|ka| {
+            if ka.key().pk_algo().is_supported() {
+                None
+            } else {
+                Some(ka.key().pk_algo())
+            }
+        })
+        {
+            eprintln!("Signing key {}: {} is not supported, skipping.",
+                      signer.fingerprint(), unknown);
+            return Ok(());
+        }
+
+        let h = VHelper::for_decryption(0, 0, 0, 0,
+                                        vec![signer.clone()],
+                                        vec![key.clone()],
+                                        vec![]);
+        let p = &P::new();
+        let mut d = DecryptorBuilder::from_bytes(crate::tests::file(message))?
+            .with_policy(p, None, h)?;
+        assert!(d.message_processed());
+
+        let mut content = Vec::new();
+        d.read_to_end(&mut content).unwrap();
+        assert_eq!(&content, plaintext);
+
+        let h = d.into_helper();
+        assert_eq!(h.good, 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn check_decrypt_verify_messages() -> Result<()> {
+        let test_vectors = vec![
+            // ietf draft test vectors
+            (
+                "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-brainpoolp384-with-mlkem768-ecdh-brainpoolp384-sample-message.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-brainpoolp384-with-mlkem768-ecdh-brainpoolp384-sample-sk.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-brainpoolp384-with-mlkem768-ecdh-brainpoolp384-sample-pk.pgp",
+                b"Testing\n",
+            ),
+            (
+                "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-nistp384-with-mlkem768-ecdh-nistp384-sample-message.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-nistp384-with-mlkem768-ecdh-nistp384-sample-sk.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-nistp384-with-mlkem768-ecdh-nistp384-sample-pk.pgp",
+                b"Testing\n",
+            ),
+            (
+                "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-brainpoolp512-with-mlkem1024-ecdh-brainpoolp512-sample-message.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-brainpoolp512-with-mlkem1024-ecdh-brainpoolp512-sample-sk.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-brainpoolp512-with-mlkem1024-ecdh-brainpoolp512-sample-pk.pgp",
+                b"Testing\n",
+            ),
+            (
+                "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-nistp521-with-mlkem1024-ecdh-nistp521-sample-message.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-nistp521-with-mlkem1024-ecdh-nistp521-sample-sk.pgp",
+                "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-nistp521-with-mlkem1024-ecdh-nistp521-sample-pk.pgp",
+                b"Testing\n",
+            ),
+        ];
+
+        for (message, key, signer, plaintext) in test_vectors {
+            check_decrypt_verify_message(message, key, signer, plaintext)
+                .expect("Can decrypt and verify");
+        }
+        Ok(())
+    }
 }
