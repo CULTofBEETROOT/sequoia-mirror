@@ -1855,6 +1855,146 @@ impl<P, R> Key<P, R>
                     self.mpis())).into())
             },
 
+            MLKEM768_ECDH_NISTP384 => if let mpi::PublicKey::MLKEM768_ECDH_NISTP384 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::NistP384)?;
+                let ecdh_ciphertext: [u8; 97] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::NistP384, &ecdh_secret, ecdh_public.as_ref())?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem768_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM768_ECDH_NISTP384 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM768_ECDSA_NISTP384 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM1024_ECDH_NISTP521 => if let mpi::PublicKey::MLKEM1024_ECDH_NISTP521 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::NistP521)?;
+                let ecdh_ciphertext: [u8; 133] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::NistP521, &ecdh_secret, ecdh_public.as_ref())?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem1024_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM1024_ECDH_NISTP521 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM1024_ECDSA_NISTP521 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 => if let mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::BrainpoolP384)?;
+                let ecdh_ciphertext: [u8; 97] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::BrainpoolP384, &ecdh_secret, ecdh_public.as_ref())?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem768_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM768_ECDH_BrainpoolP384 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM768_ECDH_BrainpoolP384 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 => if let mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::BrainpoolP512)?;
+                let ecdh_ciphertext: [u8; 129] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::BrainpoolP512, &ecdh_secret, ecdh_public.as_ref())?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem1024_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM1024_ECDH_BrainpoolP512 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM1024_ECDH_BrainpoolP512 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
             RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448
                 | MLDSA65_Ed25519 | MLDSA87_Ed448
                 | MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521
@@ -1891,10 +2031,6 @@ impl<P, R> Key<P, R>
             ElGamalEncrypt | ElGamalEncryptSign |
             ECDH |
             Private(_) | Unknown(_) => self.encrypt_backend(data),
-
-            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 |
-            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 =>
-            Err(Error::UnsupportedPublicKeyAlgorithm(self.pk_algo()).into()),
         }
     }
 
