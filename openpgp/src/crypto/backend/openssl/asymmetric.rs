@@ -291,6 +291,47 @@ impl Asymmetric for super::Backend {
         Ok(shared)
     }
 
+    fn ecdh_generate_key(curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        let ctx = super::context();
+
+        let key = EvpPkey::generate(&ctx, (&curve).try_into()?)?;
+        match key.export()? {
+            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) =>
+                Ok((prikey.as_ref().ok_or_else(not_set)?.into(),
+                    pubkey.as_ref().ok_or_else(not_set)?.clone().into_boxed_slice(),)),
+
+            _ => Err(wrong_key()),
+        }
+    }
+
+    fn ecdh_shared_point(curve: Curve, secret: &Protected, public: &[u8])
+        -> Result<Protected>
+    {
+        let ctx = super::context();
+        let ty: EvpPkeyType = (&curve).try_into()?;
+
+        let mut public = EvpPkey::import(
+            &ctx, ty.clone(),
+            PkeyData::Ecc(EccData {
+                pubkey: Some(public.to_vec()),
+                prikey: None,
+            })
+        )?;
+
+        let mut secret = EvpPkey::import(
+            &ctx, ty,
+            PkeyData::Ecc(EccData {
+                pubkey: None,
+                prikey: Some(secret.into()),
+            })
+        )?;
+
+        let mut deriver = ossl::derive::EcdhDerive::new(&ctx, &mut secret)?;
+        let mut shared: Protected = vec![0; curve.field_size()?].into();
+        deriver.derive(&mut public, &mut shared)?;
+        Ok(shared)
+    }
+
     fn ed25519_generate_key() -> Result<(Protected, [u8; 32])> {
         let ctx = super::context();
 
