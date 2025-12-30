@@ -82,7 +82,11 @@ pub trait Asymmetric {
     }
 
     /// Computes the ECDH shared point for `curve`.
-    fn ecdh_shared_point(_curve: Curve, _secret: &Protected, _public: &[u8],) -> Result<Protected> {
+    fn ecdh_shared_point(
+        _curve: Curve,
+        _secret: &Protected,
+        _public: &[u8],
+    ) -> Result<Protected> {
         Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDH).into())
     }
 

@@ -1864,7 +1864,10 @@ impl<P, R> Key<P, R>
                 let ecdh_ciphertext: [u8; 97] = ecdh_ciphertext.as_ref().try_into().unwrap();
 
                 let ecdh_keyshare = Backend::ecdh_shared_point(
-                    Curve::NistP384, &ecdh_secret, ecdh_public.as_ref())?;
+                    Curve::NistP384,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
 
                 let (mlkem_ciphertext, mlkem_keyshare) =
                     Backend::mlkem768_encapsulate(mlkem_public)?;
@@ -1899,7 +1902,10 @@ impl<P, R> Key<P, R>
                 let ecdh_ciphertext: [u8; 133] = ecdh_ciphertext.as_ref().try_into().unwrap();
 
                 let ecdh_keyshare = Backend::ecdh_shared_point(
-                    Curve::NistP521, &ecdh_secret, ecdh_public.as_ref())?;
+                    Curve::NistP521,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
 
                 let (mlkem_ciphertext, mlkem_keyshare) =
                     Backend::mlkem1024_encapsulate(mlkem_public)?;
@@ -1934,7 +1940,10 @@ impl<P, R> Key<P, R>
                 let ecdh_ciphertext: [u8; 97] = ecdh_ciphertext.as_ref().try_into().unwrap();
 
                 let ecdh_keyshare = Backend::ecdh_shared_point(
-                    Curve::BrainpoolP384, &ecdh_secret, ecdh_public.as_ref())?;
+                    Curve::BrainpoolP384,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
 
                 let (mlkem_ciphertext, mlkem_keyshare) =
                     Backend::mlkem768_encapsulate(mlkem_public)?;
@@ -1969,7 +1978,10 @@ impl<P, R> Key<P, R>
                 let ecdh_ciphertext: [u8; 129] = ecdh_ciphertext.as_ref().try_into().unwrap();
 
                 let ecdh_keyshare = Backend::ecdh_shared_point(
-                    Curve::BrainpoolP512, &ecdh_secret, ecdh_public.as_ref())?;
+                    Curve::BrainpoolP512,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
 
                 let (mlkem_ciphertext, mlkem_keyshare) =
                     Backend::mlkem1024_encapsulate(mlkem_public)?;
