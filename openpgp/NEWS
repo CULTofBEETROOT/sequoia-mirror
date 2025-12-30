@@ -50,10 +50,18 @@
    - Key6::generate_mldsa87_ecdsa_nistp521
    - Key6::generate_mldsa65_ecdsa_brainpoolp384
    - Key6::generate_mldsa87_ecdsa_brainpoolp512
+   - Key6::generate_mlkem768_ecdh_nistp384
+   - Key6::generate_mlkem1024_ecdh_nistp521
+   - Key6::generate_mlkem768_ecdh_brainpoolp384
+   - Key6::generate_mlkem1024_ecdh_brainpoolp512
    - Key6::import_public_mldsa65_ecdsa_nistp384
    - Key6::import_public_mldsa87_ecdsa_nistp521
    - Key6::import_public_mldsa65_ecdsa_brainpoolp384
    - Key6::import_public_mldsa87_ecdsa_brainpoolp512
+   - Key6::import_public_mlkem768_ecdh_nistp384
+   - Key6::import_public_mlkem1024_ecdh_nistp521
+   - Key6::import_public_mlkem768_ecdh_brainpoolp384
+   - Key6::import_public_mlkem1024_ecdh_brainpoolp512
 
 * Changes in 2.4.1
 ** Notable fixes
