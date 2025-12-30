@@ -74,6 +74,18 @@ pub trait Asymmetric {
         Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::X448).into())
     }
 
+    /// Generates an ECDH key pair for `curve`.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn ecdh_generate_key(_curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDH).into())
+    }
+
+    /// Computes the ECDH shared point for `curve`.
+    fn ecdh_shared_point(_curve: Curve, _secret: &Protected, _public: &[u8],) -> Result<Protected> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDH).into())
+    }
+
     /// Generates an Ed25519 key pair.
     ///
     /// Returns a tuple containing the secret and public key.
