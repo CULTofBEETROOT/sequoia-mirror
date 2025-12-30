@@ -145,8 +145,13 @@ fn classify_pk_algo(algo: PublicKeyAlgorithm, seipdv1: bool)
         PublicKeyAlgorithm::MLKEM768_X25519 =>
             Ok((false, seipdv1, false)),
 
-        // MLKEM1024+X448 must not be used seipv1 packets.
-        a @ PublicKeyAlgorithm::MLKEM1024_X448 =>
+        // Of the PQC algorithms, only MLKEM768+X25519 can be used
+        // with SEIPv1 packets.
+        a @ PublicKeyAlgorithm::MLKEM1024_X448 |
+        a @ PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384 |
+        a @ PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521 |
+        a @ PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384 |
+        a @ PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512 =>
             if seipdv1 {
                 Err(Error::UnsupportedPublicKeyAlgorithm(a).into())
             } else {
@@ -168,10 +173,6 @@ fn classify_pk_algo(algo: PublicKeyAlgorithm, seipdv1: bool)
         a @ PublicKeyAlgorithm::SLHDSA128s |
         a @ PublicKeyAlgorithm::SLHDSA128f |
         a @ PublicKeyAlgorithm::SLHDSA256s |
-        a @ PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384 |
-        a @ PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521 |
-        a @ PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384 |
-        a @ PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512 |
         a @ PublicKeyAlgorithm::Private(_) |
         a @ PublicKeyAlgorithm::Unknown(_) =>
             Err(Error::UnsupportedPublicKeyAlgorithm(a).into()),
