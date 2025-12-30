@@ -618,6 +618,134 @@ impl Decryptor for KeyPair {
                                       esk)?.into())
                 },
 
+                (
+                    mpi::PublicKey::MLKEM768_ECDH_NISTP384 {
+                        ecdh: ecdh_public, ..
+                    },
+                    mpi::SecretKeyMaterial::MLKEM768_ECDH_NISTP384 {
+                        ecdh: ecdh_secret, mlkem: mlkem_secret,
+                    },
+                    mpi::Ciphertext::MLKEM768_ECDH_NISTP384 {
+                        ecdh: ecdh_ciphertext, mlkem: mlkem_ciphertext, esk,
+                    },
+                ) => {
+                    let ecdh_keyshare = Backend::ecdh_shared_point(
+                        Curve::NistP384,
+                        ecdh_secret,
+                        ecdh_ciphertext.as_ref(),
+                    )?;
+
+                    let mlkem_keyshare = Backend::mlkem768_decapsulate(
+                        mlkem_secret, mlkem_ciphertext)?;
+
+                    let kek = multi_key_combine(
+                        &mlkem_keyshare,
+                        &ecdh_keyshare,
+                        ecdh_ciphertext.as_ref(),
+                        ecdh_public.as_ref(),
+                        PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384)?;
+
+                    Ok(aes_key_unwrap(SymmetricAlgorithm::AES256,
+                                      kek.as_protected(),
+                                      esk)?.into())
+                },
+
+                (
+                    mpi::PublicKey::MLKEM1024_ECDH_NISTP521 {
+                        ecdh: ecdh_public, ..
+                    },
+                    mpi::SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 {
+                        ecdh: ecdh_secret, mlkem: mlkem_secret,
+                    },
+                    mpi::Ciphertext::MLKEM1024_ECDH_NISTP521 {
+                        ecdh: ecdh_ciphertext, mlkem: mlkem_ciphertext, esk,
+                    },
+                ) => {
+                    let ecdh_keyshare = Backend::ecdh_shared_point(
+                        Curve::NistP521,
+                        ecdh_secret,
+                        ecdh_ciphertext.as_ref(),
+                    )?;
+
+                    let mlkem_keyshare = Backend::mlkem1024_decapsulate(
+                        mlkem_secret, mlkem_ciphertext)?;
+
+                    let kek = multi_key_combine(
+                        &mlkem_keyshare,
+                        &ecdh_keyshare,
+                        ecdh_ciphertext.as_ref(),
+                        ecdh_public.as_ref(),
+                        PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521)?;
+
+                    Ok(aes_key_unwrap(SymmetricAlgorithm::AES256,
+                                      kek.as_protected(),
+                                      esk)?.into())
+                },
+
+                (
+                    mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 {
+                        ecdh: ecdh_public, ..
+                    },
+                    mpi::SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 {
+                        ecdh: ecdh_secret, mlkem: mlkem_secret,
+                    },
+                    mpi::Ciphertext::MLKEM768_ECDH_BrainpoolP384 {
+                        ecdh: ecdh_ciphertext, mlkem: mlkem_ciphertext, esk,
+                    },
+                ) => {
+                    let ecdh_keyshare = Backend::ecdh_shared_point(
+                        Curve::BrainpoolP384,
+                        ecdh_secret,
+                        ecdh_ciphertext.as_ref(),
+                    )?;
+
+                    let mlkem_keyshare = Backend::mlkem768_decapsulate(
+                        mlkem_secret, mlkem_ciphertext)?;
+
+                    let kek = multi_key_combine(
+                        &mlkem_keyshare,
+                        &ecdh_keyshare,
+                        ecdh_ciphertext.as_ref(),
+                        ecdh_public.as_ref(),
+                        PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384)?;
+
+                    Ok(aes_key_unwrap(SymmetricAlgorithm::AES256,
+                                      kek.as_protected(),
+                                      esk)?.into())
+                },
+
+                (
+                    mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 {
+                        ecdh: ecdh_public, ..
+                    },
+                    mpi::SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 {
+                        ecdh: ecdh_secret, mlkem: mlkem_secret,
+                    },
+                    mpi::Ciphertext::MLKEM1024_ECDH_BrainpoolP512 {
+                        ecdh: ecdh_ciphertext, mlkem: mlkem_ciphertext, esk,
+                    },
+                ) => {
+                    let ecdh_keyshare = Backend::ecdh_shared_point(
+                        Curve::BrainpoolP512,
+                        ecdh_secret,
+                        ecdh_ciphertext.as_ref(),
+                    )?;
+
+                    let mlkem_keyshare = Backend::mlkem1024_decapsulate(
+                        mlkem_secret, mlkem_ciphertext)?;
+
+                    let kek = multi_key_combine(
+                        &mlkem_keyshare,
+                        &ecdh_keyshare,
+                        ecdh_ciphertext.as_ref(),
+                        ecdh_public.as_ref(),
+                        PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512)?;
+
+                    Ok(aes_key_unwrap(SymmetricAlgorithm::AES256,
+                                      kek.as_protected(),
+                                      esk)?.into())
+                },
+
                 (_public, secret, _ciphertext) =>
                     self.decrypt_backend(secret, ciphertext, plaintext_len),
             }
