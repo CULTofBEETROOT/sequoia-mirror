@@ -154,8 +154,8 @@ impl Asymmetric for super::Backend {
             MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512 => false,
             SLHDSA128s | SLHDSA128f | SLHDSA256s => true,
             MLKEM768_X25519 | MLKEM1024_X448 => true,
-            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 => false,
-            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 => false,
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 => true,
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 => true,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
