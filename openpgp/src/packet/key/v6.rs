@@ -720,6 +720,110 @@ where R: KeyRole,
                               })?,
         })
     }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM768 and ECDH with NIST P-384 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an ECDH key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM768 keys must be exactly 1184 bytes, and ECDH NIST P-384 keys
+    /// must be exactly 97 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem768_ecdh_nistp384<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384,
+                              mpi::PublicKey::MLKEM768_ECDH_NISTP384 {
+                                  ecdh: Box::new(ecdh.try_into()?),
+                                  mlkem: Box::new(mlkem.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM1024i and ECDH with NIST P-521 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an ECDH key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM1024 keys must be exactly 1568 bytes, and ECDH NIST P-521 keys must
+    /// be exactly 133 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem1024_ecdh_nistp521<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521,
+                              mpi::PublicKey::MLKEM1024_ECDH_NISTP521 {
+                                  ecdh: Box::new(ecdh.try_into()?),
+                                  mlkem: Box::new(mlkem.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM768 and ECDH with brainpoolP384r1 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an ECDH key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM768 keys must be exactly 1184 bytes, and ECDH brainpoolP384r1 keys
+    /// must be exactly 97 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem768_ecdh_brainpoolp384<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384,
+                              mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 {
+                                  ecdh: Box::new(ecdh.try_into()?),
+                                  mlkem: Box::new(mlkem.try_into()?),
+                              })?,
+        })
+    }
+
+    /// Creates an OpenPGP public key packet from existing
+    /// ML-KEM1024i and ECDH with brainpoolP512r1 key material.
+    ///
+    /// Note: in OpenPGP, ML-KEM keys are composite keys and include
+    /// an ECDH key to provide a pre-quantum security fallback.
+    ///
+    /// ML-KEM1024 keys must be exactly 1568 bytes, and ECDH brainpoolP512r1 keys must
+    /// be exactly 129 bytes.
+    ///
+    /// The key will have its creation date set to `ctime` or the
+    /// current time if `None` is given.
+    pub fn import_public_mlkem1024_ecdh_brainpoolp512<T>(mlkem: &[u8], ecdh: &[u8], ctime: T)
+        -> Result<Self>
+    where
+        T: Into<Option<time::SystemTime>>
+    {
+        Ok(Key6 {
+            common: Key4::new(ctime.into().unwrap_or_else(crate::now),
+                              PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
+                              mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 {
+                                  ecdh: Box::new(ecdh.try_into()?),
+                                  mlkem: Box::new(mlkem.try_into()?),
+                              })?,
+        })
+    }
 }
 
 impl<R> Key6<SecretParts, R>
@@ -1208,6 +1312,10 @@ mod tests {
             })).chain([
                 (PublicKeyAlgorithm::MLKEM768_X25519, Key6::generate_mlkem768_x25519 as fn() -> Result<_>),
                 (PublicKeyAlgorithm::MLKEM1024_X448, Key6::generate_mlkem1024_x448),
+                (PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384, Key6::generate_mlkem768_ecdh_nistp384),
+                (PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521, Key6::generate_mlkem1024_ecdh_nistp521),
+                (PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384, Key6::generate_mlkem768_ecdh_brainpoolp384),
+                (PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512, Key6::generate_mlkem1024_ecdh_brainpoolp512),
             ].into_iter().filter_map(|(algo, gen)| {
                 if algo.is_supported() {
                     Some(gen().expect(&format!("{} is supported", algo)))
@@ -1729,6 +1837,94 @@ JC6thFQ9+JWj
             };
 
             let imported_key = Key6::import_public_mlkem1024_x448(
+                &mlkem[..], &ecdh[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mlkem768_ecdh_nistp384()
+                .expect("failed to generate ML-KEM768+ECDH-NISTP384 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLKEM768_ECDH_NISTP384 {
+                ecdh,
+                mlkem,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mlkem768_ecdh_nistp384(
+                &mlkem[..], &ecdh[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mlkem1024_ecdh_nistp521()
+                .expect("failed to generate ML-KEM1024+ECDH-NISTP521 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLKEM1024_ECDH_NISTP521 {
+                ecdh,
+                mlkem,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mlkem1024_ecdh_nistp521(
+                &mlkem[..], &ecdh[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mlkem768_ecdh_brainpoolp384()
+                .expect("failed to generate ML-KEM768+ECDH-BrainpoolP384 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh,
+                mlkem,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mlkem768_ecdh_brainpoolp384(
+                &mlkem[..], &ecdh[..], creation_time)
+                .expect("Can import key");
+
+            assert_eq!(key.parts_into_public(), imported_key);
+        }
+
+        if PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512.is_supported() {
+            let key: Key6<SecretParts, UnspecifiedRole>
+                = Key6::generate_mlkem1024_ecdh_brainpoolp512()
+                .expect("failed to generate ML-KEM1024+ECDH-BrainpoolP512 key, but it is supported.");
+
+            assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512);
+            let creation_time = key.creation_time();
+            let mpis = key.mpis();
+            let crate::crypto::mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh,
+                mlkem,
+            } = &mpis else {
+                panic!("Key generate generated the wrong key");
+            };
+
+            let imported_key = Key6::import_public_mlkem1024_ecdh_brainpoolp512(
                 &mlkem[..], &ecdh[..], creation_time)
                 .expect("Can import key");
 

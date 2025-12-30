@@ -256,6 +256,94 @@ impl<R> Key6<SecretParts, R>
             }.into())
     }
 
+    /// Generates a new MLKEM768+ECDH-NISTP384 key.
+    pub fn generate_mlkem768_ecdh_nistp384() -> Result<Self> {
+        let (ecdh_secret, ecdh_public) = Backend::ecdh_generate_key(Curve::NistP384)?;
+        let ecdh_public: [u8; 97] = ecdh_public.as_ref().try_into().unwrap();
+
+        let (mlkem_secret, mlkem_public) = Backend::mlkem768_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384,
+            mpi::PublicKey::MLKEM768_ECDH_NISTP384 {
+                ecdh: Box::new(ecdh_public),
+                mlkem: mlkem_public,
+            },
+            mpi::SecretKeyMaterial::MLKEM768_ECDH_NISTP384 {
+                ecdh: ecdh_secret,
+                mlkem: mlkem_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLKEM1024+ECDH-NISTP521 key.
+    pub fn generate_mlkem1024_ecdh_nistp521() -> Result<Self> {
+        let (ecdh_secret, ecdh_public) = Backend::ecdh_generate_key(Curve::NistP521)?;
+        let ecdh_public: [u8; 133] = ecdh_public.as_ref().try_into().unwrap();
+
+        let (mlkem_secret, mlkem_public) = Backend::mlkem1024_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521,
+            mpi::PublicKey::MLKEM1024_ECDH_NISTP521 {
+                ecdh: Box::new(ecdh_public),
+                mlkem: mlkem_public,
+            },
+            mpi::SecretKeyMaterial::MLKEM1024_ECDH_NISTP521 {
+                ecdh: ecdh_secret,
+                mlkem: mlkem_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLKEM768+ECDH-BrainpoolP384 key.
+    pub fn generate_mlkem768_ecdh_brainpoolp384() -> Result<Self> {
+        let (ecdh_secret, ecdh_public) = Backend::ecdh_generate_key(Curve::BrainpoolP384)?;
+        let ecdh_public: [u8; 97] = ecdh_public.as_ref().try_into().unwrap();
+
+        let (mlkem_secret, mlkem_public) = Backend::mlkem768_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384,
+            mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: Box::new(ecdh_public),
+                mlkem: mlkem_public,
+            },
+            mpi::SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: ecdh_secret,
+                mlkem: mlkem_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLKEM1024+ECDH-BrainpoolP512 key.
+    pub fn generate_mlkem1024_ecdh_brainpoolp512() -> Result<Self> {
+        let (ecdh_secret, ecdh_public) = Backend::ecdh_generate_key(Curve::BrainpoolP512)?;
+        let ecdh_public: [u8; 129] = ecdh_public.as_ref().try_into().unwrap();
+
+        let (mlkem_secret, mlkem_public) = Backend::mlkem1024_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
+            mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: Box::new(ecdh_public),
+                mlkem: mlkem_public,
+            },
+            mpi::SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: ecdh_secret,
+                mlkem: mlkem_secret,
+            }
+            .into(),
+        )
+    }
+
     /// Generates a new RSA key with a public modulos of size `bits`.
     pub fn generate_rsa(bits: usize) -> Result<Self> {
         Key4::generate_rsa(bits)
