@@ -128,6 +128,39 @@ pub trait Asymmetric {
         Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::Ed448).into())
     }
 
+    /// Generates an ECDSA key pair for `curve`.
+    ///
+    /// Returns a tuple containing the secret scalar (fixed-width, big-endian)
+    /// and the SEC1-encoded public point.
+    fn ecdsa_generate_key(_curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDSA).into())
+    }
+
+    /// Signs `digest` using ECDSA on `curve` and returns a fixed-width raw signature `r||s`.
+    ///
+    /// The signature components are big-endian and left-padded to the curve's
+    /// adjusted field size (e.g. P-521 => 66 bytes, so output is 132 bytes).
+    fn ecdsa_sign_raw(
+        _curve: Curve,
+        _secret: &Protected,
+        _public: &[u8],
+        _digest: &[u8],
+    ) -> Result<Box<[u8]>> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDSA).into())
+    }
+
+    /// Verifies a fixed-width raw ECDSA signature `r||s` on `digest` using `public`.
+    ///
+    /// Returns `Ok(true)` if valid, `Ok(false)` if invalid.
+    fn ecdsa_verify_raw(
+        _curve: Curve,
+        _public: &[u8],
+        _digest: &[u8],
+        _signature_rs: &[u8],
+    ) -> Result<bool> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDSA).into())
+    }
+
     /// Generates an ML-DSA-65 key pair.
     ///
     /// Returns a tuple containing the secret and public key.

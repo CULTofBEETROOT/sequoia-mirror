@@ -535,6 +535,159 @@ impl Asymmetric for super::Backend {
         Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
     }
 
+    fn ecdsa_generate_key(curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        let ctx = super::context();
+
+        let key = EvpPkey::generate(&ctx, (&curve).try_into()?)?;
+        match key.export()? {
+            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) => {
+                // Public key bytes (SEC1 point bytes).
+                let pubkey = pubkey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .clone()
+                    .into_boxed_slice();
+
+                // Secret scalar must be fixed-length, big-endian, zero-padded to the
+                // curve's adjusted field size (e.g. P-521 => 66 bytes).
+                //
+                // In particular, P-521 field elements are 521 bits but encoded in
+                // 66 bytes (528 bits). The top 7 bits are always zero, and the
+                // remaining bit is zero with probability 1/2, so minimal encodings
+                // frequently drop a leading 0x00 byte unless we pad explicitly.
+                let fixed_len = curve.field_size()?;
+
+                // IMPORTANT: OsslSecret supports AsRef<[u8]> (see openssl.rs).
+                let raw: &[u8] = prikey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .as_ref();
+
+                if raw.len() > fixed_len {
+                    return Err(Error::MalformedPacket(format!(
+                        "ECDSA secret scalar too long: got {} bytes, expected <= {}",
+                        raw.len(),
+                        fixed_len
+                    ))
+                    .into());
+                }
+
+                // Left-pad with zeros (big-endian integer encoding).
+                let mut padded = vec![0u8; fixed_len];
+                padded[fixed_len - raw.len()..].copy_from_slice(raw);
+
+                Ok((padded.into(), pubkey))
+            }
+
+            _ => Err(wrong_key()),
+        }
+    }
+
+    /// Signs `digest` using ECDSA on `curve` and returns a *fixed-width* raw signature `r||s`.
+    /// `r` and `s` are left-padded to the curve's adjusted field size (e.g. P-521 => 66).
+    fn ecdsa_sign_raw(
+        curve: Curve,
+        secret: &Protected,
+        public: &[u8],
+        digest: &[u8],
+    ) -> Result<Box<[u8]>> {
+        let ctx = super::context();
+
+        let field_len = curve.field_size()?;
+        let sig_len = 2 * field_len;
+
+        // SEC1 uncompressed point length check: 0x04 || X(field_len) || Y(field_len)
+        let expected_pub_len = 1 + 2 * field_len;
+        if public.len() != expected_pub_len || public.first().copied() != Some(0x04) {
+            return Err(Error::MalformedPacket("invalid ECDSA public key encoding".into()).into());
+        }
+
+        let mut key = EvpPkey::import(
+            &ctx,
+            (&curve).try_into()?,
+            PkeyData::Ecc(EccData {
+                pubkey: Some(public.to_vec()),
+                prikey: Some(secret.into()),
+            }),
+        )?;
+
+        // OpenSSL returns DER-encoded ECDSA signature (SEQUENCE(INTEGER r, INTEGER s)).
+        let mut signer = OsslSignature::new(&ctx, SigOp::Sign, SigAlg::Ecdsa, &mut key, None)?;
+        let size = signer.sign(digest, None)?;
+        let mut der_sig = vec![0u8; size];
+        let real_size = signer.sign(digest, Some(&mut der_sig))?;
+        crate::vec_truncate(&mut der_sig, real_size);
+
+        // Parse DER -> minimal big-endian r,s.
+        let (r, s) = der::parse_sig_r_s(&der_sig)?;
+
+        // Sanity: r and s must fit into field_len.
+        if r.len() > field_len || s.len() > field_len {
+            return Err(Error::MalformedPacket(format!(
+                "ECDSA signature component too large: r={} s={} field={}",
+                r.len(),
+                s.len(),
+                field_len
+            ))
+            .into());
+        }
+
+        // Fixed-width raw r||s (left-padded, big-endian).
+        // P-521 note: 521-bit field encoded in 66 bytes => leading 0x00 occurs frequently.
+        let mut out = vec![0u8; sig_len];
+        out[field_len - r.len()..field_len].copy_from_slice(r);
+        out[sig_len - s.len()..sig_len].copy_from_slice(s);
+
+        Ok(out.into_boxed_slice())
+    }
+
+    /// Verifies a *fixed-width* raw ECDSA signature `r||s` for the given curve.
+    fn ecdsa_verify_raw(
+        curve: Curve,
+        public: &[u8],
+        digest: &[u8],
+        signature_rs: &[u8],
+    ) -> Result<bool> {
+        let ctx = super::context();
+
+        let field_len = curve.field_size()?;
+        let sig_len = 2 * field_len;
+
+        if signature_rs.len() != sig_len {
+            return Err(Error::BadSignature("invalid ECDSA signature length".into()).into());
+        }
+
+        let mut key = EvpPkey::import(
+            &ctx,
+            (&curve).try_into()?,
+            PkeyData::Ecc(EccData {
+                pubkey: Some(public.to_vec()),
+                prikey: None,
+            }),
+        )?;
+
+        // Split fixed-width raw r||s.
+        let (r_fixed, s_fixed) = signature_rs.split_at(field_len);
+
+        // Convert fixed-width big-endian to minimal big-endian for DER INTEGER encoding.
+        // Keep at least one byte (DER INTEGER cannot be empty).
+        fn trim_leading_zeros(mut x: &[u8]) -> &[u8] {
+            while x.len() > 1 && x[0] == 0 {
+                x = &x[1..];
+            }
+            x
+        }
+        let r_min = trim_leading_zeros(r_fixed);
+        let s_min = trim_leading_zeros(s_fixed);
+
+        // DER-encode R and S (same helper used by the existing MPI-based verifier).
+        let mut der_sig = Vec::new();
+        der::encode_sig_r_s(&mut der_sig, r_min, s_min)?;
+
+        let mut verifier = OsslSignature::new(&ctx, SigOp::Verify, SigAlg::Ecdsa, &mut key, None)?;
+        Ok(verifier.verify(digest, Some(&der_sig)).is_ok())
+    }
+
     fn dsa_generate_key(p_bits: usize)
                         -> Result<(MPI, MPI, MPI, MPI, ProtectedMPI)>
     {
