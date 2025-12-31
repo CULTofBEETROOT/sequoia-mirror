@@ -296,42 +296,105 @@ impl Asymmetric for super::Backend {
 
         let key = EvpPkey::generate(&ctx, (&curve).try_into()?)?;
         match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) =>
-                Ok((prikey.as_ref().ok_or_else(not_set)?.into(),
-                    pubkey.as_ref().ok_or_else(not_set)?.clone().into_boxed_slice(),)),
+            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) => {
+                // Public key bytes (SEC1 point bytes).
+                let pubkey = pubkey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .clone()
+                    .into_boxed_slice();
+
+                // Secret scalar must be fixed-length, big-endian, zero-padded to the
+                // curve's adjusted field size (e.g. P-521 => 66 bytes).
+                //
+                // In particular, P-521 field elements are 521 bits but encoded in
+                // 66 bytes (528 bits). The top 7 bits are always zero, and the
+                // remaining MSB is zero with probability 1/2, so minimal encodings
+                // frequently drop a leading 0x00 byte unless we pad explicitly.
+                let fixed_len = curve.field_size()?;
+
+                // IMPORTANT: OsslSecret supports AsRef<[u8]> (see openssl.rs).
+                let raw: &[u8] = prikey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .as_ref();
+
+                if raw.len() > fixed_len {
+                    return Err(Error::MalformedPacket(format!(
+                        "ECDH secret scalar too long: got {} bytes, expected <= {}",
+                        raw.len(),
+                        fixed_len
+                    ))
+                    .into());
+                }
+
+                // Left-pad with zeros (big-endian integer encoding).
+                let mut padded = vec![0u8; fixed_len];
+                padded[fixed_len - raw.len()..].copy_from_slice(raw);
+
+                Ok((padded.into(), pubkey))
+            }
 
             _ => Err(wrong_key()),
         }
     }
 
-    fn ecdh_shared_point(
-        curve: Curve,
-        secret: &Protected,
-        public: &[u8],
-    ) -> Result<Protected> {
+    fn ecdh_shared_point(curve: Curve, secret: &Protected, public: &[u8]) -> Result<Protected> {
         let ctx = super::context();
         let ty: EvpPkeyType = (&curve).try_into()?;
 
-        let mut public = EvpPkey::import(
-            &ctx, ty.clone(),
+        // Import peer public key (SEC1 point bytes).
+        let mut peer = EvpPkey::import(
+            &ctx,
+            ty.clone(),
             PkeyData::Ecc(EccData {
                 pubkey: Some(public.to_vec()),
                 prikey: None,
-            })
+            }),
         )?;
 
-        let mut secret = EvpPkey::import(
-            &ctx, ty,
+        // Import our private scalar.
+        let mut ours = EvpPkey::import(
+            &ctx,
+            ty,
             PkeyData::Ecc(EccData {
                 pubkey: None,
                 prikey: Some(secret.into()),
-            })
+            }),
         )?;
 
-        let mut deriver = ossl::derive::EcdhDerive::new(&ctx, &mut secret)?;
-        let mut shared: Protected = vec![0; curve.field_size()?].into();
-        deriver.derive(&mut public, &mut shared)?;
-        Ok(shared)
+        let mut deriver = ossl::derive::EcdhDerive::new(&ctx, &mut ours)?;
+
+        // Draft wants: keyshare = X coordinate, fixed-length, big-endian, zero-padded
+        // to adjusted field size (e.g. P-521 => 66 bytes).
+        //
+        // In particular, P-521 field elements are 521 bits but encoded in
+        // 66 bytes (528 bits). The top 7 bits are always zero, and the
+        // remaining MSB is zero with probability 1/2, so minimal encodings
+        // frequently drop a leading 0x00 byte unless we pad explicitly.
+        let fixed_len = curve.field_size()?;
+
+        // derive() returns the number of bytes actually written.
+        // We use that to avoid accidental right-padding when the derived X has leading zeros.
+        let mut tmp = vec![0u8; fixed_len];
+        let written: usize = deriver.derive(&mut peer, &mut tmp)?;
+
+        if written > fixed_len {
+            return Err(Error::MalformedPacket(format!(
+                "ECDH derived value too long: got {} bytes, expected <= {}",
+                written,
+                fixed_len
+            ))
+            .into());
+        }
+
+        tmp.truncate(written);
+
+        // Left-pad to fixed_len (big-endian integer encoding).
+        let mut padded = vec![0u8; fixed_len];
+        padded[fixed_len - tmp.len()..].copy_from_slice(&tmp);
+
+        Ok(padded.into())
     }
 
     fn ed25519_generate_key() -> Result<(Protected, [u8; 32])> {
