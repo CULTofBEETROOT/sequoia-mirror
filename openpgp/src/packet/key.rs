@@ -2125,28 +2125,13 @@ impl<P, R> Key<P, R>
                 => {
                     let mut ok = 0;
 
-                    let raw = ecdsa_sig.as_ref();
-                    if raw.len() != 48 + 48 {
-                        return Err(Error::BadSignature(
-                            "invalid ECDSA signature length".into()
-                        ).into());
-                    }
-
-                    // Split ECDSA raw r||s (48+48) -> MPIs.
-                    let r = mpi::MPI::new(&raw[..48]);
-                    let s = mpi::MPI::new(&raw[48..]);
-                    let ecdsa_sig_mpi = mpi::Signature::ECDSA { r, s };
-
-                    // Generate synthetic ECDSA view of this key.
-                    let mut ecdsa_key = self.clone();
-                    ecdsa_key.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_key.set_mpis(mpi::PublicKey::ECDSA {
-                       curve: Curve::NistP384,
-                       q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-
-                    // Delegate to the backend's ECDSA verifier.
-                    if ecdsa_key.verify_backend(&ecdsa_sig_mpi, hash_algo, digest).is_ok() {
+                    // Fixed-width raw ECDSA signature r||s (48+48), enforced by type: [u8; 96].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::NistP384,
+                        ecdsa_pub.as_ref(),   // &[u8; 97] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 96] -> &[u8]
+                    ) {
                         ok += 1;
                     }
 
@@ -2162,28 +2147,13 @@ impl<P, R> Key<P, R>
                 => {
                     let mut ok = 0;
 
-                    let raw = ecdsa_sig.as_ref();
-                    if raw.len() != 66 + 66 {
-                        return Err(Error::BadSignature(
-                            "invalid ECDSA signature length".into()
-                        ).into());
-                    }
-
-                    // Split ECDSA raw r||s (66+66) -> MPIs.
-                    let r = mpi::MPI::new(&raw[..66]);
-                    let s = mpi::MPI::new(&raw[66..]);
-                    let ecdsa_sig_mpi = mpi::Signature::ECDSA { r, s };
-
-                    // Generate synthetic ECDSA view of this key.
-                    let mut ecdsa_key = self.clone();
-                    ecdsa_key.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_key.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::NistP521,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-
-                    // Delegate to the backend's ECDSA verifier.
-                    if ecdsa_key.verify_backend(&ecdsa_sig_mpi, hash_algo, digest).is_ok() {
+                    // Fixed-width raw ECDSA signature r||s (66+66), enforced by type: [u8; 132].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::NistP521,
+                        ecdsa_pub.as_ref(),   // &[u8; 133] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 132] -> &[u8]
+                    ) {
                         ok += 1;
                     }
 
@@ -2199,28 +2169,13 @@ impl<P, R> Key<P, R>
                 => {
                     let mut ok = 0;
 
-                    let raw = ecdsa_sig.as_ref();
-                    if raw.len() != 48 + 48 {
-                        return Err(Error::BadSignature(
-                            "invalid ECDSA signature length".into()
-                        ).into());
-                    }
-
-                    // Split ECDSA raw r||s (48+48) -> MPIs.
-                    let r = mpi::MPI::new(&raw[..48]);
-                    let s = mpi::MPI::new(&raw[48..]);
-                    let ecdsa_sig_mpi = mpi::Signature::ECDSA { r, s };
-
-                    // Generate synthetic ECDSA view of this key.
-                    let mut ecdsa_key = self.clone();
-                    ecdsa_key.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_key.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::BrainpoolP384,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-
-                    // Delegate to the backend's ECDSA verifier.
-                    if ecdsa_key.verify_backend(&ecdsa_sig_mpi, hash_algo, digest).is_ok() {
+                    // Fixed-width raw ECDSA signature r||s (48+48), enforced by type: [u8; 96].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::BrainpoolP384,
+                        ecdsa_pub.as_ref(),   // &[u8; 97] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 96] -> &[u8]
+                    ) {
                         ok += 1;
                     }
 
@@ -2236,28 +2191,13 @@ impl<P, R> Key<P, R>
                 => {
                     let mut ok = 0;
 
-                    let raw = ecdsa_sig.as_ref();
-                    if raw.len() != 64 + 64 {
-                        return Err(Error::BadSignature(
-                            "invalid ECDSA signature length".into()
-                        ).into());
-                    }
-
-                    // Split ECDSA raw r||s (64+64) -> MPIs.
-                    let r = mpi::MPI::new(&raw[..64]);
-                    let s = mpi::MPI::new(&raw[64..]);
-                    let ecdsa_sig_mpi = mpi::Signature::ECDSA { r, s };
-
-                    // Generate synthetic ECDSA view of this key.
-                    let mut ecdsa_key = self.clone();
-                    ecdsa_key.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_key.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::BrainpoolP512,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-
-                    // Delegate to the backend's ECDSA verifier.
-                    if ecdsa_key.verify_backend(&ecdsa_sig_mpi, hash_algo, digest).is_ok() {
+                    // Fixed-width raw ECDSA signature r||s (64+64), enforced by type: [u8; 128].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::BrainpoolP512,
+                        ecdsa_pub.as_ref(),   // &[u8; 129] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 128] -> &[u8]
+                    ) {
                         ok += 1;
                     }
 

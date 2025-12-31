@@ -273,36 +273,17 @@ impl Signer for KeyPair {
                 (PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384,
                  mpi::PublicKey::MLDSA65_ECDSA_NISTP384 { ecdsa: ecdsa_pub, .. },
                  mpi::SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 { ecdsa: ecdsa_sec, mldsa: mldsa_sec }) => {
-                    // Synthetic ECDSA view of this keypair.
-                    let mut ecdsa_public = self.public().clone();
-                    ecdsa_public.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_public.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::NistP384,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-                    // The secret packet here is not used by sign_backend (it takes secret material explicitly),
-                    // but KeyPair::new requires one. Cloning the existing one is fine.
-                    let ecdsa_kp = KeyPair::new(ecdsa_public, self.secret().clone())?; // Clone
-
-                    // ECDSA secret scalar in the type expected by the backend.
-                    let ecdsa_secret = mpi::SecretKeyMaterial::ECDSA {
-                        scalar: ecdsa_sec.clone().into(), // Protected -> ProtectedMPI
-                    };
-
-                    // Delegate to backend ECDSA dispatch; must return Signature::ECDSA { r, s }.
-                    let mpi::Signature::ECDSA { r, s } =
-                        ecdsa_kp.sign_backend(&ecdsa_secret, hash_algo, digest)?
-                    else {
-                        return Err(Error::MalformedPacket("expected ECDSA signature".into()).into());
-                    };
-
-                    // Pack fixed-width raw r||s (48+48).
-                    let mut ecdsa_raw = [0u8; 96];
-                    ecdsa_raw[..48].copy_from_slice(r.value_padded(48)?.as_ref());
-                    ecdsa_raw[48..].copy_from_slice(s.value_padded(48)?.as_ref());
+                    let ecdsa = Backend::ecdsa_sign_raw(
+                        Curve::NistP384,
+                        ecdsa_sec,
+                        ecdsa_pub.as_ref(),   // &[u8; 97] -> &[u8]
+                        digest,
+                    )?;
 
                     Ok(mpi::Signature::MLDSA65_ECDSA_NISTP384 {
-                        ecdsa: Box::new(ecdsa_raw),
+                        ecdsa: ecdsa
+                            .try_into()
+                            .map_err(|_| Error::MalformedPacket("invalid ECDSA signature length".into()))?,
                         mldsa: Backend::mldsa65_sign(mldsa_sec, digest)?,
                     })
                 },
@@ -310,36 +291,17 @@ impl Signer for KeyPair {
                 (PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521,
                  mpi::PublicKey::MLDSA87_ECDSA_NISTP521 { ecdsa: ecdsa_pub, .. },
                  mpi::SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 { ecdsa: ecdsa_sec, mldsa: mldsa_sec }) => {
-                    // Synthetic ECDSA view of this keypair.
-                    let mut ecdsa_public = self.public().clone();
-                    ecdsa_public.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_public.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::NistP521,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-                    // The secret packet here is not used by sign_backend (it takes secret material explicitly),
-                    // but KeyPair::new requires one. Cloning the existing one is fine.
-                    let ecdsa_kp = KeyPair::new(ecdsa_public, self.secret().clone())?; // Clone
-
-                    // ECDSA secret scalar in the type expected by the backend.
-                    let ecdsa_secret = mpi::SecretKeyMaterial::ECDSA {
-                        scalar: ecdsa_sec.clone().into(), // Protected -> ProtectedMPI
-                    };
-
-                    // Delegate to backend ECDSA dispatch; must return Signature::ECDSA { r, s }.
-                    let mpi::Signature::ECDSA { r, s } =
-                        ecdsa_kp.sign_backend(&ecdsa_secret, hash_algo, digest)?
-                    else {
-                        return Err(Error::MalformedPacket("expected ECDSA signature".into()).into());
-                    };
-
-                    // Pack fixed-width raw r||s (66+66).
-                    let mut ecdsa_raw = [0u8; 132];
-                    ecdsa_raw[..66].copy_from_slice(r.value_padded(66)?.as_ref());
-                    ecdsa_raw[66..].copy_from_slice(s.value_padded(66)?.as_ref());
+                    let ecdsa = Backend::ecdsa_sign_raw(
+                        Curve::NistP521,
+                        ecdsa_sec,
+                        ecdsa_pub.as_ref(),   // &[u8; 133] -> &[u8]
+                        digest,
+                    )?;
 
                     Ok(mpi::Signature::MLDSA87_ECDSA_NISTP521 {
-                        ecdsa: Box::new(ecdsa_raw),
+                        ecdsa: ecdsa
+                            .try_into()
+                            .map_err(|_| Error::MalformedPacket("invalid ECDSA signature length".into()))?,
                         mldsa: Backend::mldsa87_sign(mldsa_sec, digest)?,
                     })
                 },
@@ -347,36 +309,17 @@ impl Signer for KeyPair {
                 (PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
                  mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384 { ecdsa: ecdsa_pub, .. },
                  mpi::SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 { ecdsa: ecdsa_sec, mldsa: mldsa_sec }) => {
-                    // Synthetic ECDSA view of this keypair.
-                    let mut ecdsa_public = self.public().clone();
-                    ecdsa_public.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_public.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::BrainpoolP384,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-                    // The secret packet here is not used by sign_backend (it takes secret material explicitly),
-                    // but KeyPair::new requires one. Cloning the existing one is fine.
-                    let ecdsa_kp = KeyPair::new(ecdsa_public, self.secret().clone())?; // Clone
-
-                    // ECDSA secret scalar in the type expected by the backend.
-                    let ecdsa_secret = mpi::SecretKeyMaterial::ECDSA {
-                        scalar: ecdsa_sec.clone().into(), // Protected -> ProtectedMPI
-                    };
-
-                    // Delegate to backend ECDSA dispatch; must return Signature::ECDSA { r, s }.
-                    let mpi::Signature::ECDSA { r, s } =
-                        ecdsa_kp.sign_backend(&ecdsa_secret, hash_algo, digest)?
-                    else {
-                        return Err(Error::MalformedPacket("expected ECDSA signature".into()).into());
-                    };
-
-                    // Pack fixed-width raw r||s (48+48).
-                    let mut ecdsa_raw = [0u8; 96];
-                    ecdsa_raw[..48].copy_from_slice(r.value_padded(48)?.as_ref());
-                    ecdsa_raw[48..].copy_from_slice(s.value_padded(48)?.as_ref());
+                    let ecdsa = Backend::ecdsa_sign_raw(
+                        Curve::BrainpoolP384,
+                        ecdsa_sec,
+                        ecdsa_pub.as_ref(),   // &[u8; 97] -> &[u8]
+                        digest,
+                    )?;
 
                     Ok(mpi::Signature::MLDSA65_ECDSA_BrainpoolP384 {
-                        ecdsa: Box::new(ecdsa_raw),
+                        ecdsa: ecdsa
+                            .try_into()
+                            .map_err(|_| Error::MalformedPacket("invalid ECDSA signature length".into()))?,
                         mldsa: Backend::mldsa65_sign(mldsa_sec, digest)?,
                     })
                 },
@@ -384,36 +327,17 @@ impl Signer for KeyPair {
                 (PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
                  mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512 { ecdsa: ecdsa_pub, .. },
                  mpi::SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 { ecdsa: ecdsa_sec, mldsa: mldsa_sec }) => {
-                    // Synthetic ECDSA view of this keypair.
-                    let mut ecdsa_public = self.public().clone();
-                    ecdsa_public.set_pk_algo(PublicKeyAlgorithm::ECDSA);
-                    ecdsa_public.set_mpis(mpi::PublicKey::ECDSA {
-                        curve: Curve::BrainpoolP512,
-                        q: mpi::MPI::new(ecdsa_pub.as_ref()),
-                    });
-                    // The secret packet here is not used by sign_backend (it takes secret material explicitly),
-                    // but KeyPair::new requires one. Cloning the existing one is fine.
-                    let ecdsa_kp = KeyPair::new(ecdsa_public, self.secret().clone())?; // Clone
-
-                    // ECDSA secret scalar in the type expected by the backend.
-                    let ecdsa_secret = mpi::SecretKeyMaterial::ECDSA {
-                        scalar: ecdsa_sec.clone().into(), // Protected -> ProtectedMPI
-                    };
-
-                    // Delegate to backend ECDSA dispatch; must return Signature::ECDSA { r, s }.
-                    let mpi::Signature::ECDSA { r, s } =
-                        ecdsa_kp.sign_backend(&ecdsa_secret, hash_algo, digest)?
-                    else {
-                        return Err(Error::MalformedPacket("expected ECDSA signature".into()).into());
-                    };
-
-                    // Pack fixed-width raw r||s (64+64).
-                    let mut ecdsa_raw = [0u8; 128];
-                    ecdsa_raw[..64].copy_from_slice(r.value_padded(64)?.as_ref());
-                    ecdsa_raw[64..].copy_from_slice(s.value_padded(64)?.as_ref());
+                    let ecdsa = Backend::ecdsa_sign_raw(
+                        Curve::BrainpoolP512,
+                        ecdsa_sec,
+                        ecdsa_pub.as_ref(),   // &[u8; 129] -> &[u8]
+                        digest,
+                    )?;
 
                     Ok(mpi::Signature::MLDSA87_ECDSA_BrainpoolP512 {
-                        ecdsa: Box::new(ecdsa_raw),
+                        ecdsa: ecdsa
+                            .try_into()
+                            .map_err(|_| Error::MalformedPacket("invalid ECDSA signature length".into()))?,
                         mldsa: Backend::mldsa87_sign(mldsa_sec, digest)?,
                     })
                 },
