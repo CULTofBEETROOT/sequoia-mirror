@@ -1683,7 +1683,7 @@ JC6thFQ9+JWj
 
         if PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384.is_supported() {
             let key: Key6<SecretParts, UnspecifiedRole>
-                = Key6::generate_mldsa65_ecdsa_nistp384()
+                = Key6::generate_mldsa65_ecdsa_brainpoolp384()
                 .expect("failed to generate MLDSA65+ECDSA-BrainpoolP384 key, but it is supported.");
 
             assert_eq!(key.pk_algo(), PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384);
