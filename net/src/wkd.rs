@@ -33,6 +33,9 @@ use sequoia_openpgp::{
     cert::prelude::*,
 };
 
+use percent_encoding::percent_encode;
+use crate::KEYSERVER_GET_ENCODE_SET;
+
 use crate::email::EmailAddress;
 use crate::Result;
 
@@ -96,11 +99,16 @@ impl Url {
         let variant = variant.into().unwrap_or_default();
         if variant == Variant::Direct {
             format!("https://{}/.well-known/openpgpkey/hu/{}?l={}",
-                    self.domain, self.local_encoded, self.local_part)
+                    self.domain, self.local_encoded,
+                    percent_encode(self.local_part.as_bytes(),
+                                   &KEYSERVER_GET_ENCODE_SET)
+            )
         } else {
             format!("https://openpgpkey.{}/.well-known/openpgpkey/{}/hu/{}\
                     ?l={}", self.domain, self.domain, self.local_encoded,
-                    self.local_part)
+                    percent_encode(self.local_part.as_bytes(),
+                                   &KEYSERVER_GET_ENCODE_SET)
+            )
         }
     }
 
@@ -531,6 +539,16 @@ mod tests {
         assert!(cert_contains_domain_userid("sequoia-pgp.org", &cert.with_policy(policy, None)?));
         assert!(cert_contains_domain_userid("example.example", &cert.with_policy(policy, None)?));
         assert!(!cert_contains_domain_userid("example.org", &cert.with_policy(policy, None)?));
+        Ok(())
+    }
+
+    #[test]
+    fn test_protect_localpart_in_get_request() -> Result<()> {
+        let wkd_url = Url::from("test1+tag_&admin=root%@example.com").unwrap();
+        assert_eq!(
+            "https://openpgpkey.example.com/.well-known/openpgpkey/example.com/hu/zpceuwttodc1e13yw1bo5dwot183s6kc?l=test1%2Btag_%26admin%3Droot%25", 
+            wkd_url.to_string());
+
         Ok(())
     }
 }

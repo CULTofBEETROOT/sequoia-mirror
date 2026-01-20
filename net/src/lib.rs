@@ -71,6 +71,14 @@ const KEYSERVER_ENCODE_SET: &AsciiSet =
     // The SKS keyserver as of version 1.1.6 is a bit picky with
     // respect to the encoding.
     .add(b'-').add(b'+').add(b'/');
+/// Encoding set for HTTP/GET requests
+///
+/// This expands KEYSERVER_ENCODE_SET by '&', '=' and '%'.
+const KEYSERVER_GET_ENCODE_SET: &AsciiSet = &KEYSERVER_ENCODE_SET
+    // add chars to protect the key/value structure in a HTTP/GET.
+    .add(b'&').add(b'=')
+    // as '%' has a special meaning, it needs to also be encoded.
+    .add(b'%');
 
 /// For accessing keyservers using HKP.
 #[derive(Clone)]
@@ -171,7 +179,9 @@ impl KeyServer {
             openpgp::Error::InvalidArgument(
                 "UserID does not contain an email address".into()).into()))?;
         let url = self.request_url.join(
-            &format!("pks/lookup?op=get&options=mr&search={}", email))?;
+            &format!("pks/lookup?op=get&options=mr&search={}",
+                percent_encode(email.as_bytes(), KEYSERVER_GET_ENCODE_SET)
+            ))?;
 
         let res = self.client.get(url).send().await?;
         match res.status() {
@@ -263,5 +273,28 @@ mod tests {
         assert!(KeyServer::new("keys.openpgp.org").is_err());
         assert!(KeyServer::new("hkp://keys.openpgp.org").is_ok());
         assert!(KeyServer::new("hkps://keys.openpgp.org").is_ok());
+    }
+
+    #[test]
+    fn encoding() {
+        assert_eq!(
+            percent_encode(b"alice@example.com",
+                           KEYSERVER_GET_ENCODE_SET)
+                .collect::<String>(),
+            "alice@example.com"
+        );
+        assert_eq!(
+            percent_encode(b"alice+tag@example.com",
+                           KEYSERVER_GET_ENCODE_SET)
+                .collect::<String>(),
+            "alice%2Btag@example.com"
+        );
+        assert_eq!(
+            percent_encode(b"alice+tag&role=admin%@example.com",
+                           KEYSERVER_GET_ENCODE_SET)
+                .collect::<String>(),
+            "alice%2Btag%26role%3Dadmin%25@example.com"
+        );
+
     }
 }
