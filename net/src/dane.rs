@@ -24,9 +24,9 @@ use sequoia_openpgp::{
 
 use super::Result;
 
-use hickory_client::rr::{RData, RecordType};
+use hickory_proto::rr::{RData, RecordType};
 use hickory_resolver::config::ResolverOpts;
-use hickory_resolver::TokioAsyncResolver;
+use hickory_resolver::TokioResolver;
 
 /// Generates a Fully Qualified Domain Name that holds the OPENPGPKEY
 /// record for given `local` and `domain` parameters.
@@ -60,7 +60,7 @@ async fn get_raw(email_address: impl AsRef<str>) -> Result<Vec<Vec<u8>>> {
     let mut opts = ResolverOpts::default();
     opts.validate = true;
 
-    let resolver = TokioAsyncResolver::tokio(Default::default(), opts);
+    let resolver = TokioResolver::builder_tokio()?.with_options(opts).build();
 
     let answers = resolver
         .lookup(fqdn, RecordType::OPENPGPKEY)
@@ -364,7 +364,7 @@ fn generate_<'a>(cert: &ValidCert<'a>, fqdn: &str, ttl: Option<Duration>,
 pub enum Error {
     /// A requested cert was not found.
     #[error("Cert not found")]
-    NotFound(#[from] hickory_resolver::error::ResolveError),
+    NotFound(#[from] hickory_resolver::ResolveError),
 }
 
 #[cfg(test)]
