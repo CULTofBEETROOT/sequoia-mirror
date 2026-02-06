@@ -23,7 +23,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["dane-client"]
-dane-client = ["dep:hickory-client", "dep:hickory-resolver"]
+dane-client = ["dep:hickory-client", "dep:hickory-client", "dep:hickory-resolver"]
 
 [dependencies]
 sequoia-openpgp = { version = "2", path = "../openpgp", default-features = false }
@@ -42,8 +42,9 @@ z-base-32 = "0.1.2"
 tokio = { version = "1.13.1", features = [ "macros" ] }
 base64 = ">= 0.21, < 0.23"
 
-hickory-client = { version = "0.24", optional = true }
-hickory-resolver = { version = "0.24", features = ["dnssec-openssl"], optional = true }
+hickory-client = { version = "0.25", optional = true }
+hickory-resolver = { version = "0.26", features = ["dnssec-aws-lc-rs"], optional = true }
+hickory-proto = { version = "0.26", optional = true }
 
 [dev-dependencies]
 bytes = "1"
