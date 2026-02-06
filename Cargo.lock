@@ -2909,7 +2909,7 @@ dependencies = [
  "memsec",
  "quickcheck",
  "sequoia-openpgp",
- "socket2 0.5.10",
+ "socket2 0.6.1",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
