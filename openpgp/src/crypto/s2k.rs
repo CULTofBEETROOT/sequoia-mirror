@@ -531,8 +531,11 @@ impl Drop for Blocks {
 
         let l = Layout::array::<argon2::Block>(self.count)
             .expect("was valid before");
+        let size = l.size();
         unsafe {
-            std::alloc::dealloc(self.blocks as *mut _, l)
+            let ptr = self.blocks as *mut u8;
+            memsec::memzero(ptr, size);
+            std::alloc::dealloc(ptr, l)
         };
     }
 }
