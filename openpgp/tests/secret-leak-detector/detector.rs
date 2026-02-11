@@ -262,6 +262,42 @@ fn aes_256_decryption(ciphertext: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// A test case that encrypts a message using Blowfish.
+fn test_blowfish_encryption() {
+    blowfish_encryption().unwrap()
+}
+fn blowfish_encryption() -> Result<()> {
+    use sequoia_openpgp::crypto::symmetric::BlockCipherMode;
+    use sequoia_openpgp::crypto::symmetric::Encryptor;
+    use sequoia_openpgp::crypto::symmetric::PaddingMode;
+
+    if ! SymmetricAlgorithm::Blowfish.is_supported() {
+        return Ok(());
+    }
+
+    let sk: SessionKey = NEEDLE.into();
+
+    let iv_len = SymmetricAlgorithm::Blowfish.block_size()?;
+    let iv = vec![0u8; iv_len];
+
+    let mut sink = Vec::<u8>::new();
+    let mut enc = Encryptor::new(
+        SymmetricAlgorithm::Blowfish,
+        BlockCipherMode::CFB,
+        PaddingMode::None,
+        &sk,
+        Some(&iv),
+        &mut sink,
+    )?;
+
+    // Write at least something to ensure the context is actually used.
+    enc.write_all(b"x")?;
+    // Consumes enc and returns sink.
+    enc.finalize()?;
+
+    Ok(())
+}
+
 type Test = fn() -> ();
 
 fn main() {
@@ -278,6 +314,7 @@ fn main() {
         ("test_ed25519", test_ed25519 as Test),
         ("test_aes_256_encryption", test_aes_256_encryption as Test),
         ("test_aes_256_decryption", test_aes_256_decryption as Test),
+        ("test_blowfish_encryption", test_blowfish_encryption as Test),
     ].into_iter().collect();
 
     let test = if let Some(t) = std::env::args().nth(1) {

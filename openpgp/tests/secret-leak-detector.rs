@@ -209,4 +209,5 @@ mod leak_tests {
     make_test!(test_ed25519);
     make_test!(test_aes_256_encryption);
     make_test!(test_aes_256_decryption);
+    make_test!(test_blowfish_encryption);
 }
