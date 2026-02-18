@@ -423,8 +423,8 @@ mod has_access_to_prekey {
 
         /// Maps the given function over the temporarily decrypted
         /// memory.
-        pub fn map<F, T>(&self, mut fun: F) -> T
-            where F: FnMut(&Protected) -> T
+        pub fn map<F, T>(&self, fun: F) -> T
+            where F: FnOnce(&Protected) -> T
         {
             if DANGER_DISABLE_ENCRYPTED_MEMORY {
                 return fun(&self.ciphertext);

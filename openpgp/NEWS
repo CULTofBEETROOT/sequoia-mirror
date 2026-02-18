@@ -4,6 +4,13 @@
 #+STARTUP: content hidestars
 
 
+* Changes in 2.3.0
+** Notable changes
+   - Encrypted::map, Password::map, and Unencrypted::map now accept
+     FnOnce closures (relaxed from FnMut).
+   - ValidBindingSignature::map now accepts FnMut closures (relaxed
+     from Fn).
+
 * Changes in 2.2.0
 ** Notable changes
    - Our MSRV is now 1.85.

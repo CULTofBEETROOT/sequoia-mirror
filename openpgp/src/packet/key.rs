@@ -2129,8 +2129,8 @@ impl From<mpi::SecretKeyMaterial> for Unencrypted {
 
 impl Unencrypted {
     /// Maps the given function over the secret.
-    pub fn map<F, T>(&self, mut fun: F) -> T
-        where F: FnMut(&mpi::SecretKeyMaterial) -> T
+    pub fn map<F, T>(&self, fun: F) -> T
+        where F: FnOnce(&mpi::SecretKeyMaterial) -> T
     {
         self.mpis.map(|plaintext| {
             let algo: PublicKeyAlgorithm = plaintext[0].into();

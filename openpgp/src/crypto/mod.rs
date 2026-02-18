@@ -275,7 +275,7 @@ impl Password {
     /// p.map(|p| assert_eq!(p.as_ref(), &b"hunter2"[..]));
     /// ```
     pub fn map<F, T>(&self, fun: F) -> T
-        where F: FnMut(&mem::Protected) -> T
+        where F: FnOnce(&mem::Protected) -> T
     {
         self.0.map(fun)
     }

@@ -600,9 +600,9 @@ pub trait ValidBindingSignature<'a, C: 'a>: ValidAmalgamation<'a, C> + seal::Sea
     /// 5.2.3.10 of RFC 9580].
     ///
     ///   [Section 5.2.3.10 of RFC 9580]: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.10
-    fn map<F: Fn(&'a Signature) -> Option<T>, T>(&self, f: F) -> Option<T> {
+    fn map<F: FnMut(&'a Signature) -> Option<T>, T>(&self, mut f: F) -> Option<T> {
         f(self.binding_signature())
-            .or_else(|| self.direct_key_signature().ok().and_then(f))
+            .or_else(|| self.direct_key_signature().ok().and_then(|s| f(s)))
     }
 }
 
