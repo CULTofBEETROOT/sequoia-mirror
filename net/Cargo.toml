@@ -30,7 +30,6 @@ http = "1"
 hyper = { version = "1", features = [ "http1", "http2" ] }
 hyper-tls = "0.6"
 libc = "0.2.66"
-percent-encoding = "2.1"
 reqwest = "0.12"
 thiserror = ">=1, <3"
 url = "2.1"

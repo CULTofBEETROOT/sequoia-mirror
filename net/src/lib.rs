@@ -41,8 +41,6 @@
 // Re-exports of crates that we use in our API.
 pub use reqwest;
 
-use percent_encoding::{percent_encode, AsciiSet, CONTROLS};
-
 use reqwest::{
     StatusCode,
     Url,
@@ -63,23 +61,6 @@ mod email;
 pub mod updates;
 pub mod wkd;
 
-/// <https://url.spec.whatwg.org/#fragment-percent-encode-set>
-const KEYSERVER_ENCODE_SET: &AsciiSet =
-    // Formerly DEFAULT_ENCODE_SET
-    &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>').add(b'`')
-    .add(b'?').add(b'{').add(b'}')
-    // The SKS keyserver as of version 1.1.6 is a bit picky with
-    // respect to the encoding.
-    .add(b'-').add(b'+').add(b'/');
-/// Encoding set for HTTP/GET requests
-///
-/// This expands KEYSERVER_ENCODE_SET by '&', '=' and '%'.
-const KEYSERVER_GET_ENCODE_SET: &AsciiSet = &KEYSERVER_ENCODE_SET
-    // add chars to protect the key/value structure in a HTTP/GET.
-    .add(b'&').add(b'=')
-    // as '%' has a special meaning, it needs to also be encoded.
-    .add(b'%');
-
 /// For accessing keyservers using HKP.
 #[derive(Clone)]
 pub struct KeyServer {
@@ -94,14 +75,14 @@ assert_send_and_sync!(KeyServer);
 
 impl Default for KeyServer {
     fn default() -> Self {
-	Self::new("hkps://keys.openpgp.org/").unwrap()
+        Self::new("hkps://keys.openpgp.org/").unwrap()
     }
 }
 
 impl KeyServer {
     /// Returns a handle for the given URL.
     pub fn new(url: &str) -> Result<Self> {
-	Self::with_client(url, reqwest::Client::new())
+        Self::with_client(url, reqwest::Client::new())
     }
 
     /// Returns a handle for the given URL with a custom `Client`.
@@ -132,6 +113,15 @@ impl KeyServer {
     /// Returns the keyserver's base URL.
     pub fn url(&self) -> &reqwest::Url {
         &self.url
+    }
+
+    /// Returns a search URL for `email`.
+    pub fn search_url(&self, email: &str) -> Result<reqwest::Url> {
+        reqwest::Url::parse_with_params(
+            self.request_url.join("pks/lookup")?.as_str(),
+            &[("op", "get"), ("options", "mr"), ("search", email)]
+            )
+        .map_err(|e| e.into())
     }
 
     /// Retrieves the certificate with the given handle.
@@ -178,10 +168,7 @@ impl KeyServer {
         let email = userid.email().and_then(|addr| addr.ok_or_else(||
             openpgp::Error::InvalidArgument(
                 "UserID does not contain an email address".into()).into()))?;
-        let url = self.request_url.join(
-            &format!("pks/lookup?op=get&options=mr&search={}",
-                percent_encode(email.as_bytes(), KEYSERVER_GET_ENCODE_SET)
-            ))?;
+        let url = self.search_url(email)?;
 
         let res = self.client.get(url).send().await?;
         match res.status() {
@@ -203,16 +190,10 @@ impl KeyServer {
 
         let armored_blob = w.finalize()?;
 
-        // Prepare to send url-encoded data.
-        let mut post_data = b"keytext=".to_vec();
-        post_data.extend_from_slice(percent_encode(&armored_blob, KEYSERVER_ENCODE_SET)
-                                    .collect::<String>().as_bytes());
-        let length = post_data.len();
-
         let res = self.client.post(url)
             .header("content-type", "application/x-www-form-urlencoded")
-            .header("content-length", length.to_string())
-            .body(post_data).send().await?;
+            .form(&[("keytext", String::from_utf8_lossy(&armored_blob[..]))])
+            .send().await?;
 
         match res.status() {
             StatusCode::OK => Ok(()),
@@ -277,24 +258,25 @@ mod tests {
 
     #[test]
     fn encoding() {
-        assert_eq!(
-            percent_encode(b"alice@example.com",
-                           KEYSERVER_GET_ENCODE_SET)
-                .collect::<String>(),
-            "alice@example.com"
-        );
-        assert_eq!(
-            percent_encode(b"alice+tag@example.com",
-                           KEYSERVER_GET_ENCODE_SET)
-                .collect::<String>(),
-            "alice%2Btag@example.com"
-        );
-        assert_eq!(
-            percent_encode(b"alice+tag&role=admin%@example.com",
-                           KEYSERVER_GET_ENCODE_SET)
-                .collect::<String>(),
-            "alice%2Btag%26role%3Dadmin%25@example.com"
-        );
+        let generated_url = KeyServer::new("hkps://keys.openpgp.org")
+            .unwrap()
+            .search_url("alice@example.org")
+            .unwrap();
+        assert_eq!(generated_url.to_string(),
+            "https://keys.openpgp.org/pks/lookup?op=get&options=mr&search=alice%40example.org");
 
+        let generated_url = KeyServer::new("hkps://keys.openpgp.org")
+            .unwrap()
+            .search_url("alice+tag@example.org")
+            .unwrap();
+        assert_eq!(generated_url.to_string(),
+            "https://keys.openpgp.org/pks/lookup?op=get&options=mr&search=alice%2Btag%40example.org");
+
+        let generated_url = KeyServer::new("hkps://keys.openpgp.org")
+            .unwrap()
+            .search_url("alice+tag&role=admin@example.org")
+            .unwrap();
+        assert_eq!(generated_url.to_string(),
+            "https://keys.openpgp.org/pks/lookup?op=get&options=mr&search=alice%2Btag%26role%3Dadmin%40example.org");
     }
 }
