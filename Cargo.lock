@@ -2869,6 +2869,7 @@ dependencies = [
  "memsec",
  "nettle",
  "num-bigint-dig",
+ "num-integer",
  "ocb3",
  "openssl",
  "openssl-sys",
