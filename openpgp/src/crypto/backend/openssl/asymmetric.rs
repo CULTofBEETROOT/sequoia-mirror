@@ -522,14 +522,26 @@ where
 
         let mut one = BigNum::new_secure()?;
         one.copy_from_slice(&[1])?;
-        let big_phi = &(&big_p - &one) * &(&big_q - &one);
+
+        // Compute e ≡ d⁻¹ (lcm(p-1, q-1))
+        let big_p_minus_1 = &big_p - &one;
+        let big_q_minus_1 = &big_q - &one;
+
+        let big_phi = &big_p_minus_1 * &big_q_minus_1;
 
         let mut ctx = BigNumContext::new_secure()?;
 
-        let mut e = BigNum::new_secure()?;
+        let mut gcd = BigNum::new_secure()?;
+        gcd.gcd(&big_p_minus_1, &big_q_minus_1, &mut ctx)?;
+
+        let m = &big_phi / &gcd;
+
         let mut d_bn = BigNum::new_secure()?;
         d_bn.copy_from_slice(d)?;
-        e.mod_inverse(&d_bn, &big_phi, &mut ctx)?; // e ≡ d⁻¹ (mod 𝜙)
+
+        let mut e = BigNum::new_secure()?;
+
+        e.mod_inverse(&d_bn, &m, &mut ctx)?;
 
         let mut u = BigNum::new_secure()?;
         u.mod_inverse(&big_p, &big_q, &mut ctx)?; // RFC 4880: u ≡ p⁻¹ (mod q)
