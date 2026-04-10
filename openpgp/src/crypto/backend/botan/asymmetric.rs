@@ -468,13 +468,24 @@ impl<R> Key4<SecretParts, R>
     pub fn import_secret_rsa<T>(d: &[u8], p: &[u8], q: &[u8], ctime: T)
         -> Result<Self> where T: Into<Option<SystemTime>>
     {
+        // RFC 4880: `p < q`
+        let (p, q) = crate::crypto::rsa_sort_raw_pq(p, q);
+
         let d = botan::MPI::new_from_bytes(d)?;
         let p = botan::MPI::new_from_bytes(p)?;
         let q = botan::MPI::new_from_bytes(q)?;
 
-        // Compute e ≡ d⁻¹ (mod 𝜙).
-        let phi = p.mp_sub_u32(1)?.mp_mul(&q.mp_sub_u32(1)?)?;
-        let e = botan::MPI::modular_inverse(&d, &phi)?;
+        // Compute e ≡ d⁻¹ (lcm(p-1, q-1))
+        let p_minus_1 = p.mp_sub_u32(1)?;
+        let q_minus_1 = q.mp_sub_u32(1)?;
+
+        let phi = p_minus_1.mp_mul(&q_minus_1)?;
+
+        let gcd = botan::MPI::gcd(&p_minus_1, &q_minus_1)?;
+
+        let m = phi.divrem(&gcd)?.0;
+
+        let e = botan::MPI::modular_inverse(&d, &m)?;
 
         let secret = Privkey::load_rsa(&p.try_into()?, &q.try_into()?,
                                        &e.try_into()?)?;

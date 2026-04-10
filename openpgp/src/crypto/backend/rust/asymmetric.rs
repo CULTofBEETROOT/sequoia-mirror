@@ -8,6 +8,7 @@ use std::convert::TryFrom;
 use std::time::SystemTime;
 
 use num_bigint_dig::{traits::ModInverse, BigUint};
+use num_integer::Integer;
 use rsa::traits::{PrivateKeyParts, PublicKeyParts};
 use rsa::{Pkcs1v15Encrypt, RsaPublicKey, RsaPrivateKey, Pkcs1v15Sign};
 
@@ -583,8 +584,18 @@ impl<R> Key4<SecretParts, R>
         let n = big_p.clone() * big_q.clone();
 
         let big_d = BigUint::from_bytes_be(d);
-        let big_phi = (big_p.clone() - 1u32) * (big_q.clone() - 1u32);
-        let e = big_d.mod_inverse(big_phi) // e ≡ d⁻¹ (mod 𝜙)
+
+        // Compute e ≡ d⁻¹ (lcm(p-1, q-1))
+        let big_p_minus_1 = big_p.clone() - 1u32;
+        let big_q_minus_1 = big_q.clone() - 1u32;
+
+        let big_phi = big_p_minus_1.clone() * big_q_minus_1.clone();
+
+        let gcd = big_p_minus_1.gcd(&big_q_minus_1);
+
+        let m = big_phi / gcd;
+
+        let e = big_d.mod_inverse(m)
             .and_then(|x| x.to_biguint())
             .ok_or_else(|| Error::MalformedMPI("RSA: `d` and `(p-1)(q-1)` aren't coprime".into()))?;
 
