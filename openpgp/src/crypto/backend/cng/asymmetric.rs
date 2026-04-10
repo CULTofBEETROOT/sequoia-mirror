@@ -18,6 +18,7 @@ use crate::types::PublicKeyAlgorithm;
 use crate::types::{Curve, HashAlgorithm};
 
 use num_bigint_dig::{traits::ModInverse, BigInt, BigUint};
+use num_integer::Integer;
 use win_crypto_ng as cng;
 
 impl TryFrom<&Protected> for Box<ed25519_dalek::SigningKey> {
@@ -804,9 +805,19 @@ where
         let n = big_p.clone() * big_q.clone();
 
         let big_d = BigUint::from_bytes_be(d);
-        let big_phi = (big_p.clone() - 1u32) * (big_q.clone() - 1u32);
-        let e = big_d.mod_inverse(big_phi) // e ≡ d⁻¹ (mod 𝜙)
-            .and_then(|x: BigInt| x.to_biguint())
+
+        // Compute e ≡ d⁻¹ (lcm(p-1, q-1))
+        let big_p_minus_1 = big_p.clone() - 1u32;
+        let big_q_minus_1 = big_q.clone() - 1u32;
+
+        let big_phi = big_p_minus_1.clone() * big_q_minus_1.clone();
+
+        let gcd = big_p_minus_1.gcd(&big_q_minus_1);
+
+        let m = big_phi / gcd;
+
+        let e = big_d.mod_inverse(m)
+            .and_then(|x| x.to_biguint())
             .ok_or_else(|| Error::MalformedMPI("RSA: `d` and `(p-1)(q-1)` aren't coprime".into()))?;
 
         let u: BigUint = big_p.mod_inverse(big_q) // RFC 4880: u ≡ p⁻¹ (mod q)
