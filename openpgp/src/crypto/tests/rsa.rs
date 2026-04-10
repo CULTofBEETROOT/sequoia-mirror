@@ -1,9 +1,31 @@
 //! Low-level RSA tests.
 
 use crate::Result;
+use crate::crypto::mpi::PublicKey;
 use crate::crypto::mpi;
 use crate::packet::{prelude::*, signature::subpacket::*};
 use crate::types::*;
+
+fn rsa_parameters(key: &Key4<key::SecretParts, key::PrimaryRole>)
+    -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)
+{
+    match key.secret() {
+        SecretKeyMaterial::Unencrypted(s) => s.map(|s| {
+            match (key.mpis(), s) {
+                (PublicKey::RSA { e, n },
+                 mpi::SecretKeyMaterial::RSA { d, p, q, u }) =>
+                    (e.value().into(),
+                     n.value().into(),
+                     d.value().into(),
+                     p.value().into(),
+                     q.value().into(),
+                     u.value().into()),
+                _ => unreachable!(),
+            }
+        }),
+        _ => unreachable!(),
+    }
+}
 
 #[test]
 fn p_less_than_q() -> Result<()> {
@@ -15,7 +37,7 @@ fn p_less_than_q() -> Result<()> {
         // Check that p < q holds when generating an RSA key.
         let key0 = Key4::generate_rsa(1024)?;
         let t = key0.creation_time();
-        let (d0, p, q, u0) = extract(&key0);
+        let (e0, n0, d0, p, q, u0) = rsa_parameters(&key0);
         assert_eq!(raw_bigint_cmp(&p, &q), Ordering::Less);
 
         // Check that p < q holds when importing an RSA key.
@@ -23,27 +45,42 @@ fn p_less_than_q() -> Result<()> {
         // Note: p and q are swapped, i.e. p < q doesn't hold in the
         // arguments of import_secret_rsa:
         let key1 = Key4::import_secret_rsa(&d0, &q, &p, t)?;
-        let (d1, p, q, u1) = extract(&key1);
+        let (e1, n1, d1, p, q, u1) = rsa_parameters(&key1);
         assert_eq!(raw_bigint_cmp(&p, &q), Ordering::Less);
+        assert_eq!(e0, e1);
+        assert_eq!(n0, n1);
         assert_eq!(d0, d1);
         assert_eq!(u0, u1);
     }
 
-    fn extract(key: &Key4<key::SecretParts, key::PrimaryRole>)
-               -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>)
-    {
-        match key.secret() {
-            SecretKeyMaterial::Unencrypted(s) => s.map(|s| match s {
-                mpi::SecretKeyMaterial::RSA { d, p, q, u } =>
-                    (d.value().into(),
-                     p.value().into(),
-                     q.value().into(),
-                     u.value().into()),
-                _ => unreachable!(),
-            }),
-            _ => unreachable!(),
-        }
-    }
+    Ok(())
+}
+
+#[test]
+fn gcm_reduction() -> Result<()> {
+    // Given a private key, we derive e from d, p and q.  Make sure we
+    // derive the right value.  In particular, make sure we use `e*d =
+    // 1 mod (lcm(p-1, q-1))` to find `e` and not `e*d = 1 mod ((p-1)
+    // * (q-1))`.  If the implementation follows FIPS 186-5 when
+    // generating a key (like Botan), then using the former equality
+    // is necessary.  If not, the equality should not change anything.
+    //
+    // See https://github.com/randombit/botan/issues/5524
+
+    let d = &b"\x1e\x3e\x60\x70\xbc\x57\x8c\x08\xc7\x11\x3f\xf8\x36\xc2\xee\x26\x65\x70\x5c\x68\xf5\xcf\xdc\x7b\x97\x39\x2a\x89\xe9\x99\x81\xd8\x75\x60\xbf\x25\x1a\xf2\xd6\xbd\x64\xae\x2f\x6a\x71\xa9\x56\xe4\x58\x3d\xf2\x3d\xd8\x03\x57\xd0\xb9\x45\x3c\x7d\x2d\x66\xf2\x9f\x01\x44\xad\x09\xcf\xbb\x0e\x81\xb7\x30\xc3\x1a\xa0\xc8\xbf\x9c\xf4\x8e\x94\x15\x4b\xb0\xcc\x68\xbe\x0c\x49\x82\xc5\x33\x50\xaa\xfe\xe0\xb6\x13\xc5\xee\x24\x7a\x56\xdd\x6a\x9f\x33\xc5\x29\xd4\x66\x6f\x89\x47\x45\xf9\x42\x18\x9c\x72\xac\xb9\x4d\x8a\xd8\x6b"[..];
+    let p = &b"\xd9\x00\xa2\x5b\xb8\xce\xe8\x86\xce\xf6\xe8\x0d\x5e\x42\x59\x12\xf5\xa6\x3b\x19\x56\xf5\xa2\x99\xa0\x57\x5a\x98\x05\x03\xba\xbb\xc6\xac\x89\x7c\x40\xd7\x40\x85\xed\x24\x8f\xae\xf4\x8d\x8f\x32\x79\xe3\x36\x93\x01\x04\x7b\xb5\xa9\x67\x3c\x14\xf6\xd9\xe0\x8b"[..];
+    let q = &b"\xd7\xf8\x7b\xc9\xed\xb5\x3b\x76\xfe\xd8\xce\xda\x7b\xd1\x2d\x8d\x6c\x44\x26\xb6\xd4\xe3\x2f\x75\x62\x37\x61\xee\x0a\x28\x58\xd5\x05\x81\x92\xa6\x5f\xc6\xcb\xb1\x6a\x21\x51\xf4\xa6\xe9\xae\x23\xab\xdd\x72\x76\x89\x9e\x49\x61\x9c\x7b\xa9\xba\xf2\x07\x48\xa7"[..];
+    let e = &b"\x01\x00\x01"[..];
+
+    let key = Key4::import_secret_rsa(&d, &q, &p, std::time::UNIX_EPOCH)?;
+
+    let (e2, _n, d2, p2, q2, _u) = rsa_parameters(&key);
+
+    assert_eq!(e, e2);
+    // The implementation should make sure p is smaller than q.
+    assert_eq!(p, q2);
+    assert_eq!(q, p2);
+    assert_eq!(d, d2);
 
     Ok(())
 }
