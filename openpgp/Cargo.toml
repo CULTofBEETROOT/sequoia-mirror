@@ -65,6 +65,7 @@ camellia = { version = "0.1", optional = true, features = ["zeroize"] }
 cast5 = { version = "0.11", optional = true, features = ["zeroize"] }
 cbc = { version = "0.1", optional = true }
 cipher = { version = "0.4", optional = true, features = ["std", "zeroize"] }
+cx448 = { version = "0.1.1", optional = true, features = ["zeroize"] }
 cfb-mode = { version = "0.8", optional = true }
 des = { version = "0.8", optional = true, features = ["zeroize"] }
 digest = { version = "0.10", optional = true }
@@ -125,7 +126,7 @@ default = ["compression", "crypto-nettle"]
 crypto-nettle = ["dep:nettle"]
 crypto-rust = [
     "dep:aes", "dep:block-padding", "dep:blowfish", "dep:camellia",
-    "dep:cast5", "dep:cfb-mode", "dep:cipher", "dep:des", "dep:digest",
+    "dep:cast5", "dep:cfb-mode", "dep:cipher", "dep:cx448", "dep:des", "dep:digest",
     "dep:eax", "dep:ecb", "dep:ed25519", "dep:ed25519-dalek", "dep:idea",
     "dep:md-5", "dep:num-bigint-dig", "dep:num-integer", "dep:ripemd", "dep:rsa",
     "dep:sha2", "dep:sha3",
@@ -139,7 +140,7 @@ crypto-rust = [
     "dep:ecdsa", "dep:aes-gcm", "dep:dsa", "dep:hkdf",
 ]
 crypto-cng = [
-    "dep:cipher", "dep:eax", "dep:winapi", "dep:win-crypto-ng",
+    "dep:cipher", "dep:cx448", "dep:eax", "dep:winapi", "dep:win-crypto-ng",
     "dep:ed25519", "dep:ed25519-dalek",
     "dep:num-bigint-dig", "dep:num-integer", "dep:aes-gcm", "dep:rand_core",
     "dep:hkdf", "dep:sha2",

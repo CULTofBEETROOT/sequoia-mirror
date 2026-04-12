@@ -33,6 +33,8 @@ opt-level = 2
 opt-level = 2
 [profile.dev.package.cfb-mode]
 opt-level = 2
+[profile.dev.package.cx448]
+opt-level = 2
 [profile.dev.package.des]
 opt-level = 2
 [profile.dev.package.digest]
