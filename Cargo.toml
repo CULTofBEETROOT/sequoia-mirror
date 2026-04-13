@@ -11,6 +11,28 @@ members = [
 [profile.release]
 debug = true
 
+# rustc version 1.80 adds the `unexpected_cfgs` warning, which warns
+# about unexpected cfg condition names.  Extend the list of cfg
+# condition names to include those that we use.
+#
+# https://blog.rust-lang.org/2024/05/06/check-cfg.html
+# https://doc.rust-lang.org/stable/rustc/check-cfg.html#well-known-names-and-values
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(osslconf, values("OPENSSL_NO_BF"))',
+    'cfg(osslconf, values("OPENSSL_NO_CAMELLIA"))',
+    'cfg(osslconf, values("OPENSSL_NO_CAST"))',
+    'cfg(osslconf, values("OPENSSL_NO_IDEA"))',
+    'cfg(osslconf, values("OPENSSL_NO_OCB"))',
+] }
+
+[workspace.lints.clippy]
+# default clippy lint levels matching the common-ci environment:
+# https://gitlab.com/sequoia-pgp/common-ci/-/blob/main/templates/precheck.yml
+suspicious = { level = "deny", priority = -1 }
+style = { level = "allow", priority = -1 }
+complexity = { level = "allow", priority = -1 }
+
 # The Rust Crypto crates are *very* slow when compiled without any
 # optimizations.  Turn on some optimizations.
 [profile.dev.package.aes]

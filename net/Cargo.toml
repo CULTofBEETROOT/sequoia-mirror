@@ -59,6 +59,9 @@ sequoia-openpgp = { version = "2", path = "../openpgp", default-features = false
 [target.'cfg(windows)'.dev-dependencies]
 sequoia-openpgp = { version = "2", path = "../openpgp", default-features = false, features = ["crypto-cng", "__implicit-crypto-backend-for-tests"] }
 
+[lints]
+workspace = true
+
 # Enables a crypto backend for the docs.rs generation:
 [package.metadata.docs.rs]
 features = ["sequoia-openpgp/default"]
