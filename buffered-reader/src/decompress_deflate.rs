@@ -280,7 +280,7 @@ mod test {
         {
             let mut encoder =
                 DeflateEncoder::new(&mut input, Compression::default());
-            encoder.write(&input_raw[..]).unwrap();
+            encoder.write_all(&input_raw[..]).unwrap();
             encoder.try_finish().unwrap();
         }
 
