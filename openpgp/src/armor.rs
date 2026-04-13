@@ -1967,7 +1967,7 @@ mod test {
             eprintln!("Test {}", i);
             let mut w =
                 Writer::new(Vec::new(), Kind::File).unwrap();
-            w.write(&[]).unwrap();  // Avoid zero-length optimization.
+            let _ = w.write(&[]).unwrap();  // Avoid zero-length optimization.
             w.write_all(bin).unwrap();
             let buf = w.finalize().unwrap();
             assert_eq!(String::from_utf8_lossy(&buf),
@@ -1979,9 +1979,9 @@ mod test {
     fn enarmor_bytewise() {
         for (bin, asc) in TEST_BIN.iter().zip(TEST_ASC.iter()) {
             let mut w = Writer::new(Vec::new(), Kind::File).unwrap();
-            w.write(&[]).unwrap();  // Avoid zero-length optimization.
+            let _ = w.write(&[]).unwrap();  // Avoid zero-length optimization.
             for b in bin.iter() {
-                w.write(&[*b]).unwrap();
+                w.write_all(&[*b]).unwrap();
             }
             let buf = w.finalize().unwrap();
             assert_eq!(String::from_utf8_lossy(&buf),
@@ -1999,7 +1999,7 @@ mod test {
         // However, if the user insists, we will encode a zero-byte
         // string.
         let mut w = Writer::new(Vec::new(), Kind::File).unwrap();
-        w.write(&[]).unwrap();
+        let _ = w.write(&[]).unwrap();
         let buf = w.finalize().unwrap();
         assert_eq!(
             &buf[..],
@@ -2289,8 +2289,8 @@ mod test {
         let mut r = Reader::from_bytes(crate::tests::file("armor/test-1.asc"),
                                        None);
         let mut buf = Vec::new();
-        r.read(&mut buf).unwrap();
-        r.read(&mut buf).unwrap();
+        assert_eq!(r.read(&mut buf).unwrap(), 0);
+        assert_eq!(r.read(&mut buf).unwrap(), 0);
     }
 
     /// Crash in armor parser due to indexing not aligned with UTF-8
