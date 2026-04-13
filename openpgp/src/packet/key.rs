@@ -2817,6 +2817,13 @@ mod tests {
             // Verify.
             let ctx = hash.context().unwrap().for_signature(profile);
             sig.verify_hash(&key, ctx).unwrap();
+
+            // Verify that a wrong digest is rejected.
+            let mut ctx = hash.context().unwrap().for_signature(profile);
+            ctx.update(b"tampered");
+            assert!(sig.verify_hash(&key, ctx).is_err(),
+                    "Tampered {:?} v{} signature should be rejected",
+                    algo, profile);
         }
     }
 
