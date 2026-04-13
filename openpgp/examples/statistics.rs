@@ -659,7 +659,7 @@ fn main() -> openpgp::Result<()> {
     println!("\n{:>30}", "- Packets -");
     for t in 0..64 {
         let max = cert_max.tags[t];
-        if t as u8 != Tag::PublicKey.into() && max > 0 {
+        if t as u8 != u8::from(Tag::PublicKey) && max > 0 {
             println!("{:>30} {:>9} {:>9} {:>9}",
                      format!("{:?}", Tag::from(t as u8)),
                      cert_min.tags[t],

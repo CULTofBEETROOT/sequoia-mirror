@@ -51,17 +51,29 @@ impl TryFrom<&Protected> for Box<ed25519_dalek::SigningKey> {
     }
 }
 
+impl TryFrom<&Protected> for Box<cx448::SigningKey> {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &Protected) -> Result<Self> {
+        if value.len() != cx448::SECRET_KEY_LENGTH {
+            return Err(crate::Error::InvalidArgument(
+                "Bad Ed448 secret length".into()).into());
+        }
+        Ok(Box::new(cx448::SigningKey::from(
+            cx448::SecretKey::from_slice(value.as_ref()))))
+    }
+}
+
 impl Asymmetric for super::Backend {
     fn supports_algo(algo: PublicKeyAlgorithm) -> bool {
         use PublicKeyAlgorithm::*;
         #[allow(deprecated)]
         match algo {
-            X25519 | Ed25519 |
+            X25519 | Ed25519 | X448 | Ed448 |
             RSAEncryptSign | RSAEncrypt | RSASign | ECDH | EdDSA | ECDSA
                 => true,
             DSA
                 => true,
-            X448 | Ed448 |
             ElGamalEncrypt | ElGamalEncryptSign | Private(_) | Unknown(_)
                 => false,
         }
@@ -142,6 +154,70 @@ impl Asymmetric for super::Backend {
         })?;
         let signature = Signature::from_bytes(signature);
         Ok(public.verify(digest, &signature).is_ok())
+    }
+
+    fn x448_generate_key() -> Result<(Protected, [u8; 56])> {
+        use cx448::x448::{Secret, PublicKey};
+        use cx448::rand_core::OsRng;
+
+        let secret = Secret::new(&mut OsRng);
+        let public = PublicKey::from(&secret);
+
+        Ok(((&secret.as_bytes()[..]).into(), *public.as_bytes()))
+    }
+
+    fn x448_derive_public(secret: &Protected) -> Result<[u8; 56]> {
+        use cx448::x448::{PublicKey, Secret};
+
+        let secret = Secret::from(<[u8; 56]>::try_from(&secret[..])?);
+        Ok(*PublicKey::from(&secret).as_bytes())
+    }
+
+    fn x448_shared_point(secret: &Protected, public: &[u8; 56])
+                         -> Result<Protected> {
+        use cx448::x448::{Secret, PublicKey};
+
+        let secret = Secret::from(<[u8; 56]>::try_from(&secret[..])?);
+        let public = PublicKey::from_bytes(public)
+            .ok_or_else(|| Error::InvalidKey(
+                "Invalid X448 public key".into()))?;
+        let shared = secret.as_diffie_hellman(&public)
+            .ok_or_else(|| Error::InvalidKey(
+                "X448 DH failed: low-order point".into()))?;
+        Ok((&shared.as_bytes()[..]).into())
+    }
+
+    fn ed448_generate_key() -> Result<(Protected, [u8; 57])> {
+        use cx448::rand_core::OsRng as OsRng;
+        let pair = cx448::SigningKey::generate(OsRng);
+        Ok(((&pair.as_bytes()[..]).into(), pair.verifying_key().to_bytes()))
+    }
+
+    fn ed448_derive_public(secret: &Protected) -> Result<[u8; 57]> {
+        use cx448::SigningKey;
+        let secret: Box<SigningKey> = secret.try_into()?;
+        let public = secret.verifying_key();
+        Ok(public.to_bytes())
+    }
+
+    fn ed448_sign(secret: &Protected, _public: &[u8; 57], digest: &[u8])
+                  -> Result<[u8; 114]> {
+        use cx448::SigningKey;
+        let secret: Box<SigningKey> = secret.try_into()?;
+        Ok(secret.sign_raw(digest).to_bytes())
+    }
+
+    fn ed448_verify(public: &[u8; 57], digest: &[u8], signature: &[u8; 114])
+                    -> Result<bool> {
+        use cx448::{VerifyingKey, Signature};
+
+        let public = VerifyingKey::from_bytes(public).map_err(|e| {
+            Error::InvalidKey(e.to_string())
+        })?;
+        let signature = Signature::from_bytes(signature).map_err(|e| {
+            Error::BadSignature(e.to_string())
+        })?;
+        Ok(public.verify_raw(&signature, digest).is_ok())
     }
 
     fn dsa_generate_key(p_bits: usize)

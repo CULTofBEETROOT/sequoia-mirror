@@ -121,9 +121,9 @@ impl Bitfield {
     /// ```rust
     /// # use sequoia_openpgp::types::Bitfield;
     /// let mut f = Bitfield::default();
-    /// assert_eq!(f.as_bytes(), &[]);
+    /// assert_eq!(f.as_bytes(), &[] as &[u8]);
     /// f.set(0);
-    /// assert_eq!(f.as_bytes(), &[0b0000_0001]);
+    /// assert_eq!(f.as_bytes(), &[0b0000_0001u8]);
     /// ```
     pub fn as_bytes(&self) -> &[u8] {
         &self.raw
