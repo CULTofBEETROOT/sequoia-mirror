@@ -1447,7 +1447,6 @@ mod test {
         parse_ten_bytes(&mut limitor);
         parse_ten_bytes(&mut limitor);
         assert!(limitor.eof());
-        drop(limitor);
         let suffix = mem.data_eof().unwrap();
         assert_eq!(suffix, b"suffix");
     }
@@ -1488,7 +1487,6 @@ mod test {
         parse_ten_bytes(&mut limitor);
         parse_ten_bytes(&mut limitor);
         assert!(limitor.eof());
-        drop(limitor);
         let suffix = mem.data_eof().unwrap();
         assert_eq!(suffix, b"suffix");
 
@@ -1499,7 +1497,6 @@ mod test {
         parse_ten_bytes(&mut limitor);
         parse_ten_bytes(&mut limitor);
         assert!(limitor.eof());
-        drop(limitor);
         let suffix = mem.data_eof().unwrap();
         assert_eq!(suffix, b"suffix");
     }
