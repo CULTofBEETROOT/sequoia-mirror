@@ -1,11 +1,11 @@
-/// Extracts the Web-Of-Trust, i.e. the certification relation, from
-/// SKS packet dump using the openpgp crate, Sequoia's low-level API.
-///
-/// Note that to achieve reasonable performance, you need to compile
-/// Sequoia and this program with optimizations:
-///
-///     % cargo run -p sequoia-openpgp --example web-of-trust --release \
-///           -- <packet-dump> [<packet-dump> ...]
+//! Extracts the Web-Of-Trust, i.e. the certification relation, from
+//! SKS packet dump using the openpgp crate, Sequoia's low-level API.
+//!
+//! Note that to achieve reasonable performance, you need to compile
+//! Sequoia and this program with optimizations:
+//!
+//!     % cargo run -p sequoia-openpgp --example web-of-trust --release \
+//!           -- <packet-dump> [<packet-dump> ...]
 
 use std::env;
 

@@ -1,4 +1,4 @@
-/// Generates a key, then signs and verifies a message.
+//! Generates a key, then signs and verifies a message.
 
 use std::io::{self, Write};
 
