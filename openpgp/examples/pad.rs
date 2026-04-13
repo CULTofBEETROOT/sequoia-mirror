@@ -1,5 +1,5 @@
-/// Asymmetrically encrypts and pads OpenPGP messages using the
-/// openpgp crate, Sequoia's low-level API.
+//! Asymmetrically encrypts and pads OpenPGP messages using the
+//! openpgp crate, Sequoia's low-level API.
 
 use std::env;
 use std::io;

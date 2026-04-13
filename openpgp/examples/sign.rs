@@ -1,4 +1,4 @@
-/// Signs data using the openpgp crate, Sequoia's low-level API.
+//! Signs data using the openpgp crate, Sequoia's low-level API.
 
 use std::env;
 use std::io;

@@ -1,7 +1,7 @@
-/// Wraps a stream of data into a literal data packet using the
-/// openpgp crate, Sequoia's low-level API.
-///
-/// It is also used to generate test vectors for the armor subsystem.
+//! Wraps a stream of data into a literal data packet using the
+//! openpgp crate, Sequoia's low-level API.
+//!
+//! It is also used to generate test vectors for the armor subsystem.
 
 use std::env;
 use std::io;

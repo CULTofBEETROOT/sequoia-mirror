@@ -1,4 +1,4 @@
-/// Generates a key, then encrypts and decrypts a message.
+//! Generates a key, then encrypts and decrypts a message.
 
 use std::io::{self, Write};
 

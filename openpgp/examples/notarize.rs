@@ -1,5 +1,5 @@
-/// Notarizes OpenPGP messages using the openpgp crate, Sequoia's
-/// low-level API.
+//! Notarizes OpenPGP messages using the openpgp crate, Sequoia's
+//! low-level API.
 
 use std::env;
 use std::io;
