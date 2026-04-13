@@ -4804,8 +4804,8 @@ impl <'a> PacketParser<'a> {
     /// let mut ppr = PacketParser::from_bytes(message_data)?;
     /// while let PacketParserResult::Some(mut pp) = ppr {
     ///     match pp.packet {
-    ///         Packet::CompressedData(_) => assert_eq!(pp.last_path(), &[]),
-    ///         Packet::Literal(_) => assert_eq!(pp.last_path(), &[0]),
+    ///         Packet::CompressedData(_) => assert_eq!(pp.last_path(), &[] as &[usize]),
+    ///         Packet::Literal(_) => assert_eq!(pp.last_path(), &[0usize]),
     ///         _ => (),
     ///     }
     ///
