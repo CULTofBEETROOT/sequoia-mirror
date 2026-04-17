@@ -3782,8 +3782,7 @@ mod test {
                             Err(err) => panic!("Decrypting message: {}", err),
                         };
 
-                        let mut buffer = Vec::new();
-                        buffer.resize(read_len, 0);
+                        let mut buffer = vec![0; read_len];
 
                         let mut decrypted_content = Vec::new();
                         loop {
