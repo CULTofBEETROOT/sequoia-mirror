@@ -569,7 +569,7 @@ where
     /// # Ok(()) }
     /// ```
     pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T)
-                                -> RevocationStatus
+                                -> RevocationStatus<'_>
     where
         T: Into<Option<time::SystemTime>>,
     {

@@ -164,7 +164,7 @@ impl MPI {
     /// MPI-encoding strips leading zero-bytes.  This function adds
     /// them back, if necessary.  If the size exceeds `to`, an error
     /// is returned.
-    pub fn value_padded(&self, to: usize) -> Result<Cow<[u8]>> {
+    pub fn value_padded(&self, to: usize) -> Result<Cow<'_, [u8]>> {
         crate::crypto::pad(self.value(), to)
     }
 

@@ -1273,7 +1273,7 @@ impl<'a> UserIDAmalgamation<'a> {
     /// # Ok(()) }
     /// ```
     pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T)
-                                -> RevocationStatus
+                                -> RevocationStatus<'_>
     where
         T: Into<Option<time::SystemTime>>,
     {
@@ -1732,7 +1732,7 @@ impl<'a> UserAttributeAmalgamation<'a> {
     /// # Ok(()) }
     /// ```
     pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T)
-                                -> RevocationStatus
+                                -> RevocationStatus<'_>
     where
         T: Into<Option<time::SystemTime>>,
     {

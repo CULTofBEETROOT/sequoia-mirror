@@ -119,7 +119,7 @@ impl UserAttribute {
     }
 
     /// Iterates over the subpackets.
-    pub fn subpackets(&self) -> SubpacketIterator {
+    pub fn subpackets(&self) -> SubpacketIterator<'_> {
         SubpacketIterator {
             reader: buffered_reader::Memory::new(&self.value[..]),
         }

@@ -257,7 +257,7 @@ impl<'a> PacketPileParser<'a> {
 
     /// Returns a reference to the current packet.
     pub fn packet(&self)
-                  -> std::result::Result<&PacketParser<'a>, &PacketParserEOF>
+                  -> std::result::Result<&PacketParser<'a>, &PacketParserEOF<'a>>
     {
         self.ppr.as_ref()
     }

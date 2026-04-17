@@ -434,7 +434,7 @@ impl PacketPile {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn descendants(&self) -> packet::Iter {
+    pub fn descendants(&self) -> packet::Iter<'_> {
         self.top_level.descendants().expect("toplevel is a container")
     }
 

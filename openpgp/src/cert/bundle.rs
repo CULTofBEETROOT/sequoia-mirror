@@ -969,7 +969,7 @@ impl<P: key::KeyParts> ComponentBundle<Key<P, key::SubordinateRole>> {
     /// # Ok(()) }
     /// ```
     pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T)
-        -> RevocationStatus
+        -> RevocationStatus<'_>
         where T: Into<Option<time::SystemTime>>
     {
         let t = t.into();
@@ -1045,7 +1045,7 @@ impl ComponentBundle<UserID> {
     /// # Ok(()) }
     /// ```
     pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T)
-        -> RevocationStatus
+        -> RevocationStatus<'_>
         where T: Into<Option<time::SystemTime>>
     {
         let t = t.into();
@@ -1115,7 +1115,7 @@ impl ComponentBundle<UserAttribute> {
     /// # Ok(()) }
     /// ```
     pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T)
-        -> RevocationStatus
+        -> RevocationStatus<'_>
         where T: Into<Option<time::SystemTime>>
     {
         let t = t.into();

@@ -4633,7 +4633,7 @@ impl<'a> PacketParserResult<'a> {
     /// Produces a new `Result`, containing references into the
     /// original `PacketParserResult`, leaving the original in place.
     pub fn as_ref(&self)
-                  -> StdResult<&PacketParser<'a>, &PacketParserEOF> {
+                  -> StdResult<&PacketParser<'a>, &PacketParserEOF<'a>> {
         match self {
             PacketParserResult::Some(pp) => Ok(pp),
             PacketParserResult::EOF(eof) => Err(eof),

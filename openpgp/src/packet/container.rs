@@ -244,7 +244,7 @@ impl Container {
     /// descendants are visited in depth-first order.
     ///
     /// Returns `None` if the body is not structured.
-    pub fn descendants(&self) -> Option<Iter> {
+    pub fn descendants(&self) -> Option<Iter<'_>> {
         Some(Iter {
             // Iterate over each packet in the message.
             children: self.children()?,
@@ -257,7 +257,7 @@ impl Container {
     /// Returns an iterator over the packet's immediate children.
     ///
     /// Returns `None` if the body is not structured.
-    pub fn children(&self) -> Option<slice::Iter<Packet>> {
+    pub fn children(&self) -> Option<slice::Iter<'_, Packet>> {
         Some(self.children_ref()?.iter())
     }
 
@@ -452,7 +452,7 @@ impl Packet {
 
     /// Returns an iterator over all the packet's descendants, in
     /// depth-first order.
-    pub(crate) fn descendants(&self) -> Option<Iter> {
+    pub(crate) fn descendants(&self) -> Option<Iter<'_>> {
         self.container_ref().and_then(|c| c.descendants())
     }
 
