@@ -847,8 +847,7 @@ fn packet_path_iter() {
     fn paths<'a>(iter: impl Iterator<Item=&'a Packet>) -> Vec<Vec<usize>> {
         let mut lpaths : Vec<Vec<usize>> = Vec::new();
         for (i, packet) in iter.enumerate() {
-            let mut v = Vec::new();
-            v.push(i);
+            let v = vec![i];
             lpaths.push(v);
 
             if let Some(container) = packet.container_ref() {

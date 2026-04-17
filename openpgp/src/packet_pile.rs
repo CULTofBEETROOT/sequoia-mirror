@@ -951,8 +951,7 @@ mod test {
         one.set_body(b"one".to_vec());
         let mut two = Literal::new(Unicode);
         two.set_body(b"two".to_vec());
-        let mut packets : Vec<Packet> = Vec::new();
-        packets.push(one.into());
+        let packets : Vec<Packet> = vec![one.into()];
 
         assert!(packets.iter().map(|p| p.tag()).collect::<Vec<Tag>>()
                 == [ Tag::Literal ]);
@@ -1082,8 +1081,7 @@ mod test {
         // Make sure out-of-range accesses error out.
         let mut one = Literal::new(Unicode);
         one.set_body(b"one".to_vec());
-        let mut packets : Vec<Packet> = Vec::new();
-        packets.push(one.into());
+        let packets : Vec<Packet> = vec![one.into()];
         let mut pile = PacketPile::from(packets.clone());
 
         assert!(pile.replace(&[ 1 ], 0, Vec::new()).is_ok());
@@ -1093,9 +1091,9 @@ mod test {
         assert!(pile.replace(&[ 0, 1 ], 0, Vec::new()).is_err());
 
         // Try the same thing, but with a container.
-        let mut packets : Vec<Packet> = Vec::new();
-        packets.push(CompressedData::new(CompressionAlgorithm::Uncompressed)
-                     .into());
+        let packets : Vec<Packet> = vec![
+            CompressedData::new(CompressionAlgorithm::Uncompressed).into()
+        ];
         let mut pile = PacketPile::from(packets.clone());
 
         assert!(pile.replace(&[ 1 ], 0, Vec::new()).is_ok());
