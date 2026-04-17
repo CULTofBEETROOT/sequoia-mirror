@@ -2603,7 +2603,7 @@ fn one_pass_sig_test () {
         eprintln!("Trying {}...", test.filename);
         let mut ppr = PacketParserBuilder::from_bytes(
             crate::tests::message(test.filename))
-            .expect(&format!("Reading {}", test.filename)[..])
+            .unwrap_or_else(|_| panic!("Error reading {}", test.filename))
             .build().unwrap();
 
         let mut one_pass_sigs = 0;
@@ -6622,7 +6622,7 @@ mod test {
                 crate::tests::message(test.filename)).unwrap()
                 .buffer_unread_content()
                 .build()
-                .expect(&format!("Error reading {}", test.filename)[..]);
+                .unwrap_or_else(|_| panic!("Error reading {}", test.filename));
 
             let mut ppr = consume_until(
                 ppr, false, &[ Tag::SEIP, Tag::AED ][..],
@@ -6717,7 +6717,7 @@ mod test {
             let mut ppr = PacketParserBuilder::from_bytes(&buf)
                 .unwrap()
                 .build()
-                .expect(&format!("Error reading {}", test.filename)[..]);
+                .unwrap_or_else(|_| panic!("Error reading {}", test.filename));
 
             // Make sure we actually decrypted...
             let mut saw_literal = false;
@@ -6773,7 +6773,7 @@ mod test {
             let mut ppr = PacketParserBuilder::from_bytes(&buf)
                 .unwrap()
                 .build()
-                .expect(&format!("Error reading {:?}", test));
+                .unwrap_or_else(|_| panic!("Error reading {:?}", test));
 
             while let PacketParserResult::Some(pp) = ppr {
                 assert!(pp.possible_keyring().is_ok());
@@ -6812,7 +6812,7 @@ mod test {
             let mut ppr = PacketParserBuilder::from_bytes(&buf)
                 .unwrap()
                 .build()
-                .expect(&format!("Error reading {:?}", test));
+                .unwrap_or_else(|_| panic!("Error reading {:?}", test));
 
             while let PacketParserResult::Some(pp) = ppr {
                 assert!(pp.possible_keyring().is_ok());
@@ -6837,7 +6837,7 @@ mod test {
             let mut ppr = PacketParserBuilder::from_bytes(
                 crate::tests::message(test.filename)).unwrap()
                 .build()
-                .expect(&format!("Error reading {}", test.filename)[..]);
+                .unwrap_or_else(|_| panic!("Error reading {}", test.filename));
 
             let mut saw_literal = false;
             while let PacketParserResult::Some(pp) = ppr {
@@ -6883,7 +6883,7 @@ mod test {
             let mut ppr = PacketParserBuilder::from_bytes(
                 crate::tests::message(test.filename)).unwrap()
                 .build()
-                .expect(&format!("Error reading {}", test.filename)[..]);
+                .unwrap_or_else(|_| panic!("Error reading {}", test.filename));
 
             let mut last_path = vec![];
 

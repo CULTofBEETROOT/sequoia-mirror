@@ -2654,12 +2654,12 @@ mod tests {
         //};
         let gen_v4_curve = |curve: Curve| -> Key<_, _> {
             Key4::generate_ecc(true, curve.clone())
-                .expect(&format!("Can generate a v4 {:?}", curve))
+                .unwrap_or_else(|_| panic!("Can generate a v4 {:?}", curve))
                 .into()
         };
         let gen_v6_curve = |curve: Curve| -> Key<_, _> {
             Key6::generate_ecc(true, curve.clone())
-                .expect(&format!("Can generate a v6 {:?}", curve))
+                .unwrap_or_else(|_| panic!("Can generate a v6 {:?}", curve))
                 .into()
         };
         let gen_v4_ed25519 = || -> Key<_, _> {
