@@ -228,7 +228,7 @@ fn main() -> openpgp::Result<()> {
                                 SubpacketValue::RegularExpression(r) =>
                                     if r.last() == Some(&0) {
                                         sigs_subpacket_re_zero_terminated += 1;
-                                    } else if r.iter().any(|&b| b == 0) {
+                                    } else if r.contains(&0) {
                                         sigs_subpacket_re_inner_zero += 1;
                                     },
                                 _ => (),
