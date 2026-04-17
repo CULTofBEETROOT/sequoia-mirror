@@ -34,3 +34,6 @@ default = ["compression"]
 compression = ["compression-deflate", "compression-bzip2"]
 compression-deflate = ["flate2"]
 compression-bzip2 = ["bzip2"]
+
+[lints]
+workspace = true

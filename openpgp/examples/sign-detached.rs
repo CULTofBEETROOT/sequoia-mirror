@@ -1,4 +1,4 @@
-/// This program demonstrates how to make a detached signature.
+//! This program demonstrates how to make a detached signature.
 
 use std::env;
 use std::io;

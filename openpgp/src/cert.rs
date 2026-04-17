@@ -6335,6 +6335,7 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
             p.serialize(&mut buf)?;
         }
         let dkg = dkg.to_vec()?;
+        #[expect(clippy::overly_complex_bool_expr)]
         if false && buf != dkg {
             std::fs::write("/tmp/buf", &buf)?;
             std::fs::write("/tmp/dkg", &dkg)?;

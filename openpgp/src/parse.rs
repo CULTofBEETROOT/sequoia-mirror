@@ -7219,18 +7219,15 @@ mod test {
                 Ok(vec![Cert::from_bytes(crate::tests::key("testy-new.pgp"))?])
             }
             fn check(&mut self, structure: MessageStructure) -> Result<()> {
-                for (i, layer) in structure.iter().enumerate() {
-                    assert_eq!(i, 0);
-                    if let MessageLayer::SignatureGroup { results } = layer {
-                        assert_eq!(results.len(), 1);
-                        results[0].as_ref().unwrap();
-                        assert!(results[0].is_ok());
-                        return Ok(());
-                    } else {
-                        unreachable!();
-                    }
-                }
-                unreachable!()
+                let [layer]: [&MessageLayer; 1] = structure
+                    .iter().collect::<Vec<_>>().try_into().unwrap();
+                let MessageLayer::SignatureGroup { results } = layer else {
+                    unreachable!();
+                };
+                assert_eq!(results.len(), 1);
+                results[0].as_ref().unwrap();
+                assert!(results[0].is_ok());
+                return Ok(());
             }
         }
 

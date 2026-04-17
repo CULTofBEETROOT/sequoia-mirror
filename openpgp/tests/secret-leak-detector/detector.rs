@@ -428,7 +428,7 @@ impl Map {
     fn iter() -> Result<impl Iterator<Item = Result<Map>>> {
         let f = File::open("/proc/self/maps")?;
         let f = BufReader::new(f);
-        Ok(f.lines().filter_map(|l| l.ok()).map(Self::parse_line))
+        Ok(f.lines().map_while(|l| l.ok()).map(Self::parse_line))
     }
 
     fn parse_line(l: String) -> Result<Self> {

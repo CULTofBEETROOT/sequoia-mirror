@@ -1,11 +1,11 @@
-/// Collects statistics about the SKS packet dump using the openpgp
-/// crate, Sequoia's low-level API.
-///
-/// Note that to achieve reasonable performance, you need to compile
-/// Sequoia and this program with optimizations:
-///
-///     % cargo run -p sequoia-openpgp --example statistics --release \
-///           -- <packet-dump>
+//! Collects statistics about the SKS packet dump using the openpgp
+//! crate, Sequoia's low-level API.
+//!
+//! Note that to achieve reasonable performance, you need to compile
+//! Sequoia and this program with optimizations:
+//!
+//!     % cargo run -p sequoia-openpgp --example statistics --release \
+//!           -- <packet-dump>
 
 use std::env;
 use std::collections::HashMap;
