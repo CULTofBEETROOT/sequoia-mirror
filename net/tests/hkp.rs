@@ -158,7 +158,7 @@ async fn get() -> anyhow::Result<()> {
 async fn send() -> anyhow::Result<()> {
     // Start server.
     let addr = start_server().await?;
-    eprintln!("{}", format!("hkp://{}", addr));
+    eprintln!("hkp://{}", addr);
     let keyserver =
         KeyServer::new(&format!("hkp://{}", addr))?;
     let key = Cert::from_reader(Reader::from_reader(Cursor::new(RESPONSE), None))?;

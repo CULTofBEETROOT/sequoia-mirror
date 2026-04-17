@@ -706,6 +706,7 @@ mod tests {
 
             // Read bytewise to test the buffer logic.
             let mut plaintext = Vec::new();
+            #[allow(clippy::unbuffered_bytes, reason = "data is in-memory")]
             for b in decryptor.bytes() {
                 plaintext.push(b.unwrap());
             }

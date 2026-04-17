@@ -907,7 +907,7 @@ mod tests {
                 }
 
                 let sexp = crate::tests::file(
-                    &format!("{}/{}-{}.sexp", base, test, keygrip.to_string()));
+                    &format!("{}/{}-{}.sexp", base, test, keygrip));
                 let sexp = Sexp::from_bytes(sexp).expect("valid sexp");
 
                 eprintln!("sexp: {}", sexp.summarize());

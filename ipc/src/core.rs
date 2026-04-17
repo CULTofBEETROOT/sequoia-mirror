@@ -169,7 +169,7 @@ impl Config {
 
         // As a special case, we defer the computation of the default
         // home, because env::home_dir() may fail.
-        let home_not_set = c.home == PathBuf::from("");
+        let home_not_set = c.home == Path::new("");
 
         // If we have an ephemeral home, and home is not explicitly
         // set, create a temporary directory.  Ephemeral contexts can
@@ -177,7 +177,7 @@ impl Config {
         // share one home.
         if c.ephemeral && home_not_set {
             let tmp = tempfile::Builder::new().prefix("sequoia").tempdir()?;
-            c.home = tmp.into_path();
+            c.home = tmp.keep();
             c.cleanup = true;
         } else if home_not_set {
             c.home = dirs::home_dir()

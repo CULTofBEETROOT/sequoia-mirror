@@ -273,7 +273,7 @@ impl<'a> RawCert<'a> {
     }
 
     /// Returns the ith packet.
-    pub fn packet(&self, i: usize) -> Option<RawPacket> {
+    pub fn packet(&self, i: usize) -> Option<RawPacket<'_>> {
         let data: &[u8] = self.data.as_ref();
 
         let &(tag, header_len, start) = self.packets.get(i)?;
@@ -286,7 +286,7 @@ impl<'a> RawCert<'a> {
     }
 
     /// Returns an iterator over each raw packet.
-    pub fn packets(&self) -> impl Iterator<Item=RawPacket> {
+    pub fn packets(&self) -> impl Iterator<Item=RawPacket<'_>> {
         let data: &[u8] = self.data.as_ref();
 
         let count = self.packets.len();
@@ -370,7 +370,7 @@ impl<'a> RawCert<'a> {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn keys(&self) -> KeyIter<key::PublicParts, key::UnspecifiedRole> {
+    pub fn keys(&self) -> KeyIter<'_, key::PublicParts, key::UnspecifiedRole> {
         KeyIter::new(self)
     }
 
@@ -1112,7 +1112,7 @@ mod test {
 
     // Compares the result of a RawCertParser with the results of a
     // CertParser on a particular byte stream.
-    fn compare_parse(bytes: &[u8]) -> Vec<RawCert> {
+    fn compare_parse(bytes: &[u8]) -> Vec<RawCert<'_>> {
         let mut result = Vec::new();
 
         // We do the comparison two times: once with a byte stream

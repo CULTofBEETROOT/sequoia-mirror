@@ -3847,13 +3847,13 @@ mod test {
         let mut six = Literal::new(T);
         six.set_body(b"six".to_vec());
 
-        let mut top_level = Vec::new();
-        top_level.push(
+        let top_level = vec![
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(one.clone().into())
                 .push(two.clone().into())
-                .into());
-        top_level.push(three.clone().into());
+                .into(),
+            three.clone().into(),
+        ];
         messages.push(top_level);
 
         // 1: CompressedData(CompressedData { algo: 0 })
@@ -3863,8 +3863,7 @@ mod test {
         //  2: CompressedData(CompressedData { algo: 0 })
         //   1: Literal(Literal { body: "three (5 bytes)" })
         //   2: Literal(Literal { body: "four (4 bytes)" })
-        let mut top_level = Vec::new();
-        top_level.push(
+        let top_level = vec![
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(CompressedData::new(CompressionAlgorithm::Uncompressed)
                       .push(one.clone().into())
@@ -3874,7 +3873,8 @@ mod test {
                       .push(three.clone().into())
                       .push(four.clone().into())
                       .into())
-                .into());
+                .into(),
+        ];
         messages.push(top_level);
 
         // 1: CompressedData(CompressedData { algo: 0 })
@@ -3887,8 +3887,7 @@ mod test {
         //   1: CompressedData(CompressedData { algo: 0 })
         //    1: Literal(Literal { body: "three (5 bytes)" })
         //   2: Literal(Literal { body: "four (4 bytes)" })
-        let mut top_level = Vec::new();
-        top_level.push(
+        let top_level = vec![
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(CompressedData::new(CompressionAlgorithm::Uncompressed)
                     .push(CompressedData::new(CompressionAlgorithm::Uncompressed)
@@ -3904,7 +3903,8 @@ mod test {
                         .into())
                     .push(four.clone().into())
                     .into())
-                .into());
+                .into(),
+        ];
         messages.push(top_level);
 
         // 1: CompressedData(CompressedData { algo: 0 })
@@ -3915,21 +3915,18 @@ mod test {
         // 4: CompressedData(CompressedData { algo: 0 })
         //  1: Literal(Literal { body: "five (4 bytes)" })
         //  2: Literal(Literal { body: "six (3 bytes)" })
-        let mut top_level = Vec::new();
-        top_level.push(
+        let top_level = vec![
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(one.clone().into())
                 .push(two.clone().into())
-                .into());
-        top_level.push(
-            three.clone().into());
-        top_level.push(
-            four.clone().into());
-        top_level.push(
+                .into(),
+            three.clone().into(),
+            four.clone().into(),
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(five.into())
                 .push(six.into())
-                .into());
+                .into(),
+        ];
         messages.push(top_level);
 
         // 1: UserID(UserID { value: "Foo" })

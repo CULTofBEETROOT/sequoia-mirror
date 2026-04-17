@@ -2172,6 +2172,7 @@ mod test {
                 Cursor::new(asc),
                 ReaderMode::Tolerant(Some(Kind::File)));
             let mut dearmored = Vec::<u8>::new();
+            #[allow(clippy::unbuffered_bytes, reason = "data is in-memory")]
             for c in r.bytes() {
                 dearmored.push(c.unwrap());
             }
@@ -2191,6 +2192,7 @@ mod test {
         let r = Reader::from_reader(Cursor::new(yuge_key),
                             ReaderMode::VeryTolerant);
         let mut dearmored = Vec::<u8>::new();
+        #[allow(clippy::unbuffered_bytes, reason = "data is in-memory")]
         for c in r.bytes() {
             dearmored.push(c.unwrap());
         }

@@ -407,7 +407,7 @@ mod tests {
              A47CB586A51ACB93ACB9EF806F35F29131548E59E2FACD58CF6232E3\
              ._openpgpkey.debian.org. 10800 IN OPENPGPKEY ",
             cert.fingerprint())));
-        let asc = record.split(' ').last().unwrap();
+        let asc = record.split(' ').next_back().unwrap();
         let bin = general_purpose::STANDARD.decode(&asc)?;
         let c = Cert::from_bytes(&bin)?;
         assert_eq!(c.userids().count(), 1);
@@ -436,7 +436,7 @@ mod tests {
              A47CB586A51ACB93ACB9EF806F35F29131548E59E2FACD58CF6232E3\
              ._openpgpkey.debian.org. 10800 IN OPENPGPKEY ",
             cert.fingerprint())));
-        let asc = record.split(' ').last().unwrap();
+        let asc = record.split(' ').next_back().unwrap();
         let bin = general_purpose::STANDARD.decode(&asc)?;
         let c = Cert::from_bytes(&bin)?;
         assert_eq!(c.userids().count(), 3);
@@ -459,7 +459,7 @@ mod tests {
         assert_eq!(records.len(), 2);
         for record in records {
             eprintln!("{}", record);
-            let asc = record.split(' ').last().unwrap();
+            let asc = record.split(' ').next_back().unwrap();
             let bin = general_purpose::STANDARD.decode(&asc)?;
             let c = Cert::from_bytes(&bin)?;
             assert_eq!(c.userids().count(), 1);
@@ -487,7 +487,7 @@ mod tests {
              ._openpgpkey.debian.org. 300 IN TYPE61 \\# {} ",
             cert.fingerprint(),
             cert.serialized_len())));
-        let asc = record.split(' ').last().unwrap();
+        let asc = record.split(' ').next_back().unwrap();
         let bin = openpgp::fmt::hex::decode(&asc)?;
         let c = Cert::from_bytes(&bin)?;
         assert_eq!(c.userids().count(), 1);

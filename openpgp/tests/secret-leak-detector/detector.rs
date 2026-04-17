@@ -53,7 +53,7 @@ struct Leak {
 
 static LEAKS: Mutex<Vec<Leak>> = Mutex::new(Vec::new());
 
-thread_local!(static IN_DEALLOC: AtomicBool = AtomicBool::new(false));
+thread_local!(static IN_DEALLOC: AtomicBool = const { AtomicBool::new(false) });
 
 unsafe impl GlobalAlloc for LeakingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {

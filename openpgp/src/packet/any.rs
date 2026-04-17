@@ -42,6 +42,7 @@ pub trait Any<T>: crate::seal::Sealed {
     /// let m: Marker = p.downcast().unwrap();
     /// # let _ = m;
     /// ```
+    #[expect(clippy::result_large_err, reason = "returning the value on error is intentional")]
     fn downcast(self) -> std::result::Result<T, Packet>;
 
     /// Attempts to downcast to `&T`, returning `None` if it fails.

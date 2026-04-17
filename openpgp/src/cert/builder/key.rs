@@ -143,7 +143,7 @@ impl KeyBuilder {
     /// been created in the future and will thus be ignored.  Although
     /// NTP is widely used, empirically it seems that some virtual
     /// machines have laggy clocks.
-    pub fn subkey(self, vc: ValidCert) -> Result<SubkeyBuilder<'_>> {
+    pub fn subkey(self, vc: ValidCert<'_>) -> Result<SubkeyBuilder<'_>> {
         let profile = match vc.primary_key().key().version() {
             4 => Profile::RFC4880,
             6 => Profile::RFC9580,

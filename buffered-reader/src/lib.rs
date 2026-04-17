@@ -1358,7 +1358,7 @@ mod test {
                                   "buffered-reader-test.txt"]
                 .iter().collect();
 
-            let mut f = File::open(&path).expect(&path.to_string_lossy());
+            let mut f = File::open(&path).unwrap_or_else(|_| panic!("{}", path.to_string_lossy()));
             let bio = Generic::new(&mut f, None);
             buffered_reader_read_test_aux (bio, data);
         }

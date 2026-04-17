@@ -701,7 +701,7 @@ impl Cert {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn primary_key(&self) -> PrimaryKeyAmalgamation<key::PublicParts>
+    pub fn primary_key(&self) -> PrimaryKeyAmalgamation<'_, key::PublicParts>
     {
         PrimaryKeyAmalgamation::new(self)
     }
@@ -761,7 +761,7 @@ impl Cert {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T) -> RevocationStatus
+    pub fn revocation_status<T>(&self, policy: &dyn Policy, t: T) -> RevocationStatus<'_>
         where T: Into<Option<time::SystemTime>>
     {
         let t = t.into();
@@ -976,7 +976,7 @@ impl Cert {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn userids(&self) -> UserIDAmalgamationIter {
+    pub fn userids(&self) -> UserIDAmalgamationIter<'_> {
         ComponentAmalgamationIter::new(self, self.userids.iter())
     }
 
@@ -1005,7 +1005,7 @@ impl Cert {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn user_attributes(&self) -> UserAttributeAmalgamationIter {
+    pub fn user_attributes(&self) -> UserAttributeAmalgamationIter<'_> {
         ComponentAmalgamationIter::new(self, self.user_attributes.iter())
     }
 
@@ -1065,7 +1065,7 @@ impl Cert {
     /// #     Ok(())
     /// # }
     /// ```
-    pub fn keys(&self) -> KeyAmalgamationIter<key::PublicParts, key::UnspecifiedRole>
+    pub fn keys(&self) -> KeyAmalgamationIter<'_, key::PublicParts, key::UnspecifiedRole>
     {
         KeyAmalgamationIter::new(self)
     }
@@ -1078,7 +1078,7 @@ impl Cert {
     /// the public interface.  Do not use it for new tests.
     #[cfg(test)]
     pub(crate) fn subkeys(&self)
-        -> KeyAmalgamationIter<key::PublicParts, key::SubordinateRole>
+        -> KeyAmalgamationIter<'_, key::PublicParts, key::SubordinateRole>
     {
         self.keys().subkeys()
     }
@@ -1115,7 +1115,7 @@ impl Cert {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn unknowns(&self) -> UnknownComponentAmalgamationIter {
+    pub fn unknowns(&self) -> UnknownComponentAmalgamationIter<'_> {
         ComponentAmalgamationIter::new(self, self.unknowns.iter())
     }
 

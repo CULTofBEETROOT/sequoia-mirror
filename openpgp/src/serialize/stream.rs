@@ -3341,13 +3341,13 @@ mod test {
         two.set_body(b"two".to_vec());
         let mut three = Literal::new(T);
         three.set_body(b"three".to_vec());
-        let mut reference = Vec::new();
-        reference.push(
+        let reference = vec![
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(one.into())
                 .push(two.into())
-                .into());
-        reference.push(three.into());
+                .into(),
+            three.into(),
+        ];
 
         let mut o = vec![];
         {
@@ -3396,8 +3396,7 @@ mod test {
         three.set_body(b"three".to_vec());
         let mut four = Literal::new(T);
         four.set_body(b"four".to_vec());
-        let mut reference = Vec::new();
-        reference.push(
+        let reference = vec![
             CompressedData::new(CompressionAlgorithm::Uncompressed)
                 .push(CompressedData::new(CompressionAlgorithm::Uncompressed)
                       .push(one.into())
@@ -3407,7 +3406,8 @@ mod test {
                       .push(three.into())
                       .push(four.into())
                       .into())
-                .into());
+                .into(),
+        ];
 
         let mut o = vec![];
         {
@@ -3782,8 +3782,7 @@ mod test {
                             Err(err) => panic!("Decrypting message: {}", err),
                         };
 
-                        let mut buffer = Vec::new();
-                        buffer.resize(read_len, 0);
+                        let mut buffer = vec![0; read_len];
 
                         let mut decrypted_content = Vec::new();
                         loop {
