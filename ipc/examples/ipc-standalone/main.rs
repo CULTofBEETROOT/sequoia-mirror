@@ -6,6 +6,7 @@ use capnp_rpc::{twoparty, RpcSystem};
 use capnp::capability::Rc;
 
 use clap::{Parser, ValueEnum};
+use std::future::Future;
 use std::path::PathBuf;
 
 use sequoia_ipc as ipc;
@@ -47,7 +48,7 @@ impl hello::Server for HelloServer {
         self: Rc<Self>,
         params: hello::HelloParams,
         mut results: hello::HelloResults,
-    ) -> ::capnp::capability::Promise<(), ::capnp::Error> {
+    ) -> impl Future<Output = std::result::Result<(), capnp::Error>> + 'static {
         let p = pry!(params.get());
         let name: String = pry!(p.get_name()).to_string().expect("");
         let response = format!("Hello {}!", name);
