@@ -169,7 +169,7 @@ impl Config {
 
         // As a special case, we defer the computation of the default
         // home, because env::home_dir() may fail.
-        let home_not_set = c.home == PathBuf::from("");
+        let home_not_set = c.home == Path::new("");
 
         // If we have an ephemeral home, and home is not explicitly
         // set, create a temporary directory.  Ephemeral contexts can
