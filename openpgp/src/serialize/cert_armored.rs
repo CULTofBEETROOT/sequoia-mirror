@@ -123,7 +123,7 @@ impl<'a> TSK<'a> {
 /// A `Cert` or `TSK` to be armored and serialized.
 enum Encoder<'a> {
     Cert(&'a Cert),
-    TSK(TSK<'a>),
+    TSK(Box<TSK<'a>>),
 }
 
 impl<'a> Encoder<'a> {
@@ -134,7 +134,7 @@ impl<'a> Encoder<'a> {
 
     /// Returns a new Encoder to enarmor and serialize a `TSK`.
     fn new_tsk(tsk: TSK<'a>) -> Self {
-        Encoder::TSK(tsk)
+        Encoder::TSK(Box::new(tsk))
     }
 
     /// Returns the cert's primary key version.
