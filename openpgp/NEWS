@@ -11,6 +11,11 @@
    - ValidBindingSignature::map now accepts FnMut closures (relaxed
      from Fn).
 
+** New functionality
+   - The RustCrypto backend now supports X448 and Ed448.
+   - The Windows CNG backend now supports X448 and Ed448 implemented
+     using the X448 and Ed448 implementation from RustCrypto.
+
 * Changes in 2.2.0
 ** Notable changes
    - Our MSRV is now 1.85.
