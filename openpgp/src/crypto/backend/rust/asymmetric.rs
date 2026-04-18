@@ -75,7 +75,7 @@ impl Asymmetric for super::Backend {
             DSA
                 => true,
             MLDSA65_Ed25519 | MLDSA87_Ed448 => true,
-            SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
+            SLHDSA128s | SLHDSA128f | SLHDSA256s => true,
             MLKEM768_X25519 | MLKEM1024_X448 => true,
             ElGamalEncrypt | ElGamalEncryptSign | Private(_) | Unknown(_)
                 => false,
@@ -363,6 +363,138 @@ impl Asymmetric for super::Backend {
         let sig = Signature::<MlDsa87>::decode(signature.into())
             .ok_or_else(|| Error::BadSignature(
                 "Malformed ML-DSA-87 signature".into()))?;
+        Ok(vk.verify(digest, &sig).is_ok())
+    }
+
+    fn slhdsa128s_generate_key() -> Result<(Protected, [u8; 32])> {
+        use slh_dsa::{Shake128s, SigningKey};
+        // slh-dsa 0.0.3 doesn't reexport OsRng.
+        // It depends on rand_core 0.6.
+        use rand_core::OsRng;
+
+        let signing_key = SigningKey::<Shake128s>::new(&mut OsRng);
+        let public = signing_key.as_ref().to_bytes().into();
+        let secret: [u8; 64] = signing_key.to_bytes().into();
+        Ok((secret.into(), public))
+    }
+
+    fn slhdsa128s_sign(secret: &Protected, digest: &[u8])
+                       -> Result<Box<[u8; 7856]>>
+    {
+        use slh_dsa::{Shake128s, SigningKey};
+        use slh_dsa::signature::Signer;
+
+        if secret.len() != 64 {
+            return Err(Error::InvalidKey(format!(
+                "expected 64-byte SLH-DSA-128s key, got {} bytes",
+                secret.len())).into());
+        }
+
+        let signing_key = SigningKey::<Shake128s>::try_from(&secret[..])
+            .expect("length checked");
+        let sig = signing_key.sign(digest);
+        Ok(Box::new(sig.to_bytes().into()))
+    }
+
+    fn slhdsa128s_verify(public: &[u8; 32], digest: &[u8],
+                         signature: &[u8; 7856])
+                         -> Result<bool>
+    {
+        use slh_dsa::{Shake128s, Signature, VerifyingKey};
+        use slh_dsa::signature::Verifier;
+
+        let vk = VerifyingKey::<Shake128s>::try_from(&public[..])
+            .expect("correct length");
+        let sig = Signature::<Shake128s>::try_from(&signature[..])
+            .expect("correct length");
+        Ok(vk.verify(digest, &sig).is_ok())
+    }
+
+    fn slhdsa128f_generate_key() -> Result<(Protected, [u8; 32])> {
+        use slh_dsa::{Shake128f, SigningKey};
+        // slh-dsa 0.0.3 doesn't reexport OsRng.
+        // It depends on rand_core 0.6.
+        use rand_core::OsRng;
+
+        let signing_key = SigningKey::<Shake128f>::new(&mut OsRng);
+        let public = signing_key.as_ref().to_bytes().into();
+        let secret: [u8; 64] = signing_key.to_bytes().into();
+        Ok((secret.into(), public))
+    }
+
+    fn slhdsa128f_sign(secret: &Protected, digest: &[u8])
+                       -> Result<Box<[u8; 17088]>>
+    {
+        use slh_dsa::{Shake128f, SigningKey};
+        use slh_dsa::signature::Signer;
+
+        if secret.len() != 64 {
+            return Err(Error::InvalidKey(format!(
+                "expected 64-byte SLH-DSA-128f key, got {} bytes",
+                secret.len())).into());
+        }
+
+        let signing_key = SigningKey::<Shake128f>::try_from(&secret[..])
+            .expect("length checked");
+        let sig = signing_key.sign(digest);
+        Ok(Box::new(sig.to_bytes().into()))
+    }
+
+    fn slhdsa128f_verify(public: &[u8; 32], digest: &[u8],
+                         signature: &[u8; 17088])
+                         -> Result<bool>
+    {
+        use slh_dsa::{Shake128f, Signature, VerifyingKey};
+        use slh_dsa::signature::Verifier;
+
+        let vk = VerifyingKey::<Shake128f>::try_from(&public[..])
+            .expect("correct length");
+        let sig = Signature::<Shake128f>::try_from(&signature[..])
+            .expect("correct length");
+        Ok(vk.verify(digest, &sig).is_ok())
+    }
+
+    fn slhdsa256s_generate_key() -> Result<(Protected, Box<[u8; 64]>)> {
+        use slh_dsa::{Shake256s, SigningKey};
+        // slh-dsa 0.0.3 doesn't reexport OsRng.
+        // It depends on rand_core 0.6.
+        use rand_core::OsRng;
+
+        let signing_key = SigningKey::<Shake256s>::new(&mut OsRng);
+        let public = Box::new(signing_key.as_ref().to_bytes().into());
+        let secret: [u8; 128] = signing_key.to_bytes().into();
+        Ok((secret.into(), public))
+    }
+
+    fn slhdsa256s_sign(secret: &Protected, digest: &[u8])
+                       -> Result<Box<[u8; 29792]>>
+    {
+        use slh_dsa::{Shake256s, SigningKey};
+        use slh_dsa::signature::Signer;
+
+        if secret.len() != 128 {
+            return Err(Error::InvalidKey(format!(
+                "expected 128-byte SLH-DSA-256s key, got {} bytes",
+                secret.len())).into());
+        }
+
+        let signing_key = SigningKey::<Shake256s>::try_from(&secret[..])
+            .expect("length checked");
+        let sig = signing_key.sign(digest);
+        Ok(Box::new(sig.to_bytes().into()))
+    }
+
+    fn slhdsa256s_verify(public: &[u8; 64], digest: &[u8],
+                         signature: &[u8; 29792])
+                         -> Result<bool>
+    {
+        use slh_dsa::{Shake256s, Signature, VerifyingKey};
+        use slh_dsa::signature::Verifier;
+
+        let vk = VerifyingKey::<Shake256s>::try_from(&public[..])
+            .expect("correct length");
+        let sig = Signature::<Shake256s>::try_from(&signature[..])
+            .expect("correct length");
         Ok(vk.verify(digest, &sig).is_ok())
     }
 

@@ -90,6 +90,7 @@ ripemd = { version = "0.1", features = ["oid"], optional = true }
 rsa = { version = "0.9.0", optional = true }
 sha2 = { version = "0.10", features = ["oid"], optional = true }
 sha3 = { version = "0.10", features = ["oid"], optional = true }
+slh-dsa = { version = "0.0.3", default-features = false, optional = true }
 twofish = { version = "0.7", optional = true, features = ["zeroize"] }
 typenum = { version = "1.12.0", optional = true }
 x25519-dalek = { version = "2", optional = true, default-features = false, features = ["static_secrets", "zeroize"] }
@@ -134,7 +135,7 @@ crypto-rust = [
     "dep:p384", "dep:p521",
     "dep:rand", "rand?/os_rng", "dep:rand_core", "rand_core?/getrandom",
     "dep:ecdsa", "dep:aes-gcm", "dep:dsa", "dep:hkdf",
-    "dep:ml-dsa", "dep:ml-kem",
+    "dep:ml-dsa", "dep:ml-kem", "dep:slh-dsa",
 ]
 crypto-cng = [
     "dep:cipher", "dep:cx448", "dep:eax", "dep:winapi", "dep:win-crypto-ng",

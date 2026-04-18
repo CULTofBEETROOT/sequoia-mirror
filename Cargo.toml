@@ -107,6 +107,8 @@ opt-level = 2
 opt-level = 2
 [profile.dev.package.sha3]
 opt-level = 2
+[profile.dev.package.slh-dsa]
+opt-level = 2
 [profile.dev.package.twofish]
 opt-level = 2
 [profile.dev.package.x25519-dalek]
