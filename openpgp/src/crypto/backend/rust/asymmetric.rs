@@ -74,7 +74,7 @@ impl Asymmetric for super::Backend {
                 => true,
             DSA
                 => true,
-            MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
+            MLDSA65_Ed25519 | MLDSA87_Ed448 => true,
             SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
             MLKEM768_X25519 | MLKEM1024_X448 => true,
             ElGamalEncrypt | ElGamalEncryptSign | Private(_) | Unknown(_)
@@ -274,6 +274,96 @@ impl Asymmetric for super::Backend {
         let sig = dsa::Signature::from_components(r.into(), s.into())?;
         public.verify_prehash(digest, &sig)?;
         Ok(true)
+    }
+
+    fn mldsa65_generate_key() -> Result<(Protected, Box<[u8; 1952]>)> {
+        use ml_dsa::{Keypair, MlDsa65, SigningKey};
+
+        let mut seed = Protected::new(32);
+        crate::crypto::random(&mut seed)?;
+
+        let seed_array = (&seed[..]).try_into().expect("correct length");
+        let keypair = SigningKey::<MlDsa65>::from_seed(&seed_array);
+
+        let public = Box::new(keypair.verifying_key().encode().into());
+        Ok((seed, public))
+    }
+
+    fn mldsa65_sign(secret: &Protected, digest: &[u8])
+                    -> Result<Box<[u8; 3309]>>
+    {
+        use ml_dsa::{MlDsa65, SigningKey};
+        use ml_dsa::signature::Signer;
+
+        if secret.len() != 32 {
+            return Err(Error::InvalidKey(format!(
+                "expected 32-byte ML-DSA-65 seed, got {} bytes",
+                secret.len())).into());
+        }
+
+        let seed_array = (&secret[..]).try_into().expect("length checked");
+        let keypair = SigningKey::<MlDsa65>::from_seed(&seed_array);
+        let sig = keypair.sign(digest);
+        Ok(Box::new(sig.encode().into()))
+    }
+
+    fn mldsa65_verify(public: &[u8; 1952], digest: &[u8],
+                      signature: &[u8; 3309])
+                      -> Result<bool>
+    {
+        use ml_dsa::{MlDsa65, Signature, VerifyingKey};
+        use ml_dsa::signature::Verifier;
+
+        let vk = VerifyingKey::<MlDsa65>::decode(public.into());
+        let sig = Signature::<MlDsa65>::decode(signature.into())
+            .ok_or_else(|| Error::BadSignature(
+                "Malformed ML-DSA-65 signature".into()))?;
+        Ok(vk.verify(digest, &sig).is_ok())
+    }
+
+    fn mldsa87_generate_key() -> Result<(Protected, Box<[u8; 2592]>)> {
+        use ml_dsa::{Keypair, MlDsa87, SigningKey};
+
+        let mut seed = Protected::new(32);
+        crate::crypto::random(&mut seed)?;
+
+        let seed_array = (&seed[..]).try_into().expect("correct length");
+        let keypair = SigningKey::<MlDsa87>::from_seed(&seed_array);
+
+        let public = Box::new(keypair.verifying_key().encode().into());
+        Ok((seed, public))
+    }
+
+    fn mldsa87_sign(secret: &Protected, digest: &[u8])
+                    -> Result<Box<[u8; 4627]>>
+    {
+        use ml_dsa::{MlDsa87, SigningKey};
+        use ml_dsa::signature::Signer;
+
+        if secret.len() != 32 {
+            return Err(Error::InvalidKey(format!(
+                "expected 32-byte ML-DSA-87 seed, got {} bytes",
+                secret.len())).into());
+        }
+
+        let seed_array = (&secret[..]).try_into().expect("length checked");
+        let keypair = SigningKey::<MlDsa87>::from_seed(&seed_array);
+        let sig = keypair.sign(digest);
+        Ok(Box::new(sig.encode().into()))
+    }
+
+    fn mldsa87_verify(public: &[u8; 2592], digest: &[u8],
+                      signature: &[u8; 4627])
+                      -> Result<bool>
+    {
+        use ml_dsa::{MlDsa87, Signature, VerifyingKey};
+        use ml_dsa::signature::Verifier;
+
+        let vk = VerifyingKey::<MlDsa87>::decode(public.into());
+        let sig = Signature::<MlDsa87>::decode(signature.into())
+            .ok_or_else(|| Error::BadSignature(
+                "Malformed ML-DSA-87 signature".into()))?;
+        Ok(vk.verify(digest, &sig).is_ok())
     }
 
     fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {

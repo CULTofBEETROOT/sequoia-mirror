@@ -83,6 +83,8 @@ opt-level = 2
 opt-level = 2
 [profile.dev.package.md-5]
 opt-level = 2
+[profile.dev.package.ml-dsa]
+opt-level = 2
 [profile.dev.package.ml-kem]
 opt-level = 2
 [profile.dev.package.num-bigint-dig]
