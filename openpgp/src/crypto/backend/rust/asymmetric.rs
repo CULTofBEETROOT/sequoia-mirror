@@ -76,7 +76,7 @@ impl Asymmetric for super::Backend {
                 => true,
             MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
             SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
-            MLKEM768_X25519 | MLKEM1024_X448 => false,
+            MLKEM768_X25519 | MLKEM1024_X448 => true,
             ElGamalEncrypt | ElGamalEncryptSign | Private(_) | Unknown(_)
                 => false,
         }
@@ -274,6 +274,110 @@ impl Asymmetric for super::Backend {
         let sig = dsa::Signature::from_components(r.into(), s.into())?;
         public.verify_prehash(digest, &sig)?;
         Ok(true)
+    }
+
+    fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {
+        use ml_kem::{kem::KeyExport, DecapsulationKey, MlKem768};
+
+        let mut seed = Protected::new(64);
+        crate::crypto::random(&mut seed)?;
+
+        let decaps = DecapsulationKey::<MlKem768>::from_seed(
+            (&seed[..]).try_into().expect("correct length"));
+
+        let public = Box::new(decaps.encapsulation_key().to_bytes().into());
+        Ok((seed, public))
+    }
+
+    fn mlkem768_encapsulate(public: &[u8; 1184])
+                            -> Result<(Box<[u8; 1088]>, Protected)>
+    {
+        use ml_kem::{B32, EncapsulationKey, MlKem768};
+
+        let mut m = Protected::new(32);
+        crate::crypto::random(&mut m)?;
+
+        let encaps = EncapsulationKey::<MlKem768>::new(public.into())
+            .map_err(|_| Error::InvalidKey(
+                "Invalid ML-KEM-768 public key".into()))?;
+        let m: B32 = (&m[..]).try_into().expect("correct length");
+        let (ciphertext, shared) = encaps.encapsulate_deterministic(&m);
+
+        let ciphertext = Box::new(ciphertext.into());
+        let shared: [u8; 32] = shared.into();
+        Ok((ciphertext, shared.into()))
+    }
+
+    fn mlkem768_decapsulate(secret: &Protected,
+                            ciphertext: &[u8; 1088])
+                            -> Result<Protected>
+    {
+        use ml_kem::{kem::Decapsulate, DecapsulationKey, MlKem768};
+
+        if secret.len() != 64 {
+            return Err(Error::InvalidKey(format!(
+                "expected 64-byte ML-KEM-768 seed, got {} bytes",
+                secret.len())).into());
+        }
+
+        let decaps = DecapsulationKey::<MlKem768>::from_seed(
+            (&secret[..]).try_into().expect("length checked"));
+        let shared = decaps.decapsulate(ciphertext.into());
+
+        let shared: [u8; 32] = shared.into();
+        Ok(shared.into())
+    }
+
+    fn mlkem1024_generate_key() -> Result<(Protected, Box<[u8; 1568]>)> {
+        use ml_kem::{kem::KeyExport, DecapsulationKey, MlKem1024};
+
+        let mut seed = Protected::new(64);
+        crate::crypto::random(&mut seed)?;
+
+        let decaps = DecapsulationKey::<MlKem1024>::from_seed(
+            (&seed[..]).try_into().expect("correct length"));
+
+        let public = Box::new(decaps.encapsulation_key().to_bytes().into());
+        Ok((seed, public))
+    }
+
+    fn mlkem1024_encapsulate(public: &[u8; 1568])
+                             -> Result<(Box<[u8; 1568]>, Protected)>
+    {
+        use ml_kem::{B32, EncapsulationKey, MlKem1024};
+
+        let mut m = Protected::new(32);
+        crate::crypto::random(&mut m)?;
+
+        let encaps = EncapsulationKey::<MlKem1024>::new(public.into())
+            .map_err(|_| Error::InvalidKey(
+                "Invalid ML-KEM-1024 public key".into()))?;
+        let m: B32 = (&m[..]).try_into().expect("correct length");
+        let (ciphertext, shared) = encaps.encapsulate_deterministic(&m);
+
+        let ciphertext = Box::new(ciphertext.into());
+        let shared: [u8; 32] = shared.into();
+        Ok((ciphertext, shared.into()))
+    }
+
+    fn mlkem1024_decapsulate(secret: &Protected,
+                             ciphertext: &[u8; 1568])
+                             -> Result<Protected>
+    {
+        use ml_kem::{kem::Decapsulate, DecapsulationKey, MlKem1024};
+
+        if secret.len() != 64 {
+            return Err(Error::InvalidKey(format!(
+                "expected 64-byte ML-KEM-1024 seed, got {} bytes",
+                secret.len())).into());
+        }
+
+        let decaps = DecapsulationKey::<MlKem1024>::from_seed(
+            (&secret[..]).try_into().expect("length checked"));
+        let shared = decaps.decapsulate(ciphertext.into());
+
+        let shared: [u8; 32] = shared.into();
+        Ok(shared.into())
     }
 }
 
