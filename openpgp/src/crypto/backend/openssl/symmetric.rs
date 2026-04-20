@@ -154,6 +154,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES192 => Cipher::aes_192_cfb128(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_cfb128(),
 
+            #[cfg(not(osslconf = "OPENSSL_NO_DES"))]
             SymmetricAlgorithm::TripleDES => Cipher::des_ede3_cfb64(),
 
             #[cfg(not(osslconf = "OPENSSL_NO_CAMELLIA"))]
@@ -182,6 +183,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES192 => Cipher::aes_192_cbc(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_cbc(),
 
+            #[cfg(not(osslconf = "OPENSSL_NO_DES"))]
             SymmetricAlgorithm::TripleDES => Cipher::des_ede3_cbc(),
 
             #[cfg(not(osslconf = "OPENSSL_NO_CAMELLIA"))]
@@ -210,6 +212,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES192 => Cipher::aes_192_ecb(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_ecb(),
 
+            #[cfg(not(osslconf = "OPENSSL_NO_DES"))]
             SymmetricAlgorithm::TripleDES => Cipher::des_ede3_ecb(),
 
             #[cfg(not(osslconf = "OPENSSL_NO_CAMELLIA"))]
