@@ -332,6 +332,8 @@ pub(crate) fn time(t: &std::time::SystemTime) -> String {
 
 #[cfg(test)]
 mod test {
+    use crate::fmt::hex;
+
     #[test]
     fn from_hex() {
         use super::from_hex as fh;
@@ -392,6 +394,22 @@ mod test {
             let hex = super::to_hex(&data, true);
             data == super::from_hex(&hex, true).unwrap()
         }
+    }
+
+    #[test]
+    fn hex_decode_accepts_mixed_case() {
+        assert_eq!(hex::decode("aBcD").unwrap(), vec![0xAB, 0xCD]);
+    }
+
+    #[test]
+    fn hex_decode_odd_nibbles_are_left_padded() {
+        assert_eq!(hex::decode("ABC").unwrap(), vec![0x0A, 0xBC]);
+    }
+
+    #[test]
+    fn hex_decode_rejects_invalid_characters() {
+        assert!(hex::decode("GG").is_err());
+        assert!(hex::decode_pretty("0xGG").is_err());
     }
 
     #[test]
@@ -457,6 +475,63 @@ mod test {
              00000004              00                                     \
              type\n\
              ");
+    }
+
+    quickcheck! {
+        fn hex_encode_decode_roundtrip_qc(data: Vec<u8>) -> bool {
+            hex::decode(hex::encode(&data)).unwrap() == data
+        }
+    }
+
+    #[test]
+    fn hex_encode_formats_uppercase() {
+        assert_eq!(hex::encode(&[0xAB, 0xCD, 0xEF]), "ABCDEF");
+    }
+
+    quickcheck! {
+        fn hex_pretty_accepts_0x_prefix_qc(data: Vec<u8>) -> bool {
+            let s = format!("0x{}", hex::encode(&data));
+            hex::decode_pretty(&s).unwrap() == data
+        }
+    }
+
+    #[test]
+    fn hex_pretty_accepts_bare_0x_as_empty() {
+        assert_eq!(hex::decode_pretty("0x").unwrap(), Vec::<u8>::new());
+    }
+
+    quickcheck! {
+        fn hex_pretty_encode_decode_roundtrip_qc(data: Vec<u8>) -> bool {
+            hex::decode_pretty(hex::encode_pretty(&data)).unwrap() == data
+        }
+    }
+
+    #[test]
+    fn hex_pretty_accepts_prefix_and_spaces() {
+        assert_eq!(hex::decode_pretty("  0xAB CD \n").unwrap(),
+                   vec![0xAB, 0xCD]);
+    }
+
+    #[test]
+    fn hex_pretty_rejects_input_with_several_0x() {
+        assert!(hex::decode_pretty("0x0x0x").is_err());
+    }
+    #[test]
+    fn hex_pretty_rejects_stray_x() {
+        assert!(hex::decode_pretty("ABxC").is_err());
+    }
+
+    #[test]
+    fn hex_pretty_rejects_x_when_not_part_of_leading_prefix() {
+        assert!(hex::decode_pretty("1x").is_err());
+    }
+
+    #[test]
+    fn hex_pretty_whitespace_invariant() {
+        let data = vec![0x01, 0x23, 0x45, 0x67, 0x89];
+        let base = hex::encode_pretty(&data);
+        let noisy = format!(" \n{}\t\n", base.replace(" ", " \t "));
+        assert_eq!(hex::decode_pretty(&noisy).unwrap(), data);
     }
 
     #[test]
