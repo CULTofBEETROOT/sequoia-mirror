@@ -1133,15 +1133,25 @@ mod test {
     /// Problem on systems with 32-bit time_t.
     #[test]
     fn issue_802() -> Result<()> {
-        let pp = crate::PacketPile::from_bytes(b"-----BEGIN PGP ARMORED FILE-----
+        const REPRODUCER: &[u8] = b"\
+        -----BEGIN PGP ARMORED FILE-----
 
 xiEE/////xIJKyQDAwIIAQENAFYp8M2JngCfc04tIwMBCuU=
 -----END PGP ARMORED FILE-----
-")?;
+";
+
+        let pp = crate::PacketPile::from_bytes(REPRODUCER)?;
         let p = pp.path_ref(&[0]).unwrap();
-        let buf = p.to_vec().expect("Failed to serialize packet");
-        let q = Packet::from_bytes(&buf).unwrap();
+
+        let buf1 = p.to_vec().expect("Failed to serialize packet");
+        let q = Packet::from_bytes(&buf1).unwrap();
         assert_eq!(p, &q);
+
+        // Reparsing the serialized packet.
+        let buf2 = q.to_vec().expect("Failed to reserialize packet");
+        let r = Packet::from_bytes(&buf2).unwrap();
+        assert_eq!(q, r);
+
         Ok(())
     }
 }
