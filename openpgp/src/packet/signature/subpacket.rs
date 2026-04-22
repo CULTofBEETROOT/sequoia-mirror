@@ -1772,7 +1772,9 @@ impl ArbitraryBounded for SubpacketValue {
                 },
                 22 if depth == 0 => continue, // Don't recurse, try again.
                 22 => EmbeddedSignature(
-                    ArbitraryBounded::arbitrary_bounded(g, depth - 1)),
+                    // Set depth to 0: don't create embedded
+                    // signatures in embedded signatures.
+                    ArbitraryBounded::arbitrary_bounded(g, 0)),
                 23 => IssuerFingerprint(Arbitrary::arbitrary(g)),
                 24 => Unknown {
                     tag: SubpacketTag::PreferredAEADAlgorithms,
