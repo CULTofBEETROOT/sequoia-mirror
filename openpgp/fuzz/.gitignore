@@ -1,4 +1,9 @@
-target
-corpus
 artifacts
+corpus
 coverage
+target
+
+# Include the explicitly generated seed files
+!corpus/cert_from_bytes/cert-secret.pgp
+!corpus/key_packet_from_bytes/primary-public-key.packet
+!corpus/key_packet_from_bytes/primary-secret-key.packet
