@@ -44,6 +44,3 @@ name = "decrypt_from_bytes"
 path = "fuzz_targets/decrypt_from_bytes.rs"
 test = false
 doc = false
-
-[lints]
-workspace = true
