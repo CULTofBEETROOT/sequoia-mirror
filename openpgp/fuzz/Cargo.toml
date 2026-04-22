@@ -44,3 +44,9 @@ name = "decrypt_from_bytes"
 path = "fuzz_targets/decrypt_from_bytes.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "key_packet_from_bytes"
+path = "fuzz_targets/key_packet_from_bytes.rs"
+test = false
+doc = false
