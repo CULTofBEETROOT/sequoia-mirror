@@ -2881,11 +2881,6 @@ impl<'a, P, R, R2> ValidKeyAmalgamation<'a, P, R, R2>
     /// a key's flags may change depending on the policy and the
     /// reference time.
     ///
-    /// To increase compatibility with early v4 certificates, if there
-    /// is no key flags subpacket on the considered signatures, we
-    /// infer the key flags from the key's role and public key
-    /// algorithm.
-    ///
     ///   [`Key Flags`]: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.29
     ///   [SSS]: https://de.wikipedia.org/wiki/Shamir%E2%80%99s_Secret_Sharing
     ///   [Section 5.2.3.10 of RFC 9580]: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.10
@@ -2910,61 +2905,6 @@ impl<'a, P, R, R2> ValidKeyAmalgamation<'a, P, R, R2>
     /// ```
     pub fn key_flags(&self) -> Option<KeyFlags> {
         self.map(|s| s.key_flags())
-            .or_else(|| {
-                // There is no key flags subpacket.  Match on the key
-                // role and algorithm and synthesize one.  We do this
-                // to better support very early v4 certificates, where
-                // either the binding signature is a v3 signature and
-                // cannot contain subpackets, or it is a v4 signature,
-                // but the key's capabilities were implied by the
-                // public key algorithm.
-                use crate::types::PublicKeyAlgorithm;
-
-                // XXX: We cannot know whether this is a primary key
-                // or not because of
-                // https://gitlab.com/sequoia-pgp/sequoia/-/issues/1036
-                let is_primary = false;
-
-                // We only match on public key algorithms used at the
-                // time.
-                #[allow(deprecated)]
-                match (is_primary, self.key().pk_algo()) {
-                    (true, PublicKeyAlgorithm::RSAEncryptSign) =>
-                        Some(KeyFlags::empty()
-                             .set_certification()
-                             .set_transport_encryption()
-                             .set_storage_encryption()
-                             .set_signing()),
-
-                    (true, _) =>
-                        Some(KeyFlags::empty()
-                             .set_certification()
-                             .set_signing()),
-
-                    (false, PublicKeyAlgorithm::RSAEncryptSign) =>
-                        Some(KeyFlags::empty()
-                             .set_transport_encryption()
-                             .set_storage_encryption()
-                             .set_signing()),
-
-                    (false,
-                     | PublicKeyAlgorithm::RSASign
-                     | PublicKeyAlgorithm::DSA) =>
-                        Some(KeyFlags::empty().set_signing()),
-
-                    (false,
-                     | PublicKeyAlgorithm::RSAEncrypt
-                     | PublicKeyAlgorithm::ElGamalEncrypt
-                     | PublicKeyAlgorithm::ElGamalEncryptSign) =>
-                        Some(KeyFlags::empty()
-                             .set_transport_encryption()
-                             .set_storage_encryption()),
-
-                    // Be conservative: newer algorithms don't get to
-                    // benefit from implicit key flags.
-                    (false, _) => None,
-                }
-            })
     }
 
     /// Returns whether the key has at least one of the specified key
