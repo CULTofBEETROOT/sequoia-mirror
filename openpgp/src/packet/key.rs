@@ -2896,6 +2896,28 @@ mod tests {
         }
     }
 
+    #[test]
+    fn public_serialization_drops_secret_material() -> Result<()> {
+        use crate::serialize::Serialize;
+
+        let (cert, _) = CertBuilder::new().generate()?;
+        let pk = cert.primary_key().key();
+        assert!(pk.has_secret());
+
+        let public = pk.parts_as_public();
+
+        let mut bytes = Vec::new();
+        Packet::from(public.clone()).serialize(&mut bytes)?;
+
+        let p = Packet::from_bytes(&bytes)?;
+        match p {
+            Packet::PublicKey(key) => assert!(!key.has_secret()),
+            _ => panic!("expected a public key packet"),
+        }
+
+        Ok(())
+    }
+
     quickcheck! {
         fn roundtrip_secret(p: Key<SecretParts, PrimaryRole>) -> bool {
             use crate::parse::Parse;
@@ -2907,6 +2929,19 @@ mod tests {
             assert_eq!(p, q);
             true
         }
+    }
+
+    #[test]
+    fn parts_as_public_does_not_remove_secret_material() -> Result<()> {
+        let (cert, _) = CertBuilder::new().generate()?;
+        let pk = cert.primary_key().key();
+        assert!(pk.has_secret());
+
+        let sk = pk.parts_as_secret()?;
+        let public = sk.parts_as_public();
+
+        assert!(public.has_secret());
+        Ok(())
     }
 
     fn mutate_eq_discriminates_key<P, R>(key: Key<P, R>, i: usize) -> bool
