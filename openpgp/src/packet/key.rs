@@ -1789,7 +1789,229 @@ impl<P, R> Key<P, R>
                     "Key: Expected X448 public key, got {:?}", self.mpis())).into())
             },
 
-            RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448 =>
+            MLKEM768_X25519 => if let mpi::PublicKey::MLKEM768_X25519 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::x25519_generate_key()?;
+                let ecdh_keyshare = Backend::x25519_shared_point(
+                    &ecdh_secret, ecdh_public)?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem768_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM768_X25519)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM768_X25519 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM768_X25519 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM1024_X448 => if let mpi::PublicKey::MLKEM1024_X448 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::x448_generate_key()?;
+                let ecdh_keyshare = Backend::x448_shared_point(
+                    &ecdh_secret, ecdh_public)?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem1024_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM1024_X448)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM1024_X448 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM1024_X448 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM768_ECDH_NISTP384 => if let mpi::PublicKey::MLKEM768_ECDH_NISTP384 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::NistP384)?;
+                let ecdh_ciphertext: [u8; 97] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::NistP384,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem768_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM768_ECDH_NISTP384 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM768_ECDSA_NISTP384 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM1024_ECDH_NISTP521 => if let mpi::PublicKey::MLKEM1024_ECDH_NISTP521 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::NistP521)?;
+                let ecdh_ciphertext: [u8; 133] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::NistP521,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem1024_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM1024_ECDH_NISTP521 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM1024_ECDSA_NISTP521 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM768_ECDH_BrainpoolP384 => if let mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::BrainpoolP384)?;
+                let ecdh_ciphertext: [u8; 97] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::BrainpoolP384,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem768_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM768_ECDH_BrainpoolP384 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM768_ECDH_BrainpoolP384 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            MLKEM1024_ECDH_BrainpoolP512 => if let mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512 {
+                ecdh: ecdh_public, mlkem: mlkem_public,
+            } = self.mpis()
+            {
+                let (ecdh_secret, ecdh_ciphertext) =
+                    Backend::ecdh_generate_key(Curve::BrainpoolP512)?;
+                let ecdh_ciphertext: [u8; 129] = ecdh_ciphertext.as_ref().try_into().unwrap();
+
+                let ecdh_keyshare = Backend::ecdh_shared_point(
+                    Curve::BrainpoolP512,
+                    &ecdh_secret,
+                    ecdh_public.as_ref()
+                )?;
+
+                let (mlkem_ciphertext, mlkem_keyshare) =
+                    Backend::mlkem1024_encapsulate(mlkem_public)?;
+
+                let kek = crate::crypto::asymmetric::multi_key_combine(
+                    &mlkem_keyshare,
+                    &ecdh_keyshare,
+                    ecdh_ciphertext.as_ref(),
+                    ecdh_public.as_ref(),
+                    PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512)?;
+
+                let esk = aes_key_wrap(SymmetricAlgorithm::AES256,
+                                       kek.as_protected(),
+                                       data.as_protected())?.into();
+                Ok(mpi::Ciphertext::MLKEM1024_ECDH_BrainpoolP512 {
+                    ecdh: Box::new(ecdh_ciphertext),
+                    mlkem: mlkem_ciphertext,
+                    esk,
+                })
+            } else {
+                Err(Error::MalformedPacket(format!(
+                    "Key: Expected MLKEM1024_ECDH_BrainpoolP512 public key, got {:?}",
+                    self.mpis())).into())
+            },
+
+            RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448
+                | MLDSA65_Ed25519 | MLDSA87_Ed448
+                | MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521
+                | MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512
+                | SLHDSA128s | SLHDSA128f | SLHDSA256s =>
                 Err(Error::InvalidOperation(
                     format!("{} is not an encryption algorithm", self.pk_algo())
                 ).into()),
@@ -1868,7 +2090,144 @@ impl<P, R> Key<P, R>
                 },
                 _ => return
                     Err(Error::UnsupportedEllipticCurve(curve.clone()).into()),
-            },
+              },
+
+            (PublicKey::MLDSA65_Ed25519 { eddsa: eddsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA65_Ed25519 { eddsa: eddsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    if let Ok(true) = Backend::ed25519_verify(
+                        eddsa_pub, digest, eddsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa65_verify(
+                        mldsa_pub, digest, mldsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::MLDSA87_Ed448 { eddsa: eddsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA87_Ed448 { eddsa: eddsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    if let Ok(true) = Backend::ed448_verify(
+                        eddsa_pub, digest, eddsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa87_verify(
+                        mldsa_pub, digest, mldsa_sig)
+                    {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::MLDSA65_ECDSA_NISTP384 { ecdsa: ecdsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA65_ECDSA_NISTP384 { ecdsa: ecdsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    // Fixed-width raw ECDSA signature r||s (48+48), enforced by type: [u8; 96].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::NistP384,
+                        ecdsa_pub.as_ref(),   // &[u8; 97] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 96] -> &[u8]
+                    ) {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa65_verify(mldsa_pub, digest, mldsa_sig) {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::MLDSA87_ECDSA_NISTP521 { ecdsa: ecdsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA87_ECDSA_NISTP521 { ecdsa: ecdsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    // Fixed-width raw ECDSA signature r||s (66+66), enforced by type: [u8; 132].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::NistP521,
+                        ecdsa_pub.as_ref(),   // &[u8; 133] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 132] -> &[u8]
+                    ) {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa87_verify(mldsa_pub, digest, mldsa_sig) {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::MLDSA65_ECDSA_BrainpoolP384 { ecdsa: ecdsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA65_ECDSA_BrainpoolP384 { ecdsa: ecdsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    // Fixed-width raw ECDSA signature r||s (48+48), enforced by type: [u8; 96].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::BrainpoolP384,
+                        ecdsa_pub.as_ref(),   // &[u8; 97] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 96] -> &[u8]
+                    ) {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa65_verify(mldsa_pub, digest, mldsa_sig) {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::MLDSA87_ECDSA_BrainpoolP512 { ecdsa: ecdsa_pub, mldsa: mldsa_pub },
+             Signature::MLDSA87_ECDSA_BrainpoolP512 { ecdsa: ecdsa_sig, mldsa: mldsa_sig })
+                => {
+                    let mut ok = 0;
+
+                    // Fixed-width raw ECDSA signature r||s (64+64), enforced by type: [u8; 128].
+                    if let Ok(true) = Backend::ecdsa_verify_raw(
+                        Curve::BrainpoolP512,
+                        ecdsa_pub.as_ref(),   // &[u8; 129] -> &[u8]
+                        digest,
+                        ecdsa_sig.as_ref(),   // &[u8; 128] -> &[u8]
+                    ) {
+                        ok += 1;
+                    }
+
+                    if let Ok(true) = Backend::mldsa87_verify(mldsa_pub, digest, mldsa_sig) {
+                        ok += 1;
+                    }
+
+                    ok == 2
+                },
+
+            (PublicKey::SLHDSA128s { public }, Signature::SLHDSA128s { sig }) =>
+                Backend::slhdsa128s_verify(public, digest, sig)?,
+
+            (PublicKey::SLHDSA128f { public }, Signature::SLHDSA128f { sig }) =>
+                Backend::slhdsa128f_verify(public, digest, sig)?,
+
+            (PublicKey::SLHDSA256s { public }, Signature::SLHDSA256s { sig }) =>
+                Backend::slhdsa256s_verify(public, digest, sig)?,
 
             (PublicKey::DSA { p, q, g, y }, Signature::DSA { r, s }) =>
                 Backend::dsa_verify(p, q, g, y, digest, r, s)?,

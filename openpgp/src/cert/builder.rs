@@ -64,6 +64,7 @@ pub use key::{
 /// ```
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[non_exhaustive]
+#[allow(non_camel_case_types)]
 pub enum CipherSuite {
     /// EdDSA and ECDH over Curve25519 with SHA512 and AES256
     Cv25519,
@@ -82,6 +83,14 @@ pub enum CipherSuite {
     /// 4096 bit RSA with SHA512 and AES256
     RSA4k,
 
+    /// Composite signature algorithm MLDSA65+Ed25519, and composite
+    /// KEM MLKEM768+X25519.
+    MLDSA65_Ed25519,
+
+    /// Composite signature algorithm MLDSA78+Ed448, and composite
+    /// KEM MLKEM1024+X448.
+    MLDSA87_Ed448,
+
     // If you add a variant here, be sure to update
     // CipherSuite::variants below.
 }
@@ -98,7 +107,8 @@ impl CipherSuite {
     pub fn variants() -> impl Iterator<Item=CipherSuite> {
         use CipherSuite::*;
 
-        [ Cv25519, Cv448, RSA3k, P256, P384, P521, RSA2k, RSA4k ]
+        [ Cv25519, RSA3k, P256, P384, P521, RSA2k, RSA4k,
+          MLDSA65_Ed25519, MLDSA87_Ed448 ]
             .into_iter()
     }
 
@@ -156,6 +166,14 @@ impl CipherSuite {
                 check_curve!(Curve::NistP521);
                 check_pk!(PublicKeyAlgorithm::ECDH);
             },
+            MLDSA65_Ed25519 => {
+                check_pk!(PublicKeyAlgorithm::MLDSA65_Ed25519);
+                check_pk!(PublicKeyAlgorithm::MLKEM768_X25519);
+            }
+            MLDSA87_Ed448 => {
+                check_pk!(PublicKeyAlgorithm::MLDSA87_Ed448);
+                check_pk!(PublicKeyAlgorithm::MLKEM1024_X448);
+            }
         }
         Ok(())
     }
@@ -236,6 +254,11 @@ impl CipherSuite {
                             .into()),
                 }
             },
+
+            CipherSuite::MLDSA65_Ed25519 | CipherSuite::MLDSA87_Ed448 =>
+                Err(Error::InvalidOperation(
+                    "can't use algorithms for v4 keys".into())
+                    .into()),
         }
     }
 
@@ -310,6 +333,28 @@ impl CipherSuite {
                             .into()),
                 }
             },
+
+            a @ CipherSuite::MLDSA65_Ed25519 | a @ CipherSuite::MLDSA87_Ed448 =>
+                match (sign, encrypt, a) {
+                    (true, false, CipherSuite::MLDSA65_Ed25519) =>
+                        Key6::generate_mldsa65_ed25519(),
+                    (true, false, CipherSuite::MLDSA87_Ed448) =>
+                        Key6::generate_mldsa87_ed448(),
+                    (true, false, _) => unreachable!(),
+                    (false, true, CipherSuite::MLDSA65_Ed25519) =>
+                        Key6::generate_mlkem768_x25519(),
+                    (false, true, CipherSuite::MLDSA87_Ed448) =>
+                        Key6::generate_mlkem1024_x448(),
+                    (false, true, _) => unreachable!(),
+                    (true, true, _) =>
+                        Err(Error::InvalidOperation(
+                            "Can't use key for encryption and signing".into())
+                            .into()),
+                    (false, false, _) =>
+                        Err(Error::InvalidOperation(
+                            "No key flags set".into())
+                            .into()),
+                },
         }
     }
 }
@@ -385,6 +430,32 @@ assert_send_and_sync!(KeyBlueprint);
 /// let (cert, rev) =
 ///     CertBuilder::general_purpose(Some("alice@example.org"))
 ///         .generate()?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// Generate a general-purpose certificate that uses post-quantum
+/// cryptography.  To do this, we select a post-quantum cipher suite,
+/// and we use the RFC 9580 profile, which is required for a
+/// post-quantum resistant certificate.
+///
+/// ```
+/// use sequoia_openpgp as openpgp;
+/// use openpgp::Profile;
+/// use openpgp::cert::CertBuilder;
+/// use openpgp::cert::CipherSuite;
+/// # use openpgp::types::PublicKeyAlgorithm;
+///
+/// # fn main() -> openpgp::Result<()> {
+/// # if ! PublicKeyAlgorithm::MLDSA65_Ed25519.is_supported()
+/// #     || ! PublicKeyAlgorithm::MLKEM768_X25519.is_supported()
+/// # {
+/// #     return Ok(());
+/// # }
+/// let (cert, rev) = CertBuilder::general_purpose(Some("<post-quantum@example.org>"))
+///     .set_profile(Profile::RFC9580)?
+///     .set_cipher_suite(CipherSuite::MLDSA65_Ed25519)
+///     .generate()?;
 /// # Ok(())
 /// # }
 /// ```
@@ -1975,9 +2046,12 @@ mod tests {
         for cs in CipherSuite::variants()
             .into_iter().filter(|cs| cs.is_supported().is_ok())
         {
-            assert!(CertBuilder::new()
+            CertBuilder::new()
+                .set_profile(crate::Profile::RFC9580).unwrap()
                 .set_cipher_suite(cs)
-                .generate().is_ok());
+                .add_transport_encryption_subkey()
+                .generate()
+                .unwrap();
         }
     }
 

@@ -74,6 +74,18 @@ pub trait Asymmetric {
         Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::X448).into())
     }
 
+    /// Generates an ECDH key pair for `curve`.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn ecdh_generate_key(_curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDH).into())
+    }
+
+    /// Computes the ECDH shared point for `curve`.
+    fn ecdh_shared_point(_curve: Curve, _secret: &Protected, _public: &[u8]) -> Result<Protected> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDH).into())
+    }
+
     /// Generates an Ed25519 key pair.
     ///
     /// Returns a tuple containing the secret and public key.
@@ -112,6 +124,229 @@ pub trait Asymmetric {
     fn ed448_verify(_public: &[u8; 57], _digest: &[u8], _signature: &[u8; 114])
                       -> Result<bool> {
         Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::Ed448).into())
+    }
+
+        /// Generates an ECDSA key pair for `curve`.
+    ///
+    /// Returns a tuple containing the secret scalar (fixed-width, big-endian)
+    /// and the SEC1-encoded public point.
+    fn ecdsa_generate_key(_curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDSA).into())
+    }
+
+    /// Signs `digest` using ECDSA on `curve` and returns a fixed-width raw signature `r||s`.
+    ///
+    /// The signature components are big-endian and left-padded to the curve's
+    /// adjusted field size (e.g. P-521 => 66 bytes, so output is 132 bytes).
+    fn ecdsa_sign_raw(
+        _curve: Curve,
+        _secret: &Protected,
+        _public: &[u8],
+        _digest: &[u8],
+    ) -> Result<Box<[u8]>> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDSA).into())
+    }
+
+    /// Verifies a fixed-width raw ECDSA signature `r||s` on `digest` using `public`.
+    ///
+    /// Returns `Ok(true)` if valid, `Ok(false)` if invalid.
+    fn ecdsa_verify_raw(
+        _curve: Curve,
+        _public: &[u8],
+        _digest: &[u8],
+        _signature_rs: &[u8],
+    ) -> Result<bool> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(PublicKeyAlgorithm::ECDSA).into())
+    }
+
+    /// Generates an ML-DSA-65 key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn mldsa65_generate_key() -> Result<(Protected, Box<[u8; 1952]>)> {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA65_Ed25519).into())
+    }
+
+    /// Creates an ML-DSA-65 signature.
+    fn mldsa65_sign(_secret: &Protected, _digest: &[u8])
+                    -> Result<Box<[u8; 3309]>>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA65_Ed25519).into())
+    }
+
+    /// Verifies an ML-DSA-65 signature.
+    fn mldsa65_verify(_public: &[u8; 1952], _digest: &[u8], _signature: &[u8; 3309])
+                      -> Result<bool>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA65_Ed25519).into())
+    }
+
+    /// Generates an ML-DSA-87 key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn mldsa87_generate_key() -> Result<(Protected, Box<[u8; 2592]>)> {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA87_Ed448).into())
+    }
+
+    /// Creates an ML-DSA-87 signature.
+    fn mldsa87_sign(_secret: &Protected, _digest: &[u8])
+                    -> Result<Box<[u8; 4627]>>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA87_Ed448).into())
+    }
+
+    /// Verifies an ML-DSA-87 signature.
+    fn mldsa87_verify(_public: &[u8; 2592], _digest: &[u8], _signature: &[u8; 4627])
+                      -> Result<bool>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLDSA87_Ed448).into())
+    }
+
+    /// Generates an SLHDSA128s key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn slhdsa128s_generate_key() -> Result<(Protected, [u8; 32])> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA128s).into())
+    }
+
+    /// Creates an SLHDSA128s signature.
+    fn slhdsa128s_sign(_secret: &Protected, _digest: &[u8])
+                       -> Result<Box<[u8; 7856]>>
+    {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA128s).into())
+    }
+
+    /// Verifies an SLHDSA128s signature.
+    fn slhdsa128s_verify(_public: &[u8; 32], _digest: &[u8], _signature: &[u8; 7856])
+                         -> Result<bool>
+    {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA128s).into())
+    }
+
+    /// Generates an SLHDSA128f key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn slhdsa128f_generate_key() -> Result<(Protected, [u8; 32])> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA128f).into())
+    }
+
+    /// Creates an SLHDSA128f signature.
+    fn slhdsa128f_sign(_secret: &Protected, _digest: &[u8])
+                       -> Result<Box<[u8; 17088]>>
+    {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA128f).into())
+    }
+
+    /// Verifies an SLHDSA128f signature.
+    fn slhdsa128f_verify(_public: &[u8; 32], _digest: &[u8], _signature: &[u8; 17088])
+                         -> Result<bool>
+    {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA128f).into())
+    }
+
+    /// Generates an SLHDSA256s key pair.
+    ///
+    /// Returns a tuple containing the secret and public key.
+    fn slhdsa256s_generate_key() -> Result<(Protected, Box<[u8; 64]>)> {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA256s).into())
+    }
+
+    /// Creates an SLHDSA256s signature.
+    fn slhdsa256s_sign(_secret: &Protected, _digest: &[u8])
+                       -> Result<Box<[u8; 29792]>>
+    {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA256s).into())
+    }
+
+    /// Verifies an SLHDSA256s signature.
+    fn slhdsa256s_verify(_public: &[u8; 64], _digest: &[u8], _signature: &[u8; 29792])
+                         -> Result<bool>
+    {
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::SLHDSA256s).into())
+    }
+
+    /// Generates a ML-KEM-768 key pair.
+    fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLKEM768_X25519).into())
+    }
+
+    /// Generates and encapsulates a secret using ML-KEM-768.
+    fn mlkem768_encapsulate(_public: &[u8; 1184])
+                            -> Result<(Box<[u8; 1088]>, Protected)>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLKEM768_X25519).into())
+    }
+
+    /// Decapsulates a secret using ML-KEM-768.
+    fn mlkem768_decapsulate(_secret: &Protected,
+                            _ciphertext: &[u8; 1088])
+                            -> Result<Protected>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLKEM768_X25519).into())
+    }
+
+    /// Generates a ML-KEM-1024 key pair.
+    fn mlkem1024_generate_key() -> Result<(Protected, Box<[u8; 1568]>)> {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLKEM1024_X448).into())
+    }
+
+    /// Generates and encapsulates a secret using ML-KEM-1024.
+    fn mlkem1024_encapsulate(_public: &[u8; 1568])
+                            -> Result<(Box<[u8; 1568]>, Protected)>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLKEM1024_X448).into())
+    }
+
+    /// Decapsulates a secret using ML-KEM-1024.
+    fn mlkem1024_decapsulate(_secret: &Protected,
+                            _ciphertext: &[u8; 1568])
+                            -> Result<Protected>
+    {
+        // XXX: This is not quite the right error, because we can only
+        // use the composite algorithm name in the error message.
+        Err(Error::UnsupportedPublicKeyAlgorithm(
+            PublicKeyAlgorithm::MLKEM1024_X448).into())
     }
 
     /// Generates a DSA key pair.
