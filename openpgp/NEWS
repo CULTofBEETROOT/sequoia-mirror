@@ -19,6 +19,67 @@
 * Changes in 2.2.0
 ** Notable changes
    - Our MSRV is now 1.85.
+   - We are now using the ossl OpenSSL bindings instead of the
+     rust-openssl bindings.  The ossl OpenSSL bindings use OpenSSL's
+     v3 API and includes support for Post-Quantum algorithms like
+     ML-DSA, SLH-DSA, and ML-KEM.  In terms of algorithm coverage,
+     ossl does not currently include support for RipeMD160, but it
+     brings support for CAST5 and Blowfish.
+
+** New functionality
+   - Key4::import_public_ed448
+   - Key4::import_public_x25519
+   - Key4::import_public_x448
+   - Key6::generate_mldsa65_ed25519
+   - Key6::generate_mldsa87_ed448
+   - mpi::PublicKey::MLDSA65_Ed25519
+   - mpi::PublicKey::MLDSA87_Ed448
+   - mpi::SecretKeyMaterial::MLDSA65_Ed25519
+   - mpi::SecretKeyMaterial::MLDSA87_Ed448
+   - mpi::Signature::MLDSA65_Ed25519
+   - mpi::Signature::MLDSA87_Ed448
+   - PublicKeyAlgorithm::MLDSA65_Ed25519
+   - PublicKeyAlgorithm::MLDSA87_Ed448
+   - policy::AsymmetricAlgorithm::MLDSA65_Ed25519
+   - policy::AsymmetricAlgorithm::MLDSA87_Ed448
+   - Key6::generate_slhdsa128s
+   - Key6::import_public_slhdsa128s
+   - Key6::generate_slhdsa128f
+   - Key6::import_public_slhdsa128f
+   - Key6::generate_slhdsa256s
+   - Key6::import_public_slhdsa256s
+   - mpi::PublicKey::SLHDSA128s
+   - mpi::PublicKey::SLHDSA128f
+   - mpi::PublicKey::SLHDSA256s
+   - mpi::SecretKeyMaterial::SLHDSA128s
+   - mpi::SecretKeyMaterial::SLHDSA128f
+   - mpi::SecretKeyMaterial::SLHDSA256s
+   - mpi::Signature::SLHDSA128s
+   - mpi::Signature::SLHDSA128f
+   - mpi::Signature::SLHDSA256s
+   - PublicKeyAlgorithm::SLHDSA128s
+   - PublicKeyAlgorithm::SLHDSA128f
+   - PublicKeyAlgorithm::SLHDSA256s
+   - policy::AsymmetricAlgorithm::SLHDSA128s
+   - policy::AsymmetricAlgorithm::SLHDSA128f
+   - policy::AsymmetricAlgorithm::SLHDSA256s
+   - Key6::generate_mlkem768_x25519
+   - Key4::import_public_mlkem768_x25519
+   - Key6::import_public_mlkem768_x25519
+   - Key6::generate_mlkem1024_x448
+   - Key6::import_public_mlkem1024_x448
+   - mpi::PublicKey::MLKEM768_X25519
+   - mpi::PublicKey::MLKEM1024_X448
+   - mpi::SecretKeyMaterial::MLKEM768_X25519
+   - mpi::SecretKeyMaterial::MLKEM1024_X448
+   - mpi::Signature::MLKEM768_X25519
+   - mpi::Signature::MLKEM1024_X448
+   - PublicKeyAlgorithm::MLKEM768_X25519
+   - PublicKeyAlgorithm::MLKEM1024_X448
+   - policy::AsymmetricAlgorithm::MLKEM768_X25519
+   - policy::AsymmetricAlgorithm::MLKEM1024_X448
+   - CipherSuite::MLDSA65_Ed25519
+   - CipherSuite::MLDSA87_Ed448
 
 ** New functionality
    - Key4::import_public_ed448
