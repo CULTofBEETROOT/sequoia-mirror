@@ -16,17 +16,20 @@ use sequoia_openpgp::{
     fmt,
     Cert,
     Packet,
-    parse::Parse,
     serialize::SerializeInto,
     types::{HashAlgorithm, RevocationStatus},
     cert::prelude::*,
 };
 
+#[cfg(feature = "dane-client")]
+use sequoia_openpgp::parse::Parse;
+
 use super::Result;
 
+#[cfg(feature = "dane-client")]
 use hickory_client::rr::{RData, RecordType};
-use hickory_resolver::config::ResolverOpts;
-use hickory_resolver::TokioAsyncResolver;
+#[cfg(feature = "dane-client")]
+use hickory_resolver::{config::ResolverOpts, TokioAsyncResolver};
 
 /// Generates a Fully Qualified Domain Name that holds the OPENPGPKEY
 /// record for given `local` and `domain` parameters.
@@ -53,6 +56,7 @@ fn generate_fqdn(local: &str, domain: &str) -> Result<String> {
 /// the found certificates only on validation success.
 ///
 /// [DANE]: https://datatracker.ietf.org/doc/html/rfc7929
+#[cfg(feature = "dane-client")]
 async fn get_raw(email_address: impl AsRef<str>) -> Result<Vec<Vec<u8>>> {
     let email_address = EmailAddress::from(email_address)?;
     let fqdn = generate_fqdn(&email_address.local_part, &email_address.domain)?;
@@ -97,6 +101,7 @@ async fn get_raw(email_address: impl AsRef<str>) -> Result<Vec<Vec<u8>>> {
 /// # Ok(())
 /// # }
 /// ```
+#[cfg(feature = "dane-client")]
 pub async fn get(email_address: impl AsRef<str>) -> Result<Vec<Result<Cert>>> {
     let mut certs = vec![];
 
@@ -361,6 +366,7 @@ fn generate_<'a>(cert: &ValidCert<'a>, fqdn: &str, ttl: Option<Duration>,
 /// Errors for this module.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
+#[cfg(feature = "dane-client")]
 pub enum Error {
     /// A requested cert was not found.
     #[error("Cert not found")]
@@ -370,6 +376,8 @@ pub enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use sequoia_openpgp::parse::Parse;
 
     #[test]
     fn test_generating_fqdn() {
