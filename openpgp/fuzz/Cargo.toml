@@ -56,3 +56,27 @@ name = "rawcert_from_bytes"
 path = "fuzz_targets/rawcert_from_bytes.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "cert_parser_binary_from_bytes"
+path = "fuzz_targets/cert_parser_binary_from_bytes.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "cert_parser_from_bytes"
+path = "fuzz_targets/cert_parser_from_bytes.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "message_from_bytes"
+path = "fuzz_targets/message_from_bytes.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "packet_pile_from_bytes"
+path = "fuzz_targets/packet_pile_from_bytes.rs"
+test = false
+doc = false
