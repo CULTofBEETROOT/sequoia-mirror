@@ -1068,6 +1068,8 @@ mod test {
     use crate::Fingerprint;
     use crate::cert::prelude::*;
     use crate::packet::prelude::*;
+    use crate::parse::Dearmor;
+    use crate::parse::PacketParserBuilder;
     use crate::parse::RECOVERY_THRESHOLD;
     use crate::serialize::Serialize;
     use crate::types::DataFormat;
@@ -1895,5 +1897,51 @@ mod test {
         assert!(certs[3].is_ok());
 
         Ok(())
+    }
+
+    #[test]
+    fn issue_1244() {
+        // Regression test for malformed prefix-plus-junk input that used to
+        // panic while iterating RawCertParser after successful initialization.
+        let input = &[
+            0xc6, 0x02, 0x2b, 0x6d, 0x71, 0x8d, 0xa7, 0x01,
+            0xfd, 0xfc, 0x01, 0x5c, 0x89, 0x10, 0x0e, 0x53,
+            0xb4, 0x7a, 0xdc, 0xa3, 0x5a, 0xa7, 0xbb, 0x3b,
+            0xed, 0x89, 0x94, 0x24, 0x81, 0xcd, 0x73, 0xa8,
+            0xab,
+        ];
+
+        eprintln!("Testing malformed certificate");
+        let pp = PacketParserBuilder::from_bytes(input)
+            .expect("can create PacketParserBuilder")
+            .dearmor(Dearmor::Disabled)
+            .build()
+            .expect("can build PacketParser");
+        let mut parser = CertParser::from(pp);
+
+        // We expect: an unsupported certificate error, junk, nothing.
+        parser.next().expect("result").expect_err("Unsupported certificate");
+        parser.next().expect("result").expect_err("Malformed packet");
+        assert!(parser.next().is_none());
+
+        eprintln!("Testing malformed certificate followed by valid certificate");
+        let testy = crate::tests::key("testy.pgp");
+        let mut input = input.to_vec();
+        input.extend(testy);
+
+        eprintln!("Testing malformed certificate");
+        let pp = PacketParserBuilder::from_bytes(&input)
+            .expect("can create PacketParserBuilder")
+            .dearmor(Dearmor::Disabled)
+            .build()
+            .expect("can build PacketParser");
+        let mut parser = CertParser::from(pp);
+
+        // We expect: an unsupported certificate error, junk, a valid
+        // certificate, nothing.
+        parser.next().expect("result").expect_err("Unsupported certificate");
+        parser.next().expect("result").expect_err("Malformed packet");
+        parser.next().expect("result").expect("certificate");
+        assert!(parser.next().is_none());
     }
 }

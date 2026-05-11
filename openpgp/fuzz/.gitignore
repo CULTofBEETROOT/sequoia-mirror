@@ -7,3 +7,5 @@ target
 !corpus/cert_from_bytes/cert-secret.pgp
 !corpus/key_packet_from_bytes/primary-public-key.packet
 !corpus/key_packet_from_bytes/primary-secret-key.packet
+!corpus/rawcert_from_bytes/testy.pgp
+!corpus/rawcert_from_bytes/raw-cert-parser-eof-issue-1244.pgp
