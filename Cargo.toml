@@ -24,6 +24,7 @@ unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(osslconf, values("OPENSSL_NO_CAST"))',
     'cfg(osslconf, values("OPENSSL_NO_IDEA"))',
     'cfg(osslconf, values("OPENSSL_NO_OCB"))',
+    'cfg(osslconf, values("OPENSSL_NO_DES"))',
 ] }
 
 [workspace.lints.clippy]
