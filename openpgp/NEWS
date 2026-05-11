@@ -15,6 +15,13 @@
    - The RustCrypto backend now supports X448 and Ed448.
    - The Windows CNG backend now supports X448 and Ed448 implemented
      using the X448 and Ed448 implementation from RustCrypto.
+** Notable fixes
+   - Fix a panic in `RawCertParser` triggered by malformed input.
+     https://gitlab.com/sequoia-pgp/sequoia/-/commit/dc8f99b15b9949449e51f460e38b2e3b9858a2bd
+   - Fix a crash when parsing some malformed `Signature` packets.
+     https://gitlab.com/sequoia-pgp/sequoia/-/commit/23403ff850352b420f19a8fb4724ce35bf963e08
+   - Fix a key type confusion.
+     https://gitlab.com/sequoia-pgp/sequoia/-/commit/58214b47b110e110432731f8fc5dec71918c4254
 
 * Changes in 2.2.0
 ** Notable changes
