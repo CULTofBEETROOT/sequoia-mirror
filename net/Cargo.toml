@@ -21,6 +21,10 @@ rust-version = "1.85"
 gitlab = { repository = "sequoia-pgp/sequoia" }
 maintenance = { status = "actively-developed" }
 
+[features]
+default = ["dane-client"]
+dane-client = ["dep:hickory-client", "dep:hickory-resolver"]
+
 [dependencies]
 sequoia-openpgp = { version = "2", path = "../openpgp", default-features = false }
 
@@ -37,8 +41,9 @@ url = "2.1"
 z-base-32 = "0.1.2"
 tokio = { version = "1.13.1", features = [ "macros" ] }
 base64 = ">= 0.21, < 0.23"
-hickory-client = "0.24"
-hickory-resolver = { version = "0.24", features = ["dnssec-openssl"]}
+
+hickory-client = { version = "0.24", optional = true }
+hickory-resolver = { version = "0.24", features = ["dnssec-openssl"], optional = true }
 
 [dev-dependencies]
 bytes = "1"
@@ -47,9 +52,15 @@ hyper = { version = "1", features = [ "server" ] }
 hyper-util = { version = "0.1", features = ["full"] }
 reqwest = { version = "0.12", features = ["socks"] }
 tempfile = "3.1"
+tokio = { version = "1.13.1", features = ["rt-multi-thread"] }
 
 [lib]
 bench = false
+
+[[example]]
+name = "dane-get"
+path = "examples/dane-get.rs"
+required-features = ["dane-client"]
 
 # Enables a crypto backend for the tests:
 [target.'cfg(not(windows))'.dev-dependencies]
