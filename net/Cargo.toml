@@ -22,7 +22,7 @@ gitlab = { repository = "sequoia-pgp/sequoia" }
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["dane-client"]
+default = []
 dane-client = ["dep:hickory-client", "dep:hickory-client", "dep:hickory-resolver"]
 
 [dependencies]
