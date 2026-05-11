@@ -2922,7 +2922,7 @@ dependencies = [
 
 [[package]]
 name = "sequoia-openpgp"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2981,7 +2981,7 @@ dependencies = [
  "sha1collisiondetection",
  "sha2",
  "sha3",
- "thiserror 2.0.18",
+ "thiserror 1.0.69",
  "twofish",
  "typenum",
  "win-crypto-ng",
