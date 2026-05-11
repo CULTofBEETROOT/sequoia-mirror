@@ -8,6 +8,9 @@ members = [
     "openpgp",
 ]
 
+[workspace.package]
+rust-version = "1.85"
+
 [profile.release]
 debug = true
 
