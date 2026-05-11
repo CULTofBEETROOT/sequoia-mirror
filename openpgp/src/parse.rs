@@ -348,9 +348,14 @@ pub trait Parse<'a, T>: crate::seal::Sealed {
 // it can be overridden.
 macro_rules! impl_parse_with_buffered_reader {
     ($typ: ident) => {
+        impl_parse_with_buffered_reader!($typ, $typ);
+    };
+
+    ($typ_in: ident, $typ_out: ident) => {
         impl_parse_with_buffered_reader!(
-            $typ,
-            |br: Box<dyn BufferedReader<Cookie>>| -> Result<$typ> {
+            $typ_in,
+            $typ_out,
+            |br: Box<dyn BufferedReader<Cookie>>| -> Result<$typ_out> {
                 let parser = PacketHeaderParser::new_naked(br);
 
                 let mut pp = Self::parse(parser)?;
@@ -358,13 +363,13 @@ macro_rules! impl_parse_with_buffered_reader {
 
                 match pp.next()? {
                     #[allow(deprecated)]
-                    (Packet::$typ(o), PacketParserResult::EOF(_))
+                    (Packet::$typ_out(o), PacketParserResult::EOF(_))
                         => Ok(o),
                     (Packet::Unknown(u), PacketParserResult::EOF(_)) =>
                         Err(u.into_error()),
                     (p, PacketParserResult::EOF(_)) =>
                         Err(Error::InvalidOperation(
-                            format!("Not a {} packet: {:?}", stringify!($typ),
+                            format!("Not a {} packet: {:?}", stringify!($typ_out),
                                     p)).into()),
                     (_, PacketParserResult::Some(_)) =>
                         Err(Error::InvalidOperation(
@@ -373,11 +378,15 @@ macro_rules! impl_parse_with_buffered_reader {
             });
     };
 
+    ($typ: ident, $from_buffered_reader: expr) => {
+        impl_parse_with_buffered_reader!($typ, $typ, $from_buffered_reader);
+    };
+
     // from_buffered_reader should be a closure that takes a
     // BufferedReader and returns a Result<Self>.
-    ($typ: ident, $from_buffered_reader: expr) => {
-        impl<'a> Parse<'a, $typ> for $typ {
-            fn from_buffered_reader<R>(reader: R) -> Result<Self>
+    ($typ_in: ident, $typ_out: ident, $from_buffered_reader: expr) => {
+        impl<'a> Parse<'a, $typ_out> for $typ_in {
+            fn from_buffered_reader<R>(reader: R) -> Result<$typ_out>
             where
                 R: BufferedReader<Cookie> + 'a,
             {
@@ -1398,10 +1407,44 @@ pub(crate) fn to_unknown_packet<R: Read + Send + Sync>(reader: R) -> Result<Unkn
     }
 }
 
+/// A parser for embedded signatures.
+///
+/// An embedded signature is parsed just like a normal signature, but
+/// has the restriction that it cannot contain an embedded signature.
+/// If it does, then it fails and returns `Error::MalformedPacket`.
+///
+/// This type is internal to this module.
+struct EmbeddedSignature;
+
+impl crate::seal::Sealed for EmbeddedSignature {}
+
+impl EmbeddedSignature {
+    // Parses a signature packet.
+    fn parse(php: PacketHeaderParser)
+        -> Result<PacketParser>
+    {
+        Signature::parse_internal(php, true)
+    }
+}
+
+impl_parse_with_buffered_reader!(EmbeddedSignature, Signature);
+
 impl Signature {
     // Parses a signature packet.
-    fn parse(mut php: PacketHeaderParser)
-             -> Result<PacketParser>
+    fn parse(php: PacketHeaderParser)
+        -> Result<PacketParser>
+    {
+        Signature::parse_internal(php, false)
+    }
+
+    // Parses a signature packet.
+    //
+    // If `from_embedded_signature` is `true`, then any embedded
+    // signature subpackets will make the signature invalid, as nested
+    // embedded signatures are not allowed.
+    fn parse_internal(mut php: PacketHeaderParser,
+                      from_embedded_signature: bool)
+        -> Result<PacketParser>
     {
         let indent = php.recursion_depth();
         tracer!(TRACE, "Signature::parse", indent);
@@ -1412,8 +1455,8 @@ impl Signature {
 
         match version {
             3 => Signature3::parse(php),
-            4 => Signature4::parse(php),
-            6 => Signature6::parse(php),
+            4 => Signature4::parse(php, from_embedded_signature),
+            6 => Signature6::parse(php, from_embedded_signature),
             _ => {
                 t!("Ignoring version {} packet.", version);
                 php.fail("unknown version")
@@ -1547,7 +1590,14 @@ impl Signature {
 
 impl Signature6 {
     // Parses a signature packet.
-    fn parse(mut php: PacketHeaderParser) -> Result<PacketParser> {
+    //
+    // If `from_embedded_signature` is `true`, then any embedded
+    // signature subpackets will make the signature invalid, as nested
+    // embedded signatures are not allowed.
+    fn parse(mut php: PacketHeaderParser,
+             from_embedded_signature: bool)
+        -> Result<PacketParser>
+    {
         let indent = php.recursion_depth();
         tracer!(TRACE, "Signature6::parse", indent);
 
@@ -1561,12 +1611,14 @@ impl Signature6 {
         let hashed_area
             = php_try!(SubpacketArea::parse(&mut php,
                                             hashed_area_len as usize,
-                                            hash_algo));
+                                            hash_algo,
+                                            from_embedded_signature));
         let unhashed_area_len = php_try!(php.parse_be_u32("unhashed_area_len"));
         let unhashed_area
             = php_try!(SubpacketArea::parse(&mut php,
                                             unhashed_area_len as usize,
-                                            hash_algo));
+                                            hash_algo,
+                                            from_embedded_signature));
         let digest_prefix1 = php_try!(php.parse_u8("digest_prefix1"));
         let digest_prefix2 = php_try!(php.parse_u8("digest_prefix2"));
         if ! pk_algo.for_signing() {
@@ -1593,8 +1645,13 @@ impl Signature6 {
 
 impl Signature4 {
     // Parses a signature packet.
-    fn parse(mut php: PacketHeaderParser)
-             -> Result<PacketParser>
+    //
+    // If `from_embedded_signature` is `true`, then any embedded
+    // signature subpackets will make the signature invalid, as nested
+    // embedded signatures are not allowed.
+    fn parse(mut php: PacketHeaderParser,
+             from_embedded_signature: bool)
+        -> Result<PacketParser>
     {
         let indent = php.recursion_depth();
         tracer!(TRACE, "Signature4::parse", indent);
@@ -1609,12 +1666,14 @@ impl Signature4 {
         let hashed_area
             = php_try!(SubpacketArea::parse(&mut php,
                                             hashed_area_len as usize,
-                                            hash_algo));
+                                            hash_algo,
+                                            from_embedded_signature));
         let unhashed_area_len = php_try!(php.parse_be_u16("unhashed_area_len"));
         let unhashed_area
             = php_try!(SubpacketArea::parse(&mut php,
                                             unhashed_area_len as usize,
-                                            hash_algo));
+                                            hash_algo,
+                                            from_embedded_signature));
         let digest_prefix1 = php_try!(php.parse_u8("digest_prefix1"));
         let digest_prefix2 = php_try!(php.parse_u8("digest_prefix2"));
         if ! pk_algo.for_signing() {
@@ -1751,7 +1810,8 @@ impl SubpacketArea {
     // Parses a subpacket area.
     fn parse(php: &mut PacketHeaderParser,
              mut limit: usize,
-             hash_algo: HashAlgorithm)
+             hash_algo: HashAlgorithm,
+             from_embedded_signature: bool)
              -> Result<Self>
     {
         let indent = php.recursion_depth();
@@ -1759,7 +1819,8 @@ impl SubpacketArea {
 
         let mut packets = Vec::new();
         while limit > 0 {
-            let r = Subpacket::parse(php, limit, hash_algo);
+            let r = Subpacket::parse(
+                php, limit, hash_algo, from_embedded_signature);
             t!("Subpacket::parse(_, {}, {:?}) => {:?}",
                limit, hash_algo, r);
             let p = r?;
@@ -1776,7 +1837,8 @@ impl Subpacket {
     // Parses a raw subpacket.
     fn parse(php: &mut PacketHeaderParser,
              limit: usize,
-             hash_algo: HashAlgorithm)
+             hash_algo: HashAlgorithm,
+             from_embedded_signature: bool)
              -> Result<Self>
     {
         let length = SubpacketLength::parse(&mut php.reader)?;
@@ -1934,10 +1996,17 @@ impl Subpacket {
                     digest: php.parse_bytes("digest", len - 2)?,
                 }
             },
-            SubpacketTag::EmbeddedSignature =>
-                SubpacketValue::EmbeddedSignature(
-                    Signature::from_bytes(
-                        &php.parse_bytes("embedded sig", len)?)?),
+            SubpacketTag::EmbeddedSignature => {
+                if from_embedded_signature {
+                    return Err(Error::MalformedPacket(
+                        "Nested embedded signatures are not allowed".into())
+                               .into());
+                } else {
+                    SubpacketValue::EmbeddedSignature(
+                        EmbeddedSignature::from_bytes(
+                            &php.parse_bytes("embedded sig", len)?)?)
+                }
+            }
             SubpacketTag::IssuerFingerprint => {
                 if len == 0 {
                     return Err(Error::MalformedPacket(
@@ -7436,5 +7505,103 @@ yCsBO81bKqlfklugX5yRX5qTopuXX6KbWpFZXKJXUlGSetb4dXm+gYFBCRcA
             i += 1;
         }
         Ok(())
+    }
+
+    #[test]
+    fn nested_embedded_signatures() {
+        // Builds a crafted OpenPGP certificate (~44 KB) that crashes any process
+        // parsing it. The certificate contains a signature with 3000 nested
+        // EmbeddedSignature subpackets - enough to overflow the default 8 MB stack.
+        // This is the same path triggered by keyserver fetches (Cert::from_bytes),
+        // RPM signature verification, Autocrypt header parsing, etc.
+
+        use crate::Cert;
+
+        let dummy_rsa_sig = [0x00, 0x01, 0x01]; // MPI: 1-bit value 1
+
+        // Innermost signature: minimal valid v4 body plus one RSA signature MPI.
+        let mut sig = vec![
+            0x04, 0x00, 0x01, 0x08, // v4, Binary, RSA, SHA256
+            0x00, 0x00,             // hashed subpacket area: 0 bytes
+            0x00, 0x00,             // unhashed subpacket area: 0 bytes
+            0x00, 0x00,             // hash prefix
+        ];
+        sig.extend_from_slice(&dummy_rsa_sig);
+
+        // Nest 3000 times: each layer wraps the previous signature as an
+        // EmbeddedSignature subpacket (tag 32) in the unhashed area.
+        for _ in 0..3000 {
+            let c_len = 1 + sig.len();
+            let len_enc = if c_len < 192 {
+                vec![c_len as u8]
+            } else if c_len < 16320 {
+                let a = c_len - 192;
+                vec![((a >> 8) as u8) + 192, (a & 0xFF) as u8]
+            } else {
+                let l = c_len as u32;
+                vec![0xFF, (l >> 24) as u8, (l >> 16) as u8, (l >> 8) as u8, l as u8]
+            };
+
+            let mut sub = len_enc;
+            sub.push(32); // EmbeddedSignature subpacket tag
+            sub.extend(&sig);
+            if sub.len() > 65535 { break; } // SubpacketArea max size
+
+            let ulen = sub.len();
+            let mut outer = vec![
+                0x04, 0x00, 0x01, 0x08, 0x00, 0x00,
+                (ulen >> 8) as u8, (ulen & 0xFF) as u8,
+            ];
+            outer.extend(&sub);
+            outer.extend(&[0x00, 0x00]); // hash prefix
+            outer.extend_from_slice(&dummy_rsa_sig);
+            sig = outer;
+        }
+
+        // Wrap in a minimal OpenPGP certificate so the payload matches
+        // real-world delivery: keyserver fetch, RPM package, Autocrypt header.
+        sig[1] = 0x10; // patch signature type -> Generic Certification
+
+        if let Err(err) = Signature::from_bytes(&sig) {
+            let err = err.downcast::<Error>();
+            assert!(matches!(err, Ok(Error::MalformedPacket(_))));
+        } else {
+            panic!("Failed to rejected nested embedded signatures");
+        }
+
+        // Minimal v4 RSA public key body
+        let mut pk = vec![0x04, 0x00, 0x00, 0x00, 0x00, 0x01]; // v4, time=0, RSA
+        pk.extend(&[0x02, 0x00]);          // 512-bit modulus
+        pk.extend(&[0xFF; 64]);            // dummy modulus
+        pk.extend(&[0x00, 0x11]);          // 17-bit exponent
+        pk.extend(&[0x01, 0x00, 0x01]);    // e = 65537
+
+        let uid = b"Test <test@test.com>";
+
+        // Assemble: Public Key (tag 6) + UserID (tag 13) + Signature (tag 2)
+        let mut cert_data = Vec::new();
+        let header = |tag: u8, len: usize| {
+            let mut h = vec![0xC0 | tag];
+            if len < 192 { h.push(len as u8); }
+            else {
+                let l = len as u32;
+                h.extend([0xFF, (l >> 24) as u8, (l >> 16) as u8, (l >> 8) as u8, l as u8]);
+            }
+            h
+        };
+        cert_data.extend(header(6, pk.len()));
+        cert_data.extend(&pk);
+        cert_data.extend(header(13, uid.len()));
+        cert_data.extend(uid);
+        cert_data.extend(header(2, sig.len()));
+        cert_data.extend(&sig);
+
+        // We should be able to parse the certificate by rejecting the
+        // invalid signature.  If we parse the nested signatures, then
+        // we'll probably exhaust the stack and crash.
+        eprintln!("{} bytes ({:.1} KB), calling Cert::from_bytes()...",
+                  cert_data.len(), cert_data.len() as f64 / 1024.0);
+        let _ = Cert::from_bytes(&cert_data);
+        eprintln!("no crash (stack may be larger than default)");
     }
 }

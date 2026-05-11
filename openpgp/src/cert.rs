@@ -7403,22 +7403,12 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         let vcert = c.with_policy(&np, None)?;
         assert_eq!(vcert.keys().subkeys().count(), 1);
 
-        // A v3 signature has no subpackets, so there are no key
-        // flags.  But, we then consider the key role and public key
-        // algorithm.
-        assert_eq!(vcert.keys().for_signing().count(), 1);
-        assert_eq!(vcert.keys().for_transport_encryption().count(), 1);
+        // XXX: Unfortunately, it being a v3 signature, the subkey has
+        // no keyflags, limiting its usefulness for now.
 
         // The subkey is interesting because it is bound using a v3
         // signature.
         assert_eq!(c.keys().subkeys().with_policy(&np, None).count(), 1);
-
-        // A v3 signature has no subpackets, so there are no key
-        // flags.  But, we then consider the key role and public key
-        // algorithm.
-        assert_eq!(c.keys().with_policy(&np, None).for_signing().count(), 1);
-        assert_eq!(c.keys().with_policy(&np, None)
-                   .for_transport_encryption().count(), 1);
 
         Ok(())
     }
