@@ -51,6 +51,10 @@ pub struct Keybox<'a> {
     offset: usize,
 
     reader: Box<dyn BufferedReader<()> + 'a>,
+
+    /// Whether an error occurred.  If so, `next` should just return
+    /// `None`.
+    previous_error: bool,
 }
 
 impl<'a> Keybox<'a> {
@@ -86,6 +90,7 @@ impl<'a> Keybox<'a> {
         Ok(Keybox {
             offset: 0,
             reader: buffered_reader::Adapter::new(reader).into_boxed(),
+            previous_error: false,
         })
     }
 
@@ -131,10 +136,15 @@ impl<'a> Iterator for Keybox<'a> {
     type Item = Result<KeyboxRecord>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.reader.eof() {
+        if self.reader.eof() || self.previous_error {
             None
         } else {
-            Some(self.read_next_record())
+            let record = self.read_next_record();
+            if record.is_err() {
+                // Make future calls to next() return None.
+                self.previous_error = true;
+            }
+            Some(record)
         }
     }
 }
@@ -592,5 +602,14 @@ mod tests {
         assert_eq!(kbx_record.typ(), KeyboxRecordType::X509);
         assert_eq!(kbx_record.version(), 1u8);
         Ok(())
+    }
+
+    #[test]
+    fn short_kbx() {
+        let payload: [u8; 6] = [0, 0, 0, 0, 2, 1];
+        let mut kbx = Keybox::from_bytes(&payload).unwrap();
+
+        assert!(matches!(kbx.next(), Some(Err(_))));
+        assert!(matches!(kbx.next(), None));
     }
 }
