@@ -10,7 +10,7 @@ include:
       extra_args: "-- --skip leak_tests"
 
 fuzzing:
-  image: jampot.sequoia-pgp.org/sequoia-pgp/build-docker-image/trixie-prebuild
+  image: registry.sequoia-pgp.org/sequoia-pgp/build-docker-image/trixie-prebuild
   stage: pre-check
   before_script:
     - !reference [.before_script, defaults]
@@ -24,7 +24,7 @@ fuzzing:
     - !reference [.default_rules, rules]
 
 doc:
-  image: jampot.sequoia-pgp.org/sequoia-pgp/build-docker-image/trixie-prebuild
+  image: registry.sequoia-pgp.org/sequoia-pgp/build-docker-image/trixie-prebuild
   stage: build
   before_script:
     - !reference [.before_script, defaults]

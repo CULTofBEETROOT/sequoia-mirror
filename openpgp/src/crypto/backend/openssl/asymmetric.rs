@@ -150,9 +150,12 @@ impl Asymmetric for super::Backend {
             DSA => true,
             ECDH | ECDSA | EdDSA => true,
             MLDSA65_Ed25519 | MLDSA87_Ed448 => true,
+            MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521 => true,
+            MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512 => true,
             SLHDSA128s | SLHDSA128f | SLHDSA256s => true,
-            MLKEM768_X25519 | MLKEM1024_X448 =>
-                true,
+            MLKEM768_X25519 | MLKEM1024_X448 => true,
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 => true,
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 => true,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
@@ -286,6 +289,114 @@ impl Asymmetric for super::Backend {
         let mut shared: Protected = vec![0; 56].into();
         deriver.derive(&mut public, &mut shared)?;
         Ok(shared)
+    }
+
+    fn ecdh_generate_key(curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        let ctx = super::context();
+
+        let key = EvpPkey::generate(&ctx, (&curve).try_into()?)?;
+        match key.export()? {
+            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) => {
+                // Public key bytes (SEC1 point bytes).
+                let pubkey = pubkey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .clone()
+                    .into_boxed_slice();
+
+                // Secret scalar must be fixed-length, big-endian, zero-padded to the
+                // curve's adjusted field size (e.g. P-521 => 66 bytes).
+                //
+                // In particular, P-521 field elements are 521 bits but encoded in
+                // 66 bytes (528 bits). The top 7 bits are always zero, and the
+                // remaining bit is zero with probability 1/2, so minimal encodings
+                // frequently drop a leading 0x00 byte unless we pad explicitly.
+                let fixed_len = curve.field_size()?;
+
+                // IMPORTANT: OsslSecret supports AsRef<[u8]> (see openssl.rs).
+                let raw: &[u8] = prikey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .as_ref();
+
+                if raw.len() > fixed_len {
+                    return Err(Error::MalformedPacket(format!(
+                        "ECDH secret scalar too long: got {} bytes, expected <= {}",
+                        raw.len(),
+                        fixed_len
+                    ))
+                    .into());
+                }
+
+                // Left-pad with zeros (big-endian integer encoding).
+                let mut padded = vec![0u8; fixed_len];
+                padded[fixed_len - raw.len()..].copy_from_slice(raw);
+
+                Ok((padded.into(), pubkey))
+            }
+
+            _ => Err(wrong_key()),
+        }
+    }
+
+    fn ecdh_shared_point(curve: Curve, secret: &Protected, public: &[u8])
+        -> Result<Protected>
+    {
+        let ctx = super::context();
+        let ty: EvpPkeyType = (&curve).try_into()?;
+
+        // Import peer public key (SEC1 point bytes).
+        let mut peer = EvpPkey::import(
+            &ctx,
+            ty.clone(),
+            PkeyData::Ecc(EccData {
+                pubkey: Some(public.to_vec()),
+                prikey: None,
+            }),
+        )?;
+
+        // Import our private scalar.
+        let mut ours = EvpPkey::import(
+            &ctx,
+            ty,
+            PkeyData::Ecc(EccData {
+                pubkey: None,
+                prikey: Some(secret.into()),
+            }),
+        )?;
+
+        let mut deriver = ossl::derive::EcdhDerive::new(&ctx, &mut ours)?;
+
+        // Draft wants: keyshare = X coordinate, fixed-length, big-endian, zero-padded
+        // to adjusted field size (e.g. P-521 => 66 bytes).
+        //
+        // In particular, P-521 field elements are 521 bits but encoded in
+        // 66 bytes (528 bits). The top 7 bits are always zero, and the
+        // remaining bit is zero with probability 1/2, so minimal encodings
+        // frequently drop a leading 0x00 byte unless we pad explicitly.
+        let fixed_len = curve.field_size()?;
+
+        // derive() returns the number of bytes actually written.
+        // We use that to avoid accidental right-padding when the derived X has leading zeros.
+        let mut tmp = vec![0u8; fixed_len];
+        let written: usize = deriver.derive(&mut peer, &mut tmp)?;
+
+        if written > fixed_len {
+            return Err(Error::MalformedPacket(format!(
+                "ECDH derived value too long: got {} bytes, expected <= {}",
+                written,
+                fixed_len
+            ))
+            .into());
+        }
+
+        tmp.truncate(written);
+
+        // Left-pad to fixed_len (big-endian integer encoding).
+        let mut padded = vec![0u8; fixed_len];
+        padded[fixed_len - tmp.len()..].copy_from_slice(&tmp);
+
+        Ok(padded.into())
     }
 
     fn ed25519_generate_key() -> Result<(Protected, [u8; 32])> {
@@ -422,6 +533,159 @@ impl Asymmetric for super::Backend {
         let mut verifier = OsslSignature::new(
             &ctx, SigOp::Verify, SigAlg::Ed448, &mut key, None)?;
         Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
+    }
+
+    fn ecdsa_generate_key(curve: Curve) -> Result<(Protected, Box<[u8]>)> {
+        let ctx = super::context();
+
+        let key = EvpPkey::generate(&ctx, (&curve).try_into()?)?;
+        match key.export()? {
+            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) => {
+                // Public key bytes (SEC1 point bytes).
+                let pubkey = pubkey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .clone()
+                    .into_boxed_slice();
+
+                // Secret scalar must be fixed-length, big-endian, zero-padded to the
+                // curve's adjusted field size (e.g. P-521 => 66 bytes).
+                //
+                // In particular, P-521 field elements are 521 bits but encoded in
+                // 66 bytes (528 bits). The top 7 bits are always zero, and the
+                // remaining bit is zero with probability 1/2, so minimal encodings
+                // frequently drop a leading 0x00 byte unless we pad explicitly.
+                let fixed_len = curve.field_size()?;
+
+                // IMPORTANT: OsslSecret supports AsRef<[u8]> (see openssl.rs).
+                let raw: &[u8] = prikey
+                    .as_ref()
+                    .ok_or_else(not_set)?
+                    .as_ref();
+
+                if raw.len() > fixed_len {
+                    return Err(Error::MalformedPacket(format!(
+                        "ECDSA secret scalar too long: got {} bytes, expected <= {}",
+                        raw.len(),
+                        fixed_len
+                    ))
+                    .into());
+                }
+
+                // Left-pad with zeros (big-endian integer encoding).
+                let mut padded = vec![0u8; fixed_len];
+                padded[fixed_len - raw.len()..].copy_from_slice(raw);
+
+                Ok((padded.into(), pubkey))
+            }
+
+            _ => Err(wrong_key()),
+        }
+    }
+
+    /// Signs `digest` using ECDSA on `curve` and returns a *fixed-width* raw signature `r||s`.
+    /// `r` and `s` are left-padded to the curve's adjusted field size (e.g. P-521 => 66).
+    fn ecdsa_sign_raw(
+        curve: Curve,
+        secret: &Protected,
+        public: &[u8],
+        digest: &[u8],
+    ) -> Result<Box<[u8]>> {
+        let ctx = super::context();
+
+        let field_len = curve.field_size()?;
+        let sig_len = 2 * field_len;
+
+        // SEC1 uncompressed point length check: 0x04 || X(field_len) || Y(field_len)
+        let expected_pub_len = 1 + 2 * field_len;
+        if public.len() != expected_pub_len || public.first().copied() != Some(0x04) {
+            return Err(Error::MalformedPacket("invalid ECDSA public key encoding".into()).into());
+        }
+
+        let mut key = EvpPkey::import(
+            &ctx,
+            (&curve).try_into()?,
+            PkeyData::Ecc(EccData {
+                pubkey: Some(public.to_vec()),
+                prikey: Some(secret.into()),
+            }),
+        )?;
+
+        // OpenSSL returns DER-encoded ECDSA signature (SEQUENCE(INTEGER r, INTEGER s)).
+        let mut signer = OsslSignature::new(&ctx, SigOp::Sign, SigAlg::Ecdsa, &mut key, None)?;
+        let size = signer.sign(digest, None)?;
+        let mut der_sig = vec![0u8; size];
+        let real_size = signer.sign(digest, Some(&mut der_sig))?;
+        crate::vec_truncate(&mut der_sig, real_size);
+
+        // Parse DER -> minimal big-endian r,s.
+        let (r, s) = der::parse_sig_r_s(&der_sig)?;
+
+        // Sanity: r and s must fit into field_len.
+        if r.len() > field_len || s.len() > field_len {
+            return Err(Error::MalformedPacket(format!(
+                "ECDSA signature component too large: r={} s={} field={}",
+                r.len(),
+                s.len(),
+                field_len
+            ))
+            .into());
+        }
+
+        // Fixed-width raw r||s (left-padded, big-endian).
+        // P-521 note: 521-bit field encoded in 66 bytes => leading 0x00 occurs frequently.
+        let mut out = vec![0u8; sig_len];
+        out[field_len - r.len()..field_len].copy_from_slice(r);
+        out[sig_len - s.len()..sig_len].copy_from_slice(s);
+
+        Ok(out.into_boxed_slice())
+    }
+
+    /// Verifies a *fixed-width* raw ECDSA signature `r||s` for the given curve.
+    fn ecdsa_verify_raw(
+        curve: Curve,
+        public: &[u8],
+        digest: &[u8],
+        signature_rs: &[u8],
+    ) -> Result<bool> {
+        let ctx = super::context();
+
+        let field_len = curve.field_size()?;
+        let sig_len = 2 * field_len;
+
+        if signature_rs.len() != sig_len {
+            return Err(Error::BadSignature("invalid ECDSA signature length".into()).into());
+        }
+
+        let mut key = EvpPkey::import(
+            &ctx,
+            (&curve).try_into()?,
+            PkeyData::Ecc(EccData {
+                pubkey: Some(public.to_vec()),
+                prikey: None,
+            }),
+        )?;
+
+        // Split fixed-width raw r||s.
+        let (r_fixed, s_fixed) = signature_rs.split_at(field_len);
+
+        // Convert fixed-width big-endian to minimal big-endian for DER INTEGER encoding.
+        // Keep at least one byte (DER INTEGER cannot be empty).
+        fn trim_leading_zeros(mut x: &[u8]) -> &[u8] {
+            while x.len() > 1 && x[0] == 0 {
+                x = &x[1..];
+            }
+            x
+        }
+        let r_min = trim_leading_zeros(r_fixed);
+        let s_min = trim_leading_zeros(s_fixed);
+
+        // DER-encode R and S (same helper used by the existing MPI-based verifier).
+        let mut der_sig = Vec::new();
+        der::encode_sig_r_s(&mut der_sig, r_min, s_min)?;
+
+        let mut verifier = OsslSignature::new(&ctx, SigOp::Verify, SigAlg::Ecdsa, &mut key, None)?;
+        Ok(verifier.verify(digest, Some(&der_sig)).is_ok())
     }
 
     fn dsa_generate_key(p_bits: usize)
@@ -990,8 +1254,10 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
             ECDH => crate::crypto::ecdh::encrypt(self.parts_as_public(), data),
 
             RSASign | DSA | ECDSA | EdDSA | Ed25519 | Ed448 |
-                MLDSA65_Ed25519 | MLDSA87_Ed448
-                | SLHDSA128s | SLHDSA128f | SLHDSA256s =>
+                MLDSA65_Ed25519 | MLDSA87_Ed448 |
+                MLDSA65_ECDSA_NISTP384 | MLDSA87_ECDSA_NISTP521 |
+                MLDSA65_ECDSA_BrainpoolP384 | MLDSA87_ECDSA_BrainpoolP512 |
+                SLHDSA128s | SLHDSA128f | SLHDSA256s =>
                 Err(Error::InvalidOperation(
                     format!("{} is not an encryption algorithm", self.pk_algo())
                 ).into()),
@@ -1001,6 +1267,8 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
             ElGamalEncrypt | ElGamalEncryptSign |
             MLKEM768_X25519 | // Handled in common code.
             MLKEM1024_X448 | // Handled in common code.
+            MLKEM768_ECDH_NISTP384 | MLKEM1024_ECDH_NISTP521 | // Handled in common code.
+            MLKEM768_ECDH_BrainpoolP384 | MLKEM1024_ECDH_BrainpoolP512 | // Handled in common code.
             Private(_) | Unknown(_) =>
                 Err(Error::UnsupportedPublicKeyAlgorithm(self.pk_algo()).into()),
         }

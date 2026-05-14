@@ -69,6 +69,63 @@
    - CipherSuite::MLDSA65_Ed25519
    - CipherSuite::MLDSA87_Ed448
 
+   - PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384
+   - PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521
+   - PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384
+   - PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512
+   - PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384
+   - PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521
+   - PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384
+   - PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::PublicKey::MLDSA65_ECDSA_NISTP384
+   - crypto::mpi::PublicKey::MLDSA87_ECDSA_NISTP521
+   - crypto::mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384
+   - crypto::mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512
+   - crypto::mpi::PublicKey::MLKEM768_ECDH_NISTP384
+   - crypto::mpi::PublicKey::MLKEM1024_ECDH_NISTP521
+   - crypto::mpi::PublicKey::MLKEM768_ECDH_BrainpoolP384
+   - crypto::mpi::PublicKey::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::SecretKeyMaterial::MLDSA65_ECDSA_NISTP384
+   - crypto::mpi::SecretKeyMaterial::MLDSA87_ECDSA_NISTP521
+   - crypto::mpi::SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384
+   - crypto::mpi::SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512
+   - crypto::mpi::SecretKeyMaterial::MLKEM768_ECDH_NISTP384
+   - crypto::mpi::SecretKeyMaterial::MLKEM1024_ECDH_NISTP521
+   - crypto::mpi::SecretKeyMaterial::MLKEM768_ECDH_BrainpoolP384
+   - crypto::mpi::SecretKeyMaterial::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::CipherText::MLKEM768_ECDH_NISTP384
+   - crypto::mpi::CipherText::MLKEM1024_ECDH_NISTP521
+   - crypto::mpi::CipherText::MLKEM768_ECDH_BrainpoolP384
+   - crypto::mpi::CipherText::MLKEM1024_ECDH_BrainpoolP512
+   - crypto::mpi::Signature::MLDSA65_ECDSA_NISTP384
+   - crypto::mpi::Signature::MLDSA87_ECDSA_NISTP521
+   - crypto::mpi::Signature::MLDSA65_ECDSA_BrainpoolP384
+   - crypto::mpi::Signature::MLDSA87_ECDSA_BrainpoolP512
+   - policy::AsymmetricAlgorithm::MLDSA65_ECDSA_NISTP384,
+   - policy::AsymmetricAlgorithm::MLDSA87_ECDSA_NISTP521,
+   - policy::AsymmetricAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+   - policy::AsymmetricAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+   - policy::AsymmetricAlgorithm::MLKEM768_ECDH_NISTP384,
+   - policy::AsymmetricAlgorithm::MLKEM1024_ECDH_NISTP521,
+   - policy::AsymmetricAlgorithm::MLKEM768_ECDH_BrainpoolP384,
+   - policy::AsymmetricAlgorithm::MLKEM1024_ECDH_BrainpoolP512,
+   - Key6::generate_mldsa65_ecdsa_nistp384
+   - Key6::generate_mldsa87_ecdsa_nistp521
+   - Key6::generate_mldsa65_ecdsa_brainpoolp384
+   - Key6::generate_mldsa87_ecdsa_brainpoolp512
+   - Key6::generate_mlkem768_ecdh_nistp384
+   - Key6::generate_mlkem1024_ecdh_nistp521
+   - Key6::generate_mlkem768_ecdh_brainpoolp384
+   - Key6::generate_mlkem1024_ecdh_brainpoolp512
+   - Key6::import_public_mldsa65_ecdsa_nistp384
+   - Key6::import_public_mldsa87_ecdsa_nistp521
+   - Key6::import_public_mldsa65_ecdsa_brainpoolp384
+   - Key6::import_public_mldsa87_ecdsa_brainpoolp512
+   - Key6::import_public_mlkem768_ecdh_nistp384
+   - Key6::import_public_mlkem1024_ecdh_nistp521
+   - Key6::import_public_mlkem768_ecdh_brainpoolp384
+   - Key6::import_public_mlkem1024_ecdh_brainpoolp512
+
 * Changes in 2.1.0
 ** Notable fixes
    - When using the OpenSSL backend, we now check at runtime what AEAD

@@ -125,6 +125,26 @@ pub const PQC_CERT_PAIRS: &[(PublicKeyAlgorithm, &str, &str)] = &[
     "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_pk.pgp",
     "pqc/gopenpgp/gosop_draft-ietf-openpgp-pqc-09-high-security_alice_sk.pgp"
     ),
+
+    //
+    // artifacts from draft-ietf-openpgp-nist-bp-comp-03.
+    //
+    (PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384,
+     "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-nistp384-with-mlkem768-ecdh-nistp384-sample-pk.pgp",
+     "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-nistp384-with-mlkem768-ecdh-nistp384-sample-sk.pgp"
+    ),
+    (PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521,
+     "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-nistp521-with-mlkem1024-ecdh-nistp521-sample-pk.pgp",
+     "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-nistp521-with-mlkem1024-ecdh-nistp521-sample-sk.pgp"
+    ),
+    (PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+     "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-brainpoolp384-with-mlkem768-ecdh-brainpoolp384-sample-pk.pgp",
+     "pqc-nist-bp/ietf/v6-mldsa65-ecdsa-brainpoolp384-with-mlkem768-ecdh-brainpoolp384-sample-sk.pgp"
+    ),
+    (PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+     "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-brainpoolp512-with-mlkem1024-ecdh-brainpoolp512-sample-pk.pgp",
+     "pqc-nist-bp/ietf/v6-mldsa87-ecdsa-brainpoolp512-with-mlkem1024-ecdh-brainpoolp512-sample-sk.pgp"
+    ),
 ];
 
 /// Returns the content of the given file below `openpgp/tests/data`.
