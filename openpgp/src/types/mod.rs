@@ -55,6 +55,8 @@ mod features;
 pub use self::features::Features;
 mod key_flags;
 pub use self::key_flags::KeyFlags;
+mod public_key_algorithm_specification;
+pub use public_key_algorithm_specification::PublicKeyAlgorithmSpecification;
 mod revocation_key;
 pub use revocation_key::RevocationKey;
 mod server_preferences;
