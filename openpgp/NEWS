@@ -4,6 +4,10 @@
 #+STARTUP: content hidestars
 
 
+* Changes in 2.4.0
+** New functionality
+   - types::PublicKeyAlgorithmSpecification
+
 * Changes in 2.3.0
 ** Notable changes
    - Encrypted::map, Password::map, and Unencrypted::map now accept
@@ -15,6 +19,7 @@
    - The RustCrypto backend now supports X448 and Ed448.
    - The Windows CNG backend now supports X448 and Ed448 implemented
      using the X448 and Ed448 implementation from RustCrypto.
+
 ** Notable fixes
    - Fix a panic in `RawCertParser` triggered by malformed input.
      https://gitlab.com/sequoia-pgp/sequoia/-/commit/dc8f99b15b9949449e51f460e38b2e3b9858a2bd
