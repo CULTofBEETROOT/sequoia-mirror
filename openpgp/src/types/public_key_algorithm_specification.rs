@@ -1,7 +1,15 @@
 //! Public key algorithm specification.
 
+use crate::Error;
+use crate::Profile;
 use crate::PublicKeyAlgorithm;
+use crate::Result;
+use crate::packet::Key;
+use crate::packet::key::Key4;
+use crate::packet::key::Key6;
+use crate::packet::key;
 use crate::types::Curve;
+use crate::types::KeyFlags;
 
 /// A full specification of a public key algorithm.
 ///
@@ -368,11 +376,180 @@ impl PublicKeyAlgorithmSpecification {
             inner: PublicKeyAlgorithmSpecificationInner::ECDSA(Curve::BrainpoolP512),
         }
     }
+
+    /// Generates a key according to the specification.
+    pub fn generate_key(&self, profile: Profile)
+        -> Result<Key<key::SecretParts, key::UnspecifiedRole>>
+    {
+        use PublicKeyAlgorithmSpecificationInner::*;
+
+        let key = match &self.inner {
+            RSA(bits) => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_rsa(*bits)?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_rsa(*bits)?.into()
+                    }
+                }
+            }
+            ElGamal(bits) => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_elgamal(*bits)?.into()
+                    }
+                    Profile::RFC9580 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v6 Elgamal keys".into()).into());
+                    }
+                }
+            }
+            DSA(bits) => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_dsa(*bits)?.into()
+                    }
+                    Profile::RFC9580 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v6 DSA keys".into()).into());
+                    }
+                }
+            }
+            ECDH(curve) => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_ecc(false, curve.clone())?.into()
+                    }
+                    Profile::RFC9580 => {
+                        if curve == &Curve::Cv25519 {
+                            // Key6::generate_ecc silently maps a
+                            // legacy Cv25519 curve to a new X25519
+                            // algorithm.  We forbid that here.
+                            return Err(Error::InvalidArgument(
+                                "Can't generate a v6 Cv25519 key".into()).into());
+                        } else {
+                            Key6::generate_ecc(false, curve.clone())?.into()
+                        }
+                    }
+                }
+            }
+            ECDSA(curve) => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_ecc(true, curve.clone())?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_ecc(true, curve.clone())?.into()
+                    }
+                }
+            }
+            EdDSA(curve) => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_ecc(true, curve.clone())?.into()
+                    }
+                    Profile::RFC9580 => {
+                        if curve == &Curve::Ed25519 {
+                            // Key6::generate_ecc silently maps a
+                            // legacy Ed25519 curve to a new Ed25519
+                            // algorithm.  We forbid that here.
+                            return Err(Error::InvalidArgument(
+                                "Can't generate a v6 Ed25519 key".into()).into());
+                        } else {
+                            Key6::generate_ecc(true, curve.clone())?.into()
+                        }
+                    }
+                }
+            }
+            X25519 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_x25519()?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_x25519()?.into()
+                    }
+                }
+            }
+            Ed25519 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_ed25519()?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_ed25519()?.into()
+                    }
+                }
+            }
+            X448 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_x448()?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_x448()?.into()
+                    }
+                }
+            }
+            Ed448 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_ed448()?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_ed448()?.into()
+                    }
+                }
+            }
+        };
+
+        Ok(key)
+    }
+
+    /// Generates a key according to the specification and checks that
+    /// it is compatible with the key flags.
+    pub fn generate_key_for<K>(&self, profile: Profile, key_flags: K)
+        -> Result<Key<key::SecretParts, key::UnspecifiedRole>>
+    where
+        K: AsRef<KeyFlags>
+    {
+        let algo = self.pk_algo();
+
+        let key_flags = key_flags.as_ref();
+
+        let need_signing = key_flags.for_certification()
+            || key_flags.for_signing()
+            || key_flags.for_authentication();
+
+        let need_encryption = key_flags.for_transport_encryption()
+            || key_flags.for_storage_encryption();
+
+        if need_signing && need_encryption
+            && (! algo.for_signing() || ! algo.for_encryption())
+        {
+            return Err(Error::InvalidOperation(
+                "Can't use key for signing and encryption".into())
+                .into());
+        } else if need_signing && ! algo.for_signing() {
+            return Err(Error::InvalidOperation(
+                "Can't use key for signing".into())
+                .into());
+        } else if need_encryption && ! algo.for_encryption() {
+            return Err(Error::InvalidOperation(
+                "Can't use key for encryption".into())
+                .into());
+        } else {
+            self.generate_key(profile)
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use crate::crypto::mpi;
 
     #[test]
     fn check() {
@@ -432,5 +609,211 @@ mod test {
               ECDH, Some(Curve::BrainpoolP512), None);
         check(PublicKeyAlgorithmSpecification::brainpoolp512_for_signing(),
               ECDSA, Some(Curve::BrainpoolP512), None);
+    }
+
+    #[test]
+    fn generate_key() {
+        use PublicKeyAlgorithm::*;
+        use Profile::*;
+
+        let check = |profile: Profile,
+                     spec: PublicKeyAlgorithmSpecification,
+                     algo: PublicKeyAlgorithm,
+                     curve: Option<Curve>,
+                     bits: Option<usize>|
+        {
+            assert_eq!(
+                spec.is_supported(),
+                algo.is_supported()
+                    && curve.as_ref()
+                        .map(|c| {
+                            c.is_supported()
+                        }).unwrap_or(true));
+
+            if ! spec.is_supported() {
+                // The algorithms are not supported by the crypto
+                // backend; skip.
+                eprintln!("Skipping unsupported algorithm: {}, curve: {:?}",
+                          spec.pk_algo(), spec.curve());
+                return;
+            }
+
+            let result = spec.generate_key(profile);
+            // Using DSA with Windows CNG is supported, but generating
+            // DSA keys is not.
+            if let Err(err) = result.as_ref() {
+                if let Some(Error::UnsupportedPublicKeyAlgorithm(_))
+                    = err.downcast_ref::<Error>()
+                {
+                    eprintln!("Generating {:?} is not supported, skipping",
+                              spec);
+                    return;
+                }
+            }
+            let key = result.expect("Can generate key");
+
+            match profile {
+                RFC4880 => {
+                    assert_eq!(key.version(), 4);
+                }
+                RFC9580 => {
+                    assert_eq!(key.version(), 6);
+                }
+            }
+
+            assert_eq!(algo, key.pk_algo());
+
+            assert_eq!(curve, spec.curve());
+            let curve = match key.mpis() {
+                mpi::PublicKey::EdDSA { curve, .. }
+                | mpi::PublicKey::ECDSA { curve, .. }
+                | mpi::PublicKey::ECDH { curve, .. } => {
+                    Some(curve)
+                }
+                _ => None,
+            };
+            assert_eq!(curve, spec.curve().as_ref());
+
+            assert_eq!(bits, spec.bits());
+            if bits.is_some() {
+                assert_eq!(bits, key.mpis().bits());
+            }
+        };
+
+        #[allow(deprecated)]
+        check(RFC4880, PublicKeyAlgorithmSpecification::elgamal(2048),
+              ElGamalEncrypt, None, Some(2048));
+        PublicKeyAlgorithmSpecification::elgamal(2048)
+            .generate_key(RFC9580)
+            .expect_err("forbidden by RFC9580");
+
+        #[allow(deprecated)]
+        check(RFC4880, PublicKeyAlgorithmSpecification::dsa(2048),
+              DSA, None, Some(2048));
+        PublicKeyAlgorithmSpecification::dsa(2048)
+            .generate_key(RFC9580)
+            .expect_err("forbidden by RFC9580");
+
+        check(RFC4880, PublicKeyAlgorithmSpecification::legacy_cv25519(),
+              ECDH, Some(Curve::Cv25519), None);
+        PublicKeyAlgorithmSpecification::legacy_cv25519()
+            .generate_key(RFC9580)
+            .expect_err("forbidden by RFC9580");
+
+        check(RFC4880, PublicKeyAlgorithmSpecification::legacy_ed25519(),
+              EdDSA, Some(Curve::Ed25519), None);
+        PublicKeyAlgorithmSpecification::legacy_ed25519()
+            .generate_key(RFC9580)
+            .expect_err("forbidden by RFC9580");
+
+        for profile in [ RFC4880, RFC9580 ] {
+            check(profile, PublicKeyAlgorithmSpecification::rsa(2048),
+                  RSAEncryptSign, None, Some(2048));
+
+            check(profile, PublicKeyAlgorithmSpecification::nistp256_for_encryption(),
+                  ECDH, Some(Curve::NistP256), None);
+            check(profile, PublicKeyAlgorithmSpecification::nistp384_for_encryption(),
+                  ECDH, Some(Curve::NistP384), None);
+            check(profile, PublicKeyAlgorithmSpecification::nistp521_for_encryption(),
+                  ECDH, Some(Curve::NistP521), None);
+            check(profile, PublicKeyAlgorithmSpecification::brainpoolp256_for_encryption(),
+                  ECDH, Some(Curve::BrainpoolP256), None);
+            check(profile, PublicKeyAlgorithmSpecification::brainpoolp384_for_encryption(),
+                  ECDH, Some(Curve::BrainpoolP384), None);
+            check(profile, PublicKeyAlgorithmSpecification::brainpoolp512_for_encryption(),
+                  ECDH, Some(Curve::BrainpoolP512), None);
+
+            check(profile, PublicKeyAlgorithmSpecification::nistp256_for_signing(),
+                  ECDSA, Some(Curve::NistP256), None);
+            check(profile, PublicKeyAlgorithmSpecification::nistp384_for_signing(),
+                  ECDSA, Some(Curve::NistP384), None);
+            check(profile, PublicKeyAlgorithmSpecification::nistp521_for_signing(),
+                  ECDSA, Some(Curve::NistP521), None);
+            check(profile, PublicKeyAlgorithmSpecification::brainpoolp256_for_signing(),
+                  ECDSA, Some(Curve::BrainpoolP256), None);
+            check(profile, PublicKeyAlgorithmSpecification::brainpoolp384_for_signing(),
+                  ECDSA, Some(Curve::BrainpoolP384), None);
+            check(profile, PublicKeyAlgorithmSpecification::brainpoolp512_for_signing(),
+                  ECDSA, Some(Curve::BrainpoolP512), None);
+
+            check(profile, PublicKeyAlgorithmSpecification::ed25519(),
+                  Ed25519, None, None);
+            check(profile, PublicKeyAlgorithmSpecification::ed448(),
+                  Ed448, None, None);
+            check(profile, PublicKeyAlgorithmSpecification::x25519(),
+                  X25519, None, None);
+            check(profile, PublicKeyAlgorithmSpecification::x448(),
+                  X448, None, None);
+        }
+    }
+
+    #[test]
+    fn generate_key_for() {
+        use Profile::*;
+
+        let algos = [
+            (true, true, RFC4880, PublicKeyAlgorithmSpecification::rsa(2048)),
+            (true, true, RFC9580, PublicKeyAlgorithmSpecification::rsa(2048)),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::elgamal(2048)),
+            (false, false, RFC9580, PublicKeyAlgorithmSpecification::elgamal(2048)),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::dsa(2048)),
+            (false, false, RFC9580, PublicKeyAlgorithmSpecification::dsa(2048)),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::legacy_cv25519()),
+            (false, false, RFC9580, PublicKeyAlgorithmSpecification::legacy_cv25519()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::nistp256_for_encryption()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::nistp384_for_encryption()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::nistp521_for_encryption()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::brainpoolp256_for_encryption()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::brainpoolp384_for_encryption()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::brainpoolp512_for_encryption()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::nistp256_for_signing()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::nistp384_for_signing()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::nistp521_for_signing()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::brainpoolp256_for_signing()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::brainpoolp384_for_signing()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::brainpoolp512_for_signing()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::ed25519()),
+            (true, false, RFC4880, PublicKeyAlgorithmSpecification::ed448()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::x25519()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::x448()),
+        ];
+
+        let signing = KeyFlags::certification();
+        let encryption = KeyFlags::transport_encryption();
+
+        for (for_signing, for_encryption, profile, spec) in algos {
+            if ! spec.is_supported() {
+                eprintln!("Skipping {:?}, not supported", spec);
+                continue;
+            }
+
+            let result = spec.generate_key_for(profile, &signing);
+            // Using DSA with Windows CNG is supported, but generating
+            // DSA keys is not.
+            if let Err(err) = result.as_ref() {
+                if let Some(Error::UnsupportedPublicKeyAlgorithm(_))
+                    = err.downcast_ref::<Error>()
+                {
+                    eprintln!("Generating {:?} is not supported, skipping",
+                              signing);
+                    continue;
+                }
+            }
+            assert_eq!(result.is_ok(), for_signing,
+                       "Result for {:?}: {:?}", spec, result.map(|_| ()));
+
+            let result = spec.generate_key_for(profile, &encryption);
+            if let Err(err) = result.as_ref() {
+                if let Some(Error::UnsupportedPublicKeyAlgorithm(_))
+                    = err.downcast_ref::<Error>()
+                {
+                    eprintln!("Generating {:?} is not supported, skipping",
+                              encryption);
+                    continue;
+                }
+            }
+            assert_eq!(result.is_ok(), for_encryption,
+                       "Result for {:?}: {:?}", spec, result.map(|_| ()));
+        }
     }
 }
