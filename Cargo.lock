@@ -219,6 +219,8 @@ dependencies = [
  "cexpr",
  "clang-sys",
  "itertools 0.13.0",
+ "log",
+ "prettyplease",
  "proc-macro2",
  "quote",
  "regex",
@@ -2447,6 +2449,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
+name = "ossl"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6156acd90319ee18151534bdc6a729e65ff9a48de486e10e76180280afa9c08a"
+dependencies = [
+ "bindgen",
+ "cfg-if",
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
 name = "p256"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3347,8 +3361,7 @@ dependencies = [
  "num-bigint-dig",
  "num-integer",
  "ocb3",
- "openssl",
- "openssl-sys",
+ "ossl",
  "p256",
  "p384",
  "p521",
