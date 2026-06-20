@@ -112,6 +112,8 @@
    - CipherSuite::MLDSA87_Ed448
    - PacketParserBuilder::process_csf_message
    - PacketParser::processing_csf_message
+   - MessageStructure::processed_csf_message
+   - Verifier::processing_csf_message
 
 ** New functionality
    - CertBuilder::set_encryption_algorithm
