@@ -774,7 +774,7 @@ impl CertBuilder<'_> {
     ///
     /// Supported are [`Profile::RFC9580`] which will generate version
     /// 6 keys, and [`Profile::RFC4880`] which will version 4 keys.
-    /// By default, we generate version 6 keys.
+    /// The default is the default value of [`Profile`].
     ///
     /// # Examples
     ///
