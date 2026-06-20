@@ -2,6 +2,8 @@ use crate::{Error, Result};
 
 use crate::crypto::asymmetric::KeyPair;
 use crate::crypto::backend::interface::Asymmetric;
+#[cfg(ossl350)]
+use crate::crypto::backend::openssl::sys;
 use crate::crypto::mpi;
 use crate::crypto::mpi::{ProtectedMPI, MPI};
 use crate::crypto::mem::Protected;
@@ -17,6 +19,8 @@ use openssl::derive::Deriver;
 use openssl::ec::{EcGroup, EcKey, EcPoint, PointConversionForm};
 use openssl::ecdsa::EcdsaSig;
 use openssl::nid::Nid;
+#[cfg(ossl350)]
+use openssl::pkey::KeyType;
 use openssl::pkey::PKey;
 use openssl::pkey_ctx::PkeyCtx;
 use openssl::rsa::{Padding, Rsa, RsaPrivateKeyBuilder};
@@ -36,7 +40,7 @@ impl Asymmetric for super::Backend {
             MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
             SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
             MLKEM768_X25519 | MLKEM1024_X448 =>
-                false,
+                cfg!(ossl350),
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
@@ -162,6 +166,70 @@ impl Asymmetric for super::Backend {
             public, openssl::pkey::Id::ED448)?;
         let mut verifier = Verifier::new_without_digest(&key)?;
         Ok(verifier.verify_oneshot(signature, digest)?)
+    }
+
+    #[cfg(ossl350)]
+    fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {
+        let mut secret = Protected::new(64);
+        crate::crypto::random(secret.as_mut())?;
+        let key = PKey::private_key_from_seed(None, KeyType::ML_KEM_768, None, &secret)?;
+        let public: Box<[u8; 1184]> = key
+            .raw_public_key()?
+            .into_boxed_slice()
+            .try_into()
+            .map_err(|public: Box<[u8]>| {
+                Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for ML-KEM-768; expected 1184",
+                    public.len()
+                ))
+            })?;
+        Ok((secret, public))
+    }
+
+    #[cfg(ossl350)]
+    fn mlkem768_encapsulate(public: &[u8; 1184]) -> Result<(Box<[u8; 1088]>, Protected)> {
+        let key = PKey::public_key_from_raw_bytes_ex(None, KeyType::ML_KEM_768, None, public)?;
+        let mut ciphertext = Box::new([0; 1088]);
+        let keyshare = sys::encapsulate(&key, ciphertext.as_mut_slice())?;
+        Ok((ciphertext, keyshare))
+    }
+
+    #[cfg(ossl350)]
+    fn mlkem768_decapsulate(secret: &Protected, ciphertext: &[u8; 1088]) -> Result<Protected> {
+        let key = PKey::private_key_from_seed(None, KeyType::ML_KEM_768, None, secret)?;
+        sys::decapsulate(&key, ciphertext)
+    }
+
+    #[cfg(ossl350)]
+    fn mlkem1024_generate_key() -> Result<(Protected, Box<[u8; 1568]>)> {
+        let mut secret = Protected::new(64);
+        crate::crypto::random(secret.as_mut())?;
+        let key = PKey::private_key_from_seed(None, KeyType::ML_KEM_1024, None, &secret)?;
+        let public: Box<[u8; 1568]> = key
+            .raw_public_key()?
+            .into_boxed_slice()
+            .try_into()
+            .map_err(|public: Box<[u8]>| {
+                Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for ML-KEM-1024; expected 1568",
+                    public.len()
+                ))
+            })?;
+        Ok((secret, public))
+    }
+
+    #[cfg(ossl350)]
+    fn mlkem1024_encapsulate(public: &[u8; 1568]) -> Result<(Box<[u8; 1568]>, Protected)> {
+        let key = PKey::public_key_from_raw_bytes_ex(None, KeyType::ML_KEM_1024, None, public)?;
+        let mut ciphertext = Box::new([0; 1568]);
+        let keyshare = sys::encapsulate(&key, ciphertext.as_mut_slice())?;
+        Ok((ciphertext, keyshare))
+    }
+
+    #[cfg(ossl350)]
+    fn mlkem1024_decapsulate(secret: &Protected, ciphertext: &[u8; 1568]) -> Result<Protected> {
+        let key = PKey::private_key_from_seed(None, KeyType::ML_KEM_1024, None, secret)?;
+        sys::decapsulate(&key, ciphertext)
     }
 
     fn dsa_generate_key(p_bits: usize)

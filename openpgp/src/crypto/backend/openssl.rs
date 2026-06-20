@@ -7,6 +7,9 @@ pub mod hash;
 pub mod kdf;
 pub mod symmetric;
 
+#[cfg(ossl350)]
+mod sys;
+
 pub struct Backend(());
 
 impl super::interface::Backend for Backend {
