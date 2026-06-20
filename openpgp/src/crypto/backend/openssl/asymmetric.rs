@@ -37,7 +37,8 @@ impl Asymmetric for super::Backend {
             RSAEncryptSign | RSAEncrypt | RSASign => true,
             DSA => true,
             ECDH | ECDSA | EdDSA => true,
-            MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
+            MLDSA65_Ed25519 | MLDSA87_Ed448 =>
+                cfg!(ossl350),
             SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
             MLKEM768_X25519 | MLKEM1024_X448 =>
                 cfg!(ossl350),
@@ -166,6 +167,84 @@ impl Asymmetric for super::Backend {
             public, openssl::pkey::Id::ED448)?;
         let mut verifier = Verifier::new_without_digest(&key)?;
         Ok(verifier.verify_oneshot(signature, digest)?)
+    }
+
+    #[cfg(ossl350)]
+    fn mldsa65_generate_key() -> Result<(Protected, Box<[u8; 1952]>)> {
+        let mut secret = Protected::new(32);
+        crate::crypto::random(secret.as_mut())?;
+        let key = PKey::private_key_from_seed(None, KeyType::ML_DSA_65, None, &secret)?;
+        let public: Box<[u8; 1952]> = key
+            .raw_public_key()?
+            .into_boxed_slice()
+            .try_into()
+            .map_err(|public: Box<[u8]>| {
+                Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for ML-DSA-65; expected 1952",
+                    public.len()
+                ))
+            })?;
+        Ok((secret, public))
+    }
+
+    #[cfg(ossl350)]
+    fn mldsa65_sign(secret: &Protected, digest: &[u8]) -> Result<Box<[u8; 3309]>> {
+        let key = PKey::private_key_from_seed(None, KeyType::ML_DSA_65, None, secret)?;
+        let signature: Box<[u8; 3309]> = sys::sign_message(&key, sys::ML_DSA_65_NAME, digest)?
+            .into_boxed_slice()
+            .try_into()
+            .map_err(|signature: Box<[u8]>| {
+                Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for ML-DSA-65 signature; expected 3309",
+                    signature.len()
+                ))
+            })?;
+        Ok(signature)
+    }
+
+    #[cfg(ossl350)]
+    fn mldsa65_verify(public: &[u8; 1952], digest: &[u8], signature: &[u8; 3309]) -> Result<bool> {
+        let key = PKey::public_key_from_raw_bytes_ex(None, KeyType::ML_DSA_65, None, public)?;
+        sys::verify_message(&key, sys::ML_DSA_65_NAME, digest, signature)
+    }
+
+    #[cfg(ossl350)]
+    fn mldsa87_generate_key() -> Result<(Protected, Box<[u8; 2592]>)> {
+        let mut secret = Protected::new(32);
+        crate::crypto::random(secret.as_mut())?;
+        let key = PKey::private_key_from_seed(None, KeyType::ML_DSA_87, None, &secret)?;
+        let public: Box<[u8; 2592]> = key
+            .raw_public_key()?
+            .into_boxed_slice()
+            .try_into()
+            .map_err(|public: Box<[u8]>| {
+                Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for ML-DSA-87; expected 2592",
+                    public.len()
+                ))
+            })?;
+        Ok((secret, public))
+    }
+
+    #[cfg(ossl350)]
+    fn mldsa87_sign(secret: &Protected, digest: &[u8]) -> Result<Box<[u8; 4627]>> {
+        let key = PKey::private_key_from_seed(None, KeyType::ML_DSA_87, None, secret)?;
+        let signature: Box<[u8; 4627]> = sys::sign_message(&key, sys::ML_DSA_87_NAME, digest)?
+            .into_boxed_slice()
+            .try_into()
+            .map_err(|signature: Box<[u8]>| {
+                Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for ML-DSA-87 signature; expected 4627",
+                    signature.len()
+                ))
+            })?;
+        Ok(signature)
+    }
+
+    #[cfg(ossl350)]
+    fn mldsa87_verify(public: &[u8; 2592], digest: &[u8], signature: &[u8; 4627]) -> Result<bool> {
+        let key = PKey::public_key_from_raw_bytes_ex(None, KeyType::ML_DSA_87, None, public)?;
+        sys::verify_message(&key, sys::ML_DSA_87_NAME, digest, signature)
     }
 
     #[cfg(ossl350)]
