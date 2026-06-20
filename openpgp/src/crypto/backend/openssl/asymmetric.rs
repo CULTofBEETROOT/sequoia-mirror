@@ -27,6 +27,77 @@ use openssl::rsa::{Padding, Rsa, RsaPrivateKeyBuilder};
 use openssl::sign::Signer as OpenSslSigner;
 use openssl::sign::Verifier;
 
+macro_rules! slh_dsa {
+    ($generate_key:ident,
+     $public_type:ty,
+     $sign:ident,
+     $verify:ident,
+     $algorithm_name:expr,
+     $public_size:literal,
+     $private_size:literal,
+     $signature_size:literal) => {
+        #[cfg(ossl350)]
+        fn $generate_key() -> Result<(Protected, $public_type)> {
+            let mut ctx = sys::pkey_ctx_from_name($algorithm_name)?;
+            ctx.keygen_init()?;
+            let key = ctx.keygen()?;
+
+            let public: [u8; $public_size] =
+                key.raw_public_key()?
+                    .try_into()
+                    .map_err(|public: Vec<u8>| {
+                        Error::InvalidOperation(format!(
+                            "OpenSSL returned {} bytes for {}; expected {}",
+                            public.len(),
+                            $algorithm_name.to_string_lossy(),
+                            $public_size
+                        ))
+                    })?;
+
+            let secret = key.raw_private_key()?;
+            if secret.len() != $private_size {
+                return Err(Error::InvalidOperation(format!(
+                    "OpenSSL returned {} bytes for {} private key; expected {}",
+                    secret.len(),
+                    $algorithm_name.to_string_lossy(),
+                    $private_size
+                ))
+                .into());
+            }
+
+            Ok((secret.into(), public.into()))
+        }
+
+        #[cfg(ossl350)]
+        fn $sign(secret: &Protected, digest: &[u8]) -> Result<Box<[u8; $signature_size]>> {
+            let key = sys::private_key_from_raw_bytes_by_name($algorithm_name, secret)?;
+            let signature: Box<[u8; $signature_size]> =
+                sys::sign_message(&key, $algorithm_name, digest)?
+                    .into_boxed_slice()
+                    .try_into()
+                    .map_err(|signature: Box<[u8]>| {
+                        Error::InvalidOperation(format!(
+                            "OpenSSL returned {} bytes for {} signature; expected {}",
+                            signature.len(),
+                            $algorithm_name.to_string_lossy(),
+                            $signature_size
+                        ))
+                    })?;
+            Ok(signature)
+        }
+
+        #[cfg(ossl350)]
+        fn $verify(
+            public: &[u8; $public_size],
+            digest: &[u8],
+            signature: &[u8; $signature_size],
+        ) -> Result<bool> {
+            let key = sys::public_key_from_raw_bytes_by_name($algorithm_name, public)?;
+            sys::verify_message(&key, $algorithm_name, digest, signature)
+        }
+    };
+}
+
 impl Asymmetric for super::Backend {
     fn supports_algo(algo: PublicKeyAlgorithm) -> bool {
         use PublicKeyAlgorithm::*;
@@ -39,7 +110,8 @@ impl Asymmetric for super::Backend {
             ECDH | ECDSA | EdDSA => true,
             MLDSA65_Ed25519 | MLDSA87_Ed448 =>
                 cfg!(ossl350),
-            SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
+            SLHDSA128s | SLHDSA128f | SLHDSA256s =>
+                cfg!(ossl350),
             MLKEM768_X25519 | MLKEM1024_X448 =>
                 cfg!(ossl350),
             ElGamalEncrypt | ElGamalEncryptSign |
@@ -246,6 +318,39 @@ impl Asymmetric for super::Backend {
         let key = PKey::public_key_from_raw_bytes_ex(None, KeyType::ML_DSA_87, None, public)?;
         sys::verify_message(&key, sys::ML_DSA_87_NAME, digest, signature)
     }
+
+    slh_dsa!(
+        slhdsa128s_generate_key,
+        [u8; 32],
+        slhdsa128s_sign,
+        slhdsa128s_verify,
+        sys::SLH_DSA_SHAKE_128S_NAME,
+        32,
+        64,
+        7856
+    );
+
+    slh_dsa!(
+        slhdsa128f_generate_key,
+        [u8; 32],
+        slhdsa128f_sign,
+        slhdsa128f_verify,
+        sys::SLH_DSA_SHAKE_128F_NAME,
+        32,
+        64,
+        17088
+    );
+
+    slh_dsa!(
+        slhdsa256s_generate_key,
+        Box<[u8; 64]>,
+        slhdsa256s_sign,
+        slhdsa256s_verify,
+        sys::SLH_DSA_SHAKE_256S_NAME,
+        64,
+        128,
+        29792
+    );
 
     #[cfg(ossl350)]
     fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {
