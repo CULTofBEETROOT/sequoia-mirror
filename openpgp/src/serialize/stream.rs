@@ -4204,7 +4204,7 @@ mod test {
             message.write_all(b"Hello world.")?;
             message.finalize()?;
 
-            let h = VHelper::new(1, 0, 0, 0, vec![key]);
+            let h = VHelper::new(1, 0, 0, 0, false, vec![key]);
             let mut d = VerifierBuilder::from_bytes(&sink)?
                 .with_policy(&p, None, h)?;
             assert!(d.message_processed());
@@ -4531,7 +4531,7 @@ mod test {
                 }
             }
 
-            let vhelper = VHelper::new(1, 0, 0, 0, vec![cert]);
+            let vhelper = VHelper::new(1, 0, 0, 0, false, vec![cert]);
             let mut verifier = VerifierBuilder::from_bytes(&sink)?
                 .with_policy(p, None, vhelper)?;
             assert!(verifier.message_processed());

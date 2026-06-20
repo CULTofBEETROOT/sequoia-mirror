@@ -479,37 +479,43 @@ impl<'a> VerificationErrorInternal<'a> {
 ///
 ///   [test of unusual message structures]: https://tests.sequoia-pgp.org/#Unusual_Message_Structure
 #[derive(Debug)]
-pub struct MessageStructure<'a>(Vec<MessageLayer<'a>>);
+pub struct MessageStructure<'a> {
+    layers: Vec<MessageLayer<'a>>,
+    processed_csf_message: bool,
+}
 assert_send_and_sync!(MessageStructure<'_>);
 
 impl<'a> MessageStructure<'a> {
-    fn new() -> Self {
-        MessageStructure(Vec::new())
+    fn new(processed_csf_message: bool) -> Self {
+        MessageStructure {
+            layers: Vec::new(),
+            processed_csf_message,
+        }
     }
 
     fn new_compression_layer(&mut self, algo: CompressionAlgorithm) {
-        self.0.push(MessageLayer::Compression {
+        self.layers.push(MessageLayer::Compression {
             algo,
         })
     }
 
     fn new_encryption_layer(&mut self, sym_algo: SymmetricAlgorithm,
                             aead_algo: Option<AEADAlgorithm>) {
-        self.0.push(MessageLayer::Encryption {
+        self.layers.push(MessageLayer::Encryption {
             sym_algo,
             aead_algo,
         })
     }
 
     fn new_signature_group(&mut self) {
-        self.0.push(MessageLayer::SignatureGroup {
+        self.layers.push(MessageLayer::SignatureGroup {
             results: Vec::new(),
         })
     }
 
     fn push_verification_result(&mut self, sig: VerificationResult<'a>) {
         if let Some(MessageLayer::SignatureGroup { ref mut results }) =
-            self.0.iter_mut().last()
+            self.layers.iter_mut().last()
         {
             results.push(sig);
         } else {
@@ -519,7 +525,16 @@ impl<'a> MessageStructure<'a> {
 
     /// Returns an iterator over the message layers.
     pub fn iter(&self) -> impl Iterator<Item=&MessageLayer<'a>> {
-        self.0.iter()
+        self.layers.iter()
+    }
+
+    /// Returns whether we processed a signed message using the
+    /// Cleartext Signature Framework.
+    ///
+    /// This function returns whether the parser parsed a cleartext
+    /// signature using the cleartext transformation.
+    pub fn processed_csf_message(&self) -> bool {
+        self.processed_csf_message
     }
 }
 
@@ -528,7 +543,7 @@ impl<'a> IntoIterator for MessageStructure<'a> {
     type IntoIter = std::vec::IntoIter<MessageLayer<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
+        self.layers.into_iter()
     }
 }
 
@@ -1397,6 +1412,16 @@ impl<'a, H: VerificationHelper> Verifier<'a, H> {
     /// ```
     pub fn message_processed(&self) -> bool {
         self.decryptor.message_processed()
+    }
+
+    /// Returns if we are processing a signed message using the
+    /// Cleartext Signature Framework.
+    ///
+    /// This function returns `None` if we don't know yet (i.e.,
+    /// before we've started parsing the packets).  Once the first
+    /// packet has been parsed, this will return `Some`.
+    pub fn processing_csf_message(&self) -> Option<bool> {
+        self.decryptor.processing_csf_message.clone()
     }
 }
 
@@ -2343,7 +2368,7 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
 
         let mut ppr = PacketParserBuilder::from_cookie_reader(bio)?
             .map(mapping)
-            .csf_transformation(csf_transformation)
+            .process_csf_message(csf_transformation)
             .build()?;
 
         let mut v = Decryptor {
@@ -2772,7 +2797,8 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
         self.certs = self.helper.get_certs(&self.issuers)?;
         t!("VerificationHelper::get_certs produced {} certs", self.certs.len());
 
-        let mut results = MessageStructure::new();
+        let mut results = MessageStructure::new(
+            self.processing_csf_message.unwrap_or(false));
         for layer in self.structure.layers.iter_mut() {
             match layer {
                 IMessageLayer::Compression { algo } =>
@@ -3080,6 +3106,7 @@ pub(crate) mod test {
         unknown: usize,
         bad: usize,
         error: usize,
+        expect_csf_message: bool,
         certs: Vec<Cert>,
         keys: Vec<Cert>,
         passwords: Vec<Password>,
@@ -3096,37 +3123,22 @@ pub(crate) mod test {
                 .field("bad", &self.bad)
                 .field("error", &self.error)
                 .field("error_out", &self.error_out)
+                .field("expect_csf_message", &self.expect_csf_message)
                 .finish()
-        }
-    }
-
-    impl Default for VHelper {
-        fn default() -> Self {
-            VHelper {
-                good: 0,
-                unknown: 0,
-                bad: 0,
-                error: 0,
-                certs: Vec::default(),
-                keys: Vec::default(),
-                passwords: Default::default(),
-                for_decryption: false,
-                error_out: true,
-                packets: Default::default(),
-            }
         }
     }
 
     impl VHelper {
         /// Creates a new verification helper.
         pub fn new(good: usize, unknown: usize, bad: usize, error: usize,
-                   certs: Vec<Cert>)
+                   expect_csf_message: bool, certs: Vec<Cert>)
                    -> Self {
             VHelper {
                 good,
                 unknown,
                 bad,
                 error,
+                expect_csf_message,
                 certs,
                 keys: Default::default(),
                 passwords: Default::default(),
@@ -3148,6 +3160,7 @@ pub(crate) mod test {
                 unknown,
                 bad,
                 error,
+                expect_csf_message: false,
                 certs,
                 keys,
                 passwords,
@@ -3197,6 +3210,16 @@ pub(crate) mod test {
                         }
                     MessageLayer::Compression { .. } => (),
                     MessageLayer::Encryption { .. } => (),
+                }
+            }
+
+            if self.expect_csf_message != structure.processed_csf_message() {
+                if self.expect_csf_message {
+                    return Err(anyhow::anyhow!(
+                        "Expected CSF, but didn't get it"));
+                } else {
+                    return Err(anyhow::anyhow!(
+                        "Didn't expect CSF, but got it"));
                 }
             }
 
@@ -3280,7 +3303,7 @@ pub(crate) mod test {
              crate::tests::manifesto().to_vec(),
              true,
              Some(crate::frozen_time()),
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, false, certs.clone())),
             // The same, but with a marker packet.
             ({
                 let pp = crate::PacketPile::from_bytes(
@@ -3293,18 +3316,18 @@ pub(crate) mod test {
              crate::tests::manifesto().to_vec(),
              true,
              Some(crate::frozen_time()),
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, false, certs.clone())),
             (crate::tests::message("signed-1-sha256-testy.pgp").to_vec(),
              crate::tests::manifesto().to_vec(),
              true,
              Some(crate::frozen_time()),
-             VHelper::new(0, 1, 0, 0, certs.clone())),
+             VHelper::new(0, 1, 0, 0, false, certs.clone())),
             (crate::tests::message("signed-1-notarized-by-ed25519.pgp")
              .to_vec(),
              crate::tests::manifesto().to_vec(),
              true,
              Some(crate::frozen_time()),
-             VHelper::new(2, 0, 0, 0, certs.clone())),
+             VHelper::new(2, 0, 0, 0, false, certs.clone())),
             // Signed messages using the Cleartext Signature Framework.
             (crate::tests::message("a-cypherpunks-manifesto.txt.cleartext.sig")
              .to_vec(),
@@ -3322,7 +3345,7 @@ pub(crate) mod test {
              },
              false,
              None,
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, true, certs.clone())),
             (crate::tests::message("a-problematic-poem.txt.cleartext.sig")
              .to_vec(),
              {
@@ -3335,27 +3358,27 @@ pub(crate) mod test {
              },
              false,
              None,
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, true, certs.clone())),
             (crate::tests::file("crypto-refresh/cleartext-signed-message.txt")
              .to_vec(),
              crate::tests::file("crypto-refresh/cleartext-signed-message.txt.plain")
              .to_vec(),
              false,
              None,
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, true, certs.clone())),
             // A key as example of an invalid message.
             (crate::tests::key("neal.pgp").to_vec(),
              crate::tests::manifesto().to_vec(),
              true,
              Some(crate::frozen_time()),
-             VHelper::new(0, 0, 0, 1, certs.clone())),
+             VHelper::new(0, 0, 0, 1, false, certs.clone())),
             // A signed message where the signature type is text and a
             // crlf straddles two chunks.
             (crate::tests::message("crlf-straddles-chunks.txt.sig").to_vec(),
              crate::tests::message("crlf-straddles-chunks.txt").to_vec(),
              false,
              None,
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, false, certs.clone())),
             // Like crlf-straddles-chunks, but the signature includes a
             // notation with a '\n'.  Make sure it is not converted to
             // a '\r\n'.
@@ -3363,7 +3386,7 @@ pub(crate) mod test {
              crate::tests::message("text-signature-notation-has-lf.txt").to_vec(),
              false,
              None,
-             VHelper::new(1, 0, 0, 0, certs.clone())),
+             VHelper::new(1, 0, 0, 0, false, certs.clone())),
         ];
 
         for (i, (signed, reference, test_decryptor, time, r))
@@ -3372,7 +3395,7 @@ pub(crate) mod test {
             eprintln!("{}...", i);
 
             // Test Verifier.
-            let h = VHelper::new(0, 0, 0, 0, certs.clone());
+            let h = VHelper::new(0, 0, 0, 0, r.expect_csf_message, certs.clone());
             let mut v =
                 match VerifierBuilder::from_bytes(&signed)?
                     .with_policy(&p, *time, h) {
@@ -3404,7 +3427,7 @@ pub(crate) mod test {
             }
 
             // Test Decryptor.
-            let h = VHelper::new(0, 0, 0, 0, certs.clone());
+            let h = VHelper::new(0, 0, 0, 0, r.expect_csf_message, certs.clone());
             let mut v = match DecryptorBuilder::from_bytes(&signed)?
                 .with_policy(&p, *time, h) {
                     Ok(v) => v,
@@ -3597,11 +3620,12 @@ pub(crate) mod test {
                 .map(|f| Cert::from_bytes(crate::tests::key(f)).unwrap())
                 .collect::<Vec<_>>();
 
-            let mut h = VHelper::new(0, 0, 0, 0, certs.clone());
+            let mut h = VHelper::new(0, 0, 0, 0, false, certs.clone());
             h.error_out = false;
             let mut v = VerifierBuilder::from_bytes(buf)?
                 .with_policy(&p, crate::frozen_time(), h)?;
             assert!(v.message_processed());
+            assert_eq!(v.processing_csf_message(), Some(false));
             assert_eq!(v.helper_ref().good, expect_good);
 
             let mut content = Vec::new();
@@ -3700,6 +3724,7 @@ pub(crate) mod test {
             crate::tests::message("signed-1-notarized-by-ed25519.pgp"))?
             .with_policy(&p, crate::frozen_time(), VHelper(()))?;
         assert!(v.message_processed());
+        assert_eq!(v.processing_csf_message(), Some(false));
 
         // Test decryptor.
         let v = DecryptorBuilder::from_bytes(
@@ -3766,7 +3791,7 @@ pub(crate) mod test {
             let content = test.content;
             let reference = test.reference;
 
-            let h = VHelper::new(0, 0, 0, 0, certs.clone());
+            let h = VHelper::new(0, 0, 0, 0, false, certs.clone());
             let mut v = DetachedVerifierBuilder::from_bytes(sig).unwrap()
                 .with_policy(&p, reference, h).unwrap();
             v.verify_bytes(content).unwrap();
@@ -3783,7 +3808,7 @@ pub(crate) mod test {
         let p = P::new();
         let sig = crate::tests::message("signature-with-broken-mpis.sig");
 
-        let h = VHelper::new(0, 0, 0, 0, vec![]);
+        let h = VHelper::new(0, 0, 0, 0, false, vec![]);
         let mut v = DetachedVerifierBuilder::from_bytes(sig)?
             .with_policy(&p, None, h)?;
 
@@ -3824,7 +3849,7 @@ pub(crate) mod test {
         }
 
         // Test Verifier.
-        let h = VHelper::new(0, 0, 0, 0, vec![cert.clone()]);
+        let h = VHelper::new(0, 0, 0, 0, false, vec![cert.clone()]);
         let mut v = VerifierBuilder::from_bytes(&buf)?
             .buffer_size(2 * 2usize.pow(20))
             .with_policy(p, None, h)?;
@@ -3840,6 +3865,7 @@ pub(crate) mod test {
         v.read_to_end(&mut message).unwrap();
 
         assert!(v.message_processed());
+        assert_eq!(v.processing_csf_message(), Some(false));
         assert_eq!(3 * 1024 * 1024, message.len());
         assert!(message.iter().all(|&b| b == 42));
         assert!(v.helper_ref().good == 1);
@@ -3849,12 +3875,13 @@ pub(crate) mod test {
 
         // Try the same, but this time we let .check() fail.
         let h = VHelper::new(0, 0, /* makes check() fail: */ 1, 0,
-                             vec![cert.clone()]);
+                             false, vec![cert.clone()]);
         let mut v = VerifierBuilder::from_bytes(&buf)?
             .buffer_size(2 * 2usize.pow(20))
             .with_policy(p, None, h)?;
 
         assert!(!v.message_processed());
+        assert_eq!(v.processing_csf_message(), Some(false));
         assert!(v.helper_ref().good == 0);
         assert!(v.helper_ref().bad == 1);
         assert!(v.helper_ref().unknown == 0);
@@ -3866,6 +3893,7 @@ pub(crate) mod test {
 
         // Check that we only got a truncated message.
         assert!(v.message_processed());
+        assert_eq!(v.processing_csf_message(), Some(false));
         assert!(!message.is_empty());
         assert!(message.len() <= 1 * 1024 * 1024);
         assert!(message.iter().all(|&b| b == 42));
@@ -3875,7 +3903,7 @@ pub(crate) mod test {
         assert!(v.helper_ref().error == 0);
 
         // Test Decryptor.
-        let h = VHelper::new(0, 0, 0, 0, vec![cert.clone()]);
+        let h = VHelper::new(0, 0, 0, 0, false, vec![cert.clone()]);
         let mut v = DecryptorBuilder::from_bytes(&buf)?
             .buffer_size(2 * 2usize.pow(20))
             .with_policy(p, None, h)?;
@@ -3900,7 +3928,7 @@ pub(crate) mod test {
 
         // Try the same, but this time we let .check() fail.
         let h = VHelper::new(0, 0, /* makes check() fail: */ 1, 0,
-                             vec![cert.clone()]);
+                             false, vec![cert.clone()]);
         let mut v = DecryptorBuilder::from_bytes(&buf)?
             .buffer_size(2 * 2usize.pow(20))
             .with_policy(p, None, h)?;
@@ -4057,6 +4085,7 @@ EK8=
                 .with_policy(p, None, H(certs, false))?;
             let mut b = Vec::new();
             verifier.read_to_end(&mut b)?;
+            assert_eq!(verifier.processing_csf_message(), Some(true));
             let h = verifier.into_helper();
             assert!(h.1);
         }
@@ -4102,6 +4131,7 @@ EK8=
             .with_policy(p, None, H(false))?;
         let mut b = Vec::new();
         verifier.read_to_end(&mut b)?;
+        assert_eq!(verifier.processing_csf_message(), Some(true));
         let h = verifier.into_helper();
         assert!(h.0);
         Ok(())
@@ -4176,7 +4206,7 @@ wgoEAAAAAAB6CkAAxADLBq8AAKurq8IKBCC/CAAAAAD0sA==
 -----END PGP MESSAGE-----
 ";
 
-        let mut h = VHelper::new(0, 0, 0, 0, vec![
+        let mut h = VHelper::new(0, 0, 0, 0, false, vec![
             Cert::from_bytes(crate::tests::key("testy.pgp"))?,
         ]);
         h.error_out = false;
@@ -4194,7 +4224,7 @@ wgoEAAAAAAB6CkAAxADLBq8AAKurq8IKBCC/CAAAAAD0sA==
 ---BEGIN PGP SIGNATURE
 0iHUEARYIAB0QCyUHMcArrZbte9msAndEO9clJG5wpCAEA2/";
 
-        let mut h = VHelper::new(0, 0, 0, 0, vec![
+        let mut h = VHelper::new(0, 0, 0, 0, true, vec![
             Cert::from_bytes(crate::tests::key("testy.pgp"))?,
         ]);
         h.error_out = false;
@@ -4212,7 +4242,7 @@ wgoEAAAAAAB6CkAAxADLBq8AAKurq8IKBCC/CAAAAAD0sA==
 -----BEGIN PGP SIGNATURE-----
 xHUDBRY0WIQ+50WENDPP";
 
-        let mut h = VHelper::new(0, 0, 0, 0, vec![
+        let mut h = VHelper::new(0, 0, 0, 0, true, vec![
             Cert::from_bytes(crate::tests::key("testy.pgp"))?,
         ]);
         h.error_out = false;
@@ -4227,7 +4257,7 @@ xHUDBRY0WIQ+50WENDPP";
     fn message_grammar_check() -> Result<()> {
         let p = P::new();
         let certs = vec![Cert::from_bytes(crate::tests::key("neal.pgp"))?];
-        let helper = VHelper::new(1, 0, 0, 0, certs.clone());
+        let helper = VHelper::new(1, 0, 0, 0, false, certs.clone());
 
         let pp = crate::PacketPile::from_bytes(
             crate::tests::message("signed-1-notarized-by-ed25519.pgp"))?;
@@ -4269,7 +4299,7 @@ xHUDBRY0WIQ+50WENDPP";
         };
         let p = P::new();
         let cert = Cert::from_bytes(crate::tests::key("testy-private.pgp"))?;
-        let helper = VHelper::new(0, 0, 0, 0, vec![cert.clone()]);
+        let helper = VHelper::new(0, 0, 0, 0, false, vec![cert.clone()]);
         let mut signer = cert.primary_key().key().clone().parts_into_secret()?
             .into_keypair()?;
         let msg = b"Hello, world!";
@@ -4300,6 +4330,7 @@ xHUDBRY0WIQ+50WENDPP";
         packets.iter().for_each(|p| p.serialize(&mut buf).unwrap());
         let v = VerifierBuilder::from_bytes(&buf)?
             .with_policy(&p, crate::frozen_time(), helper)?;
+        assert_eq!(v.processing_csf_message(), Some(false));
         assert!(v.message_processed());
         assert_eq!(v.helper_ref().good, 2);
 
@@ -4393,7 +4424,7 @@ xHUDBRY0WIQ+50WENDPP";
             return Ok(());
         }
 
-        let h = VHelper::new(0, 0, 0, 0, vec![cert]);
+        let h = VHelper::new(0, 0, 0, 0, false, vec![cert]);
         let p = &P::new();
         let mut v = DetachedVerifierBuilder::from_bytes(
             crate::tests::file(sig))?
