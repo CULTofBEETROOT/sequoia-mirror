@@ -5975,9 +5975,16 @@ impl <'a> PacketParser<'a> {
         self.map.take()
     }
 
-    /// Checks if we are processing a signed message using the
+    /// Checks if we are processing a message encoded using the
     /// Cleartext Signature Framework.
-    pub(crate) fn processing_csf_message(&self) -> bool {
+    ///
+    /// By default, the `PacketParser` does not parse messages encoded
+    /// using the signature framework.  (If it encounters such a
+    /// message, it only returns the `Signature`).  Use
+    /// [`PacketParserBuilder::process_csf_message`] to enable parsing
+    /// messages encoded using the [cleartext signature
+    /// framework](https://www.rfc-editor.org/rfc/rfc9580.html#name-cleartext-signature-framew).
+    pub fn processing_csf_message(&self) -> bool {
         Cookie::processing_csf_message(&self.reader)
     }
 }
@@ -7603,5 +7610,55 @@ yCsBO81bKqlfklugX5yRX5qTopuXX6KbWpFZXKJXUlGSetb4dXm+gYFBCRcA
                   cert_data.len(), cert_data.len() as f64 / 1024.0);
         let _ = Cert::from_bytes(&cert_data);
         eprintln!("no crash (stack may be larger than default)");
+    }
+
+    #[test]
+    fn cleartext() {
+        // Check if we're processing a clear text message.
+
+        eprintln!("Checking a cleartext signature with the clear text \
+                   transformation enabled.");
+        let mut ppr = PacketParserBuilder::from_bytes(
+            crate::tests::message("a-cypherpunks-manifesto.txt.cleartext.sig"))
+            .expect("Can read file")
+            .process_csf_message(true)
+            .build()
+            .expect("Can build packet parser");
+
+        while let PacketParserResult::Some(pp) = ppr {
+            eprintln!("Have {:?} packet", pp.packet.tag());
+            assert!(pp.processing_csf_message());
+            ppr = pp.recurse().expect("well-formed message").1;
+        }
+
+        eprintln!("Checking a cleartext signature with the clear text \
+                   transformation disabled.");
+        let mut ppr = PacketParserBuilder::from_bytes(
+            crate::tests::message("a-cypherpunks-manifesto.txt.cleartext.sig"))
+            .expect("Can read file")
+            .process_csf_message(false)
+            .build()
+            .expect("Can build packet parser");
+
+        while let PacketParserResult::Some(pp) = ppr {
+            eprintln!("Have {:?} packet", pp.packet.tag());
+            assert!(! pp.processing_csf_message());
+            ppr = pp.recurse().expect("well-formed message").1;
+        }
+
+        eprintln!("Checking a detached signature with the clear text \
+                   transformation enabled.");
+        let mut ppr = PacketParserBuilder::from_bytes(
+            crate::tests::message("a-cypherpunks-manifesto.txt.ed25519.sig"))
+            .expect("Can read file")
+            .process_csf_message(true)
+            .build()
+            .expect("Can build packet parser");
+
+        while let PacketParserResult::Some(pp) = ppr {
+            eprintln!("Have {:?} packet", pp.packet.tag());
+            assert!(! pp.processing_csf_message());
+            ppr = pp.recurse().expect("well-formed message").1;
+        }
     }
 }

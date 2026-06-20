@@ -387,9 +387,13 @@ impl<'a> PacketParserBuilder<'a> {
     /// Controls transparent transformation of messages using the
     /// cleartext signature framework into signed messages.
     ///
-    /// XXX: This could be controlled by `Dearmor`, but we cannot add
-    /// values to that now.
-    pub(crate) fn csf_transformation(mut self, enable: bool) -> Self {
+    /// This enables the transformation.  If the parser does not
+    /// encounter a cleartext message, it continues parsing as usual.
+    /// Use [`PacketParser::processing_csf_message`] to check if the
+    /// message is actually a cleartext message,
+    // XXX: This should be controlled by `Dearmor`, but we cannot add
+    // values to that now.
+    pub fn process_csf_message(mut self, enable: bool) -> Self {
         self.csf_transformation = enable;
         self
     }

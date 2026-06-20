@@ -2343,7 +2343,7 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
 
         let mut ppr = PacketParserBuilder::from_cookie_reader(bio)?
             .map(mapping)
-            .csf_transformation(csf_transformation)
+            .process_csf_message(csf_transformation)
             .build()?;
 
         let mut v = Decryptor {
