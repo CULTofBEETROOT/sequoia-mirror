@@ -1919,9 +1919,16 @@ impl Subpacket {
                 SubpacketValue::RevocationKey(
                     RevocationKey::from_bits(pk_algo, fp, class)?)
             },
-            SubpacketTag::Issuer =>
+            SubpacketTag::Issuer => {
+                if len != 8 {
+                    return Err(Error::MalformedPacket(
+                        format!("Malformed issuer subpacket: \
+                                 expect 8 bytes (got {})", len))
+                               .into());
+                }
                 SubpacketValue::Issuer(
-                    KeyID::from_bytes(&php.parse_bytes("issuer", len)?)),
+                    KeyID::from_bytes(&php.parse_bytes("issuer", len)?))
+            }
             SubpacketTag::NotationData => {
                 let flags = php.parse_bytes("flags", 4)?;
                 let name_len = php.parse_be_u16("name len")? as usize;
