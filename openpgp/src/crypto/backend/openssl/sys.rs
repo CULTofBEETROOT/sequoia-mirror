@@ -14,6 +14,9 @@ use std::ptr;
 
 pub(super) const ML_DSA_65_NAME: &CStr = c"ML-DSA-65";
 pub(super) const ML_DSA_87_NAME: &CStr = c"ML-DSA-87";
+pub(super) const SLH_DSA_SHAKE_128S_NAME: &CStr = c"SLH-DSA-SHAKE-128s";
+pub(super) const SLH_DSA_SHAKE_128F_NAME: &CStr = c"SLH-DSA-SHAKE-128f";
+pub(super) const SLH_DSA_SHAKE_256S_NAME: &CStr = c"SLH-DSA-SHAKE-256s";
 
 // Based on openssl::cvt in openssl/src/lib.rs.
 fn cvt(ret: c_int) -> Result<c_int> {
@@ -59,6 +62,54 @@ impl Drop for EvpSignature {
             ffi::EVP_SIGNATURE_free(self.0);
         }
     }
+}
+
+pub(super) fn pkey_ctx_from_name(algorithm: &CStr) -> Result<PkeyCtx<()>> {
+    ffi::init();
+    let ctx = unsafe {
+        cvt_p(ffi::EVP_PKEY_CTX_new_from_name(
+            ptr::null_mut(),
+            algorithm.as_ptr(),
+            ptr::null(),
+        ))?
+    };
+    Ok(unsafe { PkeyCtx::from_ptr(ctx) })
+}
+
+// PKey::private_key_from_raw_bytes_ex requires a KeyType, but SLH-DSA has none.
+pub(super) fn private_key_from_raw_bytes_by_name(
+    algorithm: &CStr,
+    key: &[u8],
+) -> Result<PKey<Private>> {
+    ffi::init();
+    let key = unsafe {
+        cvt_p(ffi::EVP_PKEY_new_raw_private_key_ex(
+            ptr::null_mut(),
+            algorithm.as_ptr(),
+            ptr::null(),
+            key.as_ptr(),
+            key.len(),
+        ))?
+    };
+    Ok(unsafe { PKey::from_ptr(key) })
+}
+
+// PKey::public_key_from_raw_bytes_ex requires a KeyType, but SLH-DSA has none.
+pub(super) fn public_key_from_raw_bytes_by_name(
+    algorithm: &CStr,
+    key: &[u8],
+) -> Result<PKey<Public>> {
+    ffi::init();
+    let key = unsafe {
+        cvt_p(ffi::EVP_PKEY_new_raw_public_key_ex(
+            ptr::null_mut(),
+            algorithm.as_ptr(),
+            ptr::null(),
+            key.as_ptr(),
+            key.len(),
+        ))?
+    };
+    Ok(unsafe { PKey::from_ptr(key) })
 }
 
 pub(super) fn sign_message(
