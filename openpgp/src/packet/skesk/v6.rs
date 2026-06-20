@@ -142,8 +142,16 @@ impl SKESK6 {
             self.symmetric_algo(), &kek, &ad, self.aead_iv())?
             .for_decryption()?;
 
+        let digest_size = self.aead_algo.digest_size()?;
+
+        if self.esk().len() < digest_size {
+            return Err(Error::InvalidArgument(format!(
+                "Encryption session key too small, got {} bytes",
+                self.esk().len())).into());
+        }
+
         let mut plain: SessionKey =
-            vec![0; self.esk().len() - self.aead_algo.digest_size()?].into();
+            vec![0; self.esk().len() - digest_size].into();
         cipher.decrypt_verify(&mut plain, self.esk())?;
         Ok(plain)
     }
@@ -325,5 +333,37 @@ mod test {
         }
 
         Ok(())
+    }
+
+    // Check that we error out (and don't panic) when the ESK is too
+    // short.
+    #[test]
+    fn short_esk() {
+        use crate::packet::SKESK;
+
+        // Create an SKESK packet with an ESK that is too short.
+        let sym_algo = SymmetricAlgorithm::AES128;
+        let aead_algo = AEADAlgorithm::OCB;
+        if ! aead_algo.is_supported() {
+            eprintln!("{} not supported, skipping test", aead_algo);
+        }
+        let s2k = S2K::Argon2 { salt: [0u8; 16], t: 1, p: 1, m: 8 };
+
+        let iv_len = aead_algo.nonce_size()
+            .expect("algorithm is supported");
+        let digest_len = aead_algo.digest_size()
+            .expect("algorithm is supported");
+        let iv = vec![0u8; iv_len].into_boxed_slice();
+        // Make the ESK too short.
+        let esk = vec![0u8; digest_len - 1].into_boxed_slice();
+
+        let skesk6 = SKESK6::new(sym_algo, aead_algo, s2k, iv, esk)
+            .expect("Can create SKESK6");
+        let skesk = SKESK::V6(skesk6);
+
+        // Decrypting the too-short session key should fail (not
+        // panic).
+        skesk.decrypt(&Password::from("pw"))
+            .expect_err("Should fail to decrypt");
     }
 }
