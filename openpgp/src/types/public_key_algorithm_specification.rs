@@ -46,6 +46,20 @@ enum PublicKeyAlgorithmSpecificationInner {
     Ed25519,
     /// Ed448 (RFC 8032).
     Ed448,
+    /// Composite signature algorithm using ML-DSA-65 and Ed25519.
+    MLDSA65_Ed25519,
+    /// Composite signature algorithm using ML-DSA-87 and Ed448.
+    MLDSA87_Ed448,
+    /// SLH-DSA signature algorithm 128 bit, small signatures.
+    SLHDSA128s,
+    /// SLH-DSA signature algorithm 128 bit, fast signatures.
+    SLHDSA128f,
+    /// SLH-DSA signature algorithm 256 bit, small signatures.
+    SLHDSA256s,
+    /// Composite KEM using ML-KEM-768 and X25519.
+    MLKEM768_X25519,
+    /// Composite KEM using ML-KEM-1024 and X448.
+    MLKEM1024_X448,
 }
 
 impl PublicKeyAlgorithmSpecification {
@@ -65,6 +79,13 @@ impl PublicKeyAlgorithmSpecification {
             X448 => PublicKeyAlgorithm::X448,
             Ed25519 => PublicKeyAlgorithm::Ed25519,
             Ed448 => PublicKeyAlgorithm::Ed448,
+            MLDSA65_Ed25519 => PublicKeyAlgorithm::MLDSA65_Ed25519,
+            MLDSA87_Ed448 => PublicKeyAlgorithm::MLDSA87_Ed448,
+            SLHDSA128s => PublicKeyAlgorithm::SLHDSA128s,
+            SLHDSA128f => PublicKeyAlgorithm::SLHDSA128f,
+            SLHDSA256s => PublicKeyAlgorithm::SLHDSA256s,
+            MLKEM768_X25519 => PublicKeyAlgorithm::MLKEM768_X25519,
+            MLKEM1024_X448 => PublicKeyAlgorithm::MLKEM1024_X448,
         }
     }
 
@@ -86,6 +107,13 @@ impl PublicKeyAlgorithmSpecification {
             X448 => None,
             Ed25519 => None,
             Ed448 => None,
+            MLDSA65_Ed25519 => None,
+            MLDSA87_Ed448 => None,
+            SLHDSA128s => None,
+            SLHDSA128f => None,
+            SLHDSA256s => None,
+            MLKEM768_X25519 => None,
+            MLKEM1024_X448 => None,
         }
     }
 
@@ -106,6 +134,13 @@ impl PublicKeyAlgorithmSpecification {
             X448 => None,
             Ed25519 => None,
             Ed448 => None,
+            MLDSA65_Ed25519 => None,
+            MLDSA87_Ed448 => None,
+            SLHDSA128s => None,
+            SLHDSA128f => None,
+            SLHDSA256s => None,
+            MLKEM768_X25519 => None,
+            MLKEM1024_X448 => None,
         }
     }
 }
@@ -377,6 +412,120 @@ impl PublicKeyAlgorithmSpecification {
         }
     }
 
+    /// MLDSA65+Ed25519.
+    ///
+    /// MLDSA65+Ed25519 is a post-quantum secure signing algorithm,
+    /// which includes a fallback to classical Ed25519.  It's
+    /// appropriate for use in general-purpose certificates.
+    ///
+    /// MLDSA65+Ed25519 is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn mldsa65_ed25519() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::MLDSA65_Ed25519,
+        }
+    }
+
+    /// MLDSA87+Ed448.
+    ///
+    /// MLDSA87+Ed448 is a post-quantum secure signing algorithm,
+    /// which includes a fallback to classical Ed448.  It has a higher
+    /// security margin than than MLDSA65+Ed25519 and is consequently
+    /// slower.
+    ///
+    /// MLDSA87+Ed448 is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn mldsa87_ed448() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::MLDSA87_Ed448,
+        }
+    }
+
+    /// SLHDSA128s.
+    ///
+    /// SLHDSA128s is a post-quantum secure signing algorithm.  There
+    /// is more confidence that SLHDSA is secure than MLDSA and as
+    /// such there is no classical fallback.  SLHDSA is very slow and
+    /// thus this algorithm is only recommended for infrequent signing
+    /// (e.g., software releases) and asynchronous operations.
+    /// SLHDSA128f is faster than SLHDSA128s (but still not
+    /// recommended for frequent synchronous use), but it generates
+    /// larger artifacts.
+    ///
+    /// SLHDSA128s is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn slhdsa128s() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::SLHDSA128s,
+        }
+    }
+
+    /// SLHDSA128f.
+    ///
+    /// SLHDSA128f is a post-quantum secure signing algorithm.  There
+    /// is more confidence that SLHDSA is secure than MLDSA and as
+    /// such there is no classical fallback.  SLHDSA is very slow and
+    /// thus this algorithm is only recommended for infrequent signing
+    /// (e.g., software releases) and asynchronous operations.
+    /// SLHDSA128f is faster than SLHDSA128s (but still not
+    /// recommended for frequent synchronous use), but generates
+    /// larger artifacts.
+    ///
+    /// SLHDSA128f is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn slhdsa128f() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::SLHDSA128f,
+        }
+    }
+
+    /// SLHDSA256s.
+    ///
+    /// SLHDSA256s is a post-quantum secure signing algorithm.  There
+    /// is more confidence that SLHDSA is secure than MLDSA and as
+    /// such there is no classical fallback.  SLHDSA is very slow and
+    /// thus this algorithm is only recommended for infrequent signing
+    /// (e.g., software releases) and asynchronous operations.
+    /// SLHDSA256s has a higher security margin than SLHDSA256s and
+    /// SLHDSA256f and in consequently even slower.
+    ///
+    /// SLHDSA256s is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn slhdsa256s() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::SLHDSA256s,
+        }
+    }
+
+    /// MLKEM768+X25519.
+    ///
+    /// MLKEM768+X25519 is a post-quantum secure encryption algorithm,
+    /// which includes a fallback to classical X25519.  It's
+    /// appropriate for use in general purpose certificates.
+    ///
+    /// MLKEM768+X25519 is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn mlkem768_x25519() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::MLKEM768_X25519,
+        }
+    }
+
+    /// MLKEM1024+X448.
+    ///
+    /// MLKEM1024+X448 is a post-quantum secure encryption algorithm,
+    /// which includes a fallback to classical X448.  It has a higher
+    /// security margin than than MLKEM768+X25519 and is consequently
+    /// slower.
+    ///
+    /// MLKEM1024+X448 is defined in [RFC
+    /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    pub fn mlkem1024_x448() -> Self {
+        PublicKeyAlgorithmSpecification {
+            inner: PublicKeyAlgorithmSpecificationInner::MLKEM1024_X448,
+        }
+    }
+
     /// Generates a key according to the specification.
     pub fn generate_key(&self, profile: Profile)
         -> Result<Key<key::SecretParts, key::UnspecifiedRole>>
@@ -502,6 +651,82 @@ impl PublicKeyAlgorithmSpecification {
                     }
                 }
             }
+            MLDSA65_Ed25519 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v4 MLDSA65+Ed25519 keys".into()).into());
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_mldsa65_ed25519()?.into()
+                    }
+                }
+            }
+            MLDSA87_Ed448 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v4 MLDSA87+Ed448 keys".into()).into());
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_mldsa87_ed448()?.into()
+                    }
+                }
+            }
+            SLHDSA128s => {
+                match profile {
+                    Profile::RFC4880 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v4 SLHDSA128s keys".into()).into());
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_slhdsa128s()?.into()
+                    }
+                }
+            }
+            SLHDSA128f => {
+                match profile {
+                    Profile::RFC4880 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v4 SLHDSA128f keys".into()).into());
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_slhdsa128f()?.into()
+                    }
+                }
+            }
+            SLHDSA256s => {
+                match profile {
+                    Profile::RFC4880 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v4 SLHDSA256s keys".into()).into());
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_slhdsa256s()?.into()
+                    }
+                }
+            }
+            MLKEM768_X25519 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        Key4::generate_mlkem768_x25519()?.into()
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_mlkem768_x25519()?.into()
+                    }
+                }
+            }
+            MLKEM1024_X448 => {
+                match profile {
+                    Profile::RFC4880 => {
+                        return Err(Error::InvalidArgument(
+                            "Can't generate v4 MLKEM1024+X448 keys".into()).into());
+                    }
+                    Profile::RFC9580 => {
+                        Key6::generate_mlkem1024_x448()?.into()
+                    }
+                }
+            }
         };
 
         Ok(key)
@@ -609,6 +834,20 @@ mod test {
               ECDH, Some(Curve::BrainpoolP512), None);
         check(PublicKeyAlgorithmSpecification::brainpoolp512_for_signing(),
               ECDSA, Some(Curve::BrainpoolP512), None);
+        check(PublicKeyAlgorithmSpecification::mldsa65_ed25519(),
+              MLDSA65_Ed25519, None, None);
+        check(PublicKeyAlgorithmSpecification::mldsa87_ed448(),
+              MLDSA87_Ed448, None, None);
+        check(PublicKeyAlgorithmSpecification::slhdsa128s(),
+              SLHDSA128s, None, None);
+        check(PublicKeyAlgorithmSpecification::slhdsa128f(),
+              SLHDSA128f, None, None);
+        check(PublicKeyAlgorithmSpecification::slhdsa256s(),
+              SLHDSA256s, None, None);
+        check(PublicKeyAlgorithmSpecification::mlkem768_x25519(),
+              MLKEM768_X25519, None, None);
+        check(PublicKeyAlgorithmSpecification::mlkem1024_x448(),
+              MLKEM1024_X448, None, None);
     }
 
     #[test]
@@ -744,7 +983,23 @@ mod test {
                   X25519, None, None);
             check(profile, PublicKeyAlgorithmSpecification::x448(),
                   X448, None, None);
+
+            check(profile, PublicKeyAlgorithmSpecification::mlkem768_x25519(),
+                  MLKEM768_X25519, None, None);
         }
+
+        check(RFC9580, PublicKeyAlgorithmSpecification::mldsa65_ed25519(),
+              MLDSA65_Ed25519, None, None);
+        check(RFC9580, PublicKeyAlgorithmSpecification::mldsa87_ed448(),
+              MLDSA87_Ed448, None, None);
+        check(RFC9580, PublicKeyAlgorithmSpecification::slhdsa128s(),
+              SLHDSA128s, None, None);
+        check(RFC9580, PublicKeyAlgorithmSpecification::slhdsa128f(),
+              SLHDSA128f, None, None);
+        check(RFC9580, PublicKeyAlgorithmSpecification::slhdsa256s(),
+              SLHDSA256s, None, None);
+        check(RFC9580, PublicKeyAlgorithmSpecification::mlkem1024_x448(),
+              MLKEM1024_X448, None, None);
     }
 
     #[test]
@@ -776,6 +1031,22 @@ mod test {
             (true, false, RFC4880, PublicKeyAlgorithmSpecification::ed448()),
             (false, true, RFC4880, PublicKeyAlgorithmSpecification::x25519()),
             (false, true, RFC4880, PublicKeyAlgorithmSpecification::x448()),
+
+            (true, false, RFC9580, PublicKeyAlgorithmSpecification::mldsa65_ed25519()),
+            (true, false, RFC9580, PublicKeyAlgorithmSpecification::mldsa87_ed448()),
+            (true, false, RFC9580, PublicKeyAlgorithmSpecification::slhdsa128s()),
+            (true, false, RFC9580, PublicKeyAlgorithmSpecification::slhdsa128f()),
+            (true, false, RFC9580, PublicKeyAlgorithmSpecification::slhdsa256s()),
+            (false, true, RFC9580, PublicKeyAlgorithmSpecification::mlkem768_x25519()),
+            (false, true, RFC9580, PublicKeyAlgorithmSpecification::mlkem1024_x448()),
+
+            (false, false, RFC4880, PublicKeyAlgorithmSpecification::mldsa65_ed25519()),
+            (false, false, RFC4880, PublicKeyAlgorithmSpecification::mldsa87_ed448()),
+            (false, false, RFC4880, PublicKeyAlgorithmSpecification::slhdsa128s()),
+            (false, false, RFC4880, PublicKeyAlgorithmSpecification::slhdsa128f()),
+            (false, false, RFC4880, PublicKeyAlgorithmSpecification::slhdsa256s()),
+            (false, true, RFC4880, PublicKeyAlgorithmSpecification::mlkem768_x25519()),
+            (false, false, RFC4880, PublicKeyAlgorithmSpecification::mlkem1024_x448()),
         ];
 
         let signing = KeyFlags::certification();
