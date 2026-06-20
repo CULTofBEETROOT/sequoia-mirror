@@ -3100,23 +3100,6 @@ pub(crate) mod test {
         }
     }
 
-    impl Default for VHelper {
-        fn default() -> Self {
-            VHelper {
-                good: 0,
-                unknown: 0,
-                bad: 0,
-                error: 0,
-                certs: Vec::default(),
-                keys: Vec::default(),
-                passwords: Default::default(),
-                for_decryption: false,
-                error_out: true,
-                packets: Default::default(),
-            }
-        }
-    }
-
     impl VHelper {
         /// Creates a new verification helper.
         pub fn new(good: usize, unknown: usize, bad: usize, error: usize,
