@@ -2799,6 +2799,31 @@ mod tests {
                 .expect("Can generate a v6 Ed448 key")
                 .into()
         };
+        let gen_v6_mldsa65_ed25519 = || -> Key<_, _> {
+            Key6::generate_mldsa65_ed25519()
+                .expect("Can generate a v6 ML-DSA-65+Ed25519 key")
+                .into()
+        };
+        let gen_v6_mldsa87_ed448 = || -> Key<_, _> {
+            Key6::generate_mldsa87_ed448()
+                .expect("Can generate a v6 ML-DSA-87+Ed448 key")
+                .into()
+        };
+        let gen_v6_slhdsa128s = || -> Key<_, _> {
+            Key6::generate_slhdsa128s()
+                .expect("Can generate a v6 SLH-DSA-128s key")
+                .into()
+        };
+        let gen_v6_slhdsa128f = || -> Key<_, _> {
+            Key6::generate_slhdsa128f()
+                .expect("Can generate a v6 SLH-DSA-128f key")
+                .into()
+        };
+        let gen_v6_slhdsa256s = || -> Key<_, _> {
+            Key6::generate_slhdsa256s()
+                .expect("Can generate a v6 SLH-DSA-256s key")
+                .into()
+        };
 
         #[allow(deprecated)]
         for (algo, curve, profile, gen) in [
@@ -2874,6 +2899,18 @@ mod tests {
              Box::new(|| gen_v4_curve(Curve::BrainpoolP512))),
             (PublicKeyAlgorithm::ECDSA, Some(Curve::BrainpoolP512), 6,
              Box::new(|| gen_v6_curve(Curve::BrainpoolP512))),
+
+            // PQC signing algorithms (v6 only).
+            (PublicKeyAlgorithm::MLDSA65_Ed25519, None, 6,
+             Box::new(gen_v6_mldsa65_ed25519)),
+            (PublicKeyAlgorithm::MLDSA87_Ed448, None, 6,
+             Box::new(gen_v6_mldsa87_ed448)),
+            (PublicKeyAlgorithm::SLHDSA128s, None, 6,
+             Box::new(gen_v6_slhdsa128s)),
+            (PublicKeyAlgorithm::SLHDSA128f, None, 6,
+             Box::new(gen_v6_slhdsa128f)),
+            (PublicKeyAlgorithm::SLHDSA256s, None, 6,
+             Box::new(gen_v6_slhdsa256s)),
         ]
         {
             eprintln!("Checking algo: {}, curve: {:?}, profile: {}.",
