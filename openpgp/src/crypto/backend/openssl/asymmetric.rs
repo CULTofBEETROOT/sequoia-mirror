@@ -2,7 +2,6 @@ use crate::{Error, Result};
 
 use crate::crypto::asymmetric::KeyPair;
 use crate::crypto::backend::interface::Asymmetric;
-use crate::crypto::backend::openssl::der;
 use crate::crypto::mpi;
 use crate::crypto::mpi::{ProtectedMPI, MPI};
 use crate::crypto::mem::Protected;
@@ -13,131 +12,16 @@ use crate::types::{Curve, HashAlgorithm, PublicKeyAlgorithm};
 use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
 
-use ossl::{
-    pkey::{EccData, EvpPkey, EvpPkeyType, DsaData, MlkeyData, PkeyData, RsaData, SlhDsaKeyData},
-    asymcipher::{EncAlg, EncOp, OsslAsymcipher},
-    signature::{OsslSignature, SigAlg, SigOp},
-};
-
-use std::ffi::CStr;
-const E: &CStr = unsafe { CStr::from_ptr(b"e\0".as_ptr() as *const _) };
-const N: &CStr = unsafe { CStr::from_ptr(b"n\0".as_ptr() as *const _) };
-const D: &CStr = unsafe { CStr::from_ptr(b"d\0".as_ptr() as *const _) };
-const RSA: &CStr = unsafe { CStr::from_ptr(b"RSA\0".as_ptr() as *const _) };
-
-/// Signals that OpenSSL failed to return some property.
-fn not_set() -> anyhow::Error {
-    Error::InvalidOperation("a required value was not set".into())
-        .into()
-}
-
-/// Signals that OpenSSL returned an unexpected key type.
-pub fn wrong_key() -> anyhow::Error {
-    Error::InvalidOperation("an unexpected key type was returned".into())
-        .into()
-}
-
-/// Parameterized implementation of SLH-DSA.
-///
-/// This generates a generate, sign and verify method for a SLH-DSA
-/// variant.
-macro_rules! slhdsa {
-    ($generate_key:ident,
-     $priv_type:ty,
-     $sign:ident,
-     $verify:ident,
-     $evp_pkey_type:ident,
-     $n:literal,
-     $sig_alg:ident,
-     $sig_size:literal) =>
-    {
-        fn $generate_key() -> Result<(Protected, $priv_type)>
-        {
-            let ctx = super::context();
-
-            let key = EvpPkey::generate(
-                &ctx, EvpPkeyType::$evp_pkey_type)?;
-            match key.export()? {
-                PkeyData::SlhDsaKey(SlhDsaKeyData {
-                    ref pubkey,
-                    ref prikey,
-                    ..
-                }) => {
-                    let pubkey = pubkey.as_ref().expect("to be set");
-                    let prikey = prikey.as_ref().expect("to be set");
-
-                    assert_eq!(pubkey.len(), 2 * $n);
-                    assert_eq!(prikey.len(), 4 * $n);
-
-                    let mut public = [0; 2 * $n];
-                    public.copy_from_slice(&pubkey);
-
-                    // From
-                    // https://www.ietf.org/archive/id/draft-ietf-openpgp-pqc-13.html#name-key-material-packets-3
-                    //
-                    //   The algorithm-specific part of the secret key
-                    //   consists of:
-                    //
-                    //   * A fixed-length octet string containing the
-                    //     SLH-DSA secret key, whose length depends on
-                    //     the algorithm ID as specified in Table 8.
-
-                    // From
-                    // https://docs.openssl.org/3.5/man7/EVP_PKEY-SLH-DSA/#keygen-parameters
-                    //
-                    //   The private key has a size of 4 * n bytes,
-                    //   which includes the public key
-                    //   components. i.e. It consists of the
-                    //   concatenation of SK.seed, SK.prf, PK.seed and
-                    //   PF.root as defined by FIPS 205 Figure 15.
-                    let private = Protected::from(prikey);
-
-                    Ok((private, public.into()))
-                },
-                _ => Err(wrong_key()),
-            }
-        }
-
-        fn $sign(secret: &Protected, digest: &[u8])
-            -> Result<Box<[u8; $sig_size]>>
-        {
-            let ctx = super::context();
-
-            let mut key = EvpPkey::import(
-                &ctx, EvpPkeyType::$evp_pkey_type,
-                PkeyData::SlhDsaKey(SlhDsaKeyData {
-                    pubkey: None,
-                    prikey: Some(secret.into()),
-                })
-            )?;
-
-            let mut signer = OsslSignature::new(
-                &ctx, SigOp::Sign, SigAlg::$sig_alg, &mut key, None)?;
-            let mut signature = Box::new([0; $sig_size]);
-            signer.sign(digest, Some(&mut signature[..]))?;
-            Ok(signature)
-        }
-
-        fn $verify(public: &[u8; 2 * $n], digest: &[u8],
-                   signature: &[u8; $sig_size])
-            -> Result<bool>
-        {
-            let ctx = super::context();
-
-            let mut key = EvpPkey::import(
-                &ctx, EvpPkeyType::$evp_pkey_type,
-                PkeyData::SlhDsaKey(SlhDsaKeyData {
-                    pubkey: Some(public.to_vec()),
-                    prikey: None,
-                })
-            )?;
-
-            let mut verifier = OsslSignature::new(
-                &ctx, SigOp::Verify, SigAlg::$sig_alg, &mut key, None)?;
-            Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
-        }
-    };
-}
+use openssl::bn::{BigNum, BigNumRef, BigNumContext};
+use openssl::derive::Deriver;
+use openssl::ec::{EcGroup, EcKey, EcPoint, PointConversionForm};
+use openssl::ecdsa::EcdsaSig;
+use openssl::nid::Nid;
+use openssl::pkey::PKey;
+use openssl::pkey_ctx::PkeyCtx;
+use openssl::rsa::{Padding, Rsa, RsaPrivateKeyBuilder};
+use openssl::sign::Signer as OpenSslSigner;
+use openssl::sign::Verifier;
 
 impl Asymmetric for super::Backend {
     fn supports_algo(algo: PublicKeyAlgorithm) -> bool {
@@ -149,10 +33,10 @@ impl Asymmetric for super::Backend {
             RSAEncryptSign | RSAEncrypt | RSASign => true,
             DSA => true,
             ECDH | ECDSA | EdDSA => true,
-            MLDSA65_Ed25519 | MLDSA87_Ed448 => true,
-            SLHDSA128s | SLHDSA128f | SLHDSA256s => true,
+            MLDSA65_Ed25519 | MLDSA87_Ed448 => false,
+            SLHDSA128s | SLHDSA128f | SLHDSA256s => false,
             MLKEM768_X25519 | MLKEM1024_X448 =>
-                true,
+                false,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
@@ -166,277 +50,127 @@ impl Asymmetric for super::Backend {
         } else {
             // the rest of EC algorithms are supported via the same
             // codepath
-
-            // XXX: We should do a runtime check here.
-            EvpPkeyType::try_from(curve).is_ok()
+            if let Ok(nid) = openssl::nid::Nid::try_from(curve) {
+                openssl::ec::EcGroup::from_curve_name(nid).is_ok()
+            } else {
+                false
+            }
         }
     }
 
     fn x25519_generate_key() -> Result<(Protected, [u8; 32])> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::X25519)?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) =>
-                Ok((prikey.as_ref().ok_or_else(not_set)?.into(),
-                    pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)),
-
-            _ => Err(wrong_key()),
-        }
+        let pair = openssl::pkey::PKey::generate_x25519()?;
+        Ok((pair.raw_private_key()?.into(),
+            pair.raw_public_key()?.as_slice().try_into()?))
     }
 
     fn x25519_derive_public(secret: &Protected) -> Result<[u8; 32]> {
-        let ctx = super::context();
-
-        let key = EvpPkey::import(
-            &ctx, EvpPkeyType::X25519,
-            PkeyData::Ecc(EccData {
-                pubkey: None,
-                prikey: Some(secret.into()),
-            })
-        )?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, .. }) => {
-                Ok(pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)
-            },
-
-            _ => Err(wrong_key()),
-        }
+        let key = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::X25519)?;
+        Ok(key.raw_public_key()?.as_slice().try_into()?)
     }
 
     fn x25519_shared_point(secret: &Protected, public: &[u8; 32])
                            -> Result<Protected> {
-        let ctx = super::context();
+        let public = PKey::public_key_from_raw_bytes(
+            public, openssl::pkey::Id::X25519)?;
+        let secret = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::X25519)?;
 
-        let mut public = EvpPkey::import(
-            &ctx, EvpPkeyType::X25519,
-            PkeyData::Ecc(EccData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-            })
-        )?;
-
-        let mut secret = EvpPkey::import(
-            &ctx, EvpPkeyType::X25519,
-            PkeyData::Ecc(EccData {
-                pubkey: None,
-                prikey: Some(secret.into()),
-            })
-        )?;
-
-        let mut deriver = ossl::derive::EcdhDerive::new(&ctx, &mut secret)?;
-        let mut shared: Protected = vec![0; 32].into();
-        deriver.derive(&mut public, &mut shared)?;
-        Ok(shared)
+        let mut deriver = Deriver::new(&secret)?;
+        deriver.set_peer(&public)?;
+        Ok(deriver.derive_to_vec()?.into())
     }
 
     fn x448_generate_key() -> Result<(Protected, [u8; 56])> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::X448)?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) =>
-                Ok((prikey.as_ref().ok_or_else(not_set)?.into(),
-                    pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)),
-
-            _ => Err(wrong_key()),
-        }
+        let pair = openssl::pkey::PKey::generate_x448()?;
+        Ok((pair.raw_private_key()?.into(),
+            pair.raw_public_key()?.as_slice().try_into()?))
     }
 
     fn x448_derive_public(secret: &Protected) -> Result<[u8; 56]> {
-        let ctx = super::context();
-
-        let key = EvpPkey::import(
-            &ctx, EvpPkeyType::X448,
-            PkeyData::Ecc(EccData {
-                pubkey: None,
-                prikey: Some(secret.into()),
-            })
-        )?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, .. }) => {
-                Ok(pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)
-            },
-
-            _ => Err(wrong_key()),
-        }
+        let key = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::X448)?;
+        Ok(key.raw_public_key()?.as_slice().try_into()?)
     }
 
     fn x448_shared_point(secret: &Protected, public: &[u8; 56])
                            -> Result<Protected> {
-        let ctx = super::context();
+        let public = PKey::public_key_from_raw_bytes(
+            public, openssl::pkey::Id::X448)?;
+        let secret = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::X448)?;
 
-        let mut public = EvpPkey::import(
-            &ctx, EvpPkeyType::X448,
-            PkeyData::Ecc(EccData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-            })
-        )?;
-
-        let mut secret = EvpPkey::import(
-            &ctx, EvpPkeyType::X448,
-            PkeyData::Ecc(EccData {
-                pubkey: None,
-                prikey: Some(secret.into()),
-            })
-        )?;
-
-        let mut deriver = ossl::derive::EcdhDerive::new(&ctx, &mut secret)?;
-        let mut shared: Protected = vec![0; 56].into();
-        deriver.derive(&mut public, &mut shared)?;
-        Ok(shared)
+        let mut deriver = Deriver::new(&secret)?;
+        deriver.set_peer(&public)?;
+        Ok(deriver.derive_to_vec()?.into())
     }
 
     fn ed25519_generate_key() -> Result<(Protected, [u8; 32])> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::Ed25519)?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) =>
-                Ok((prikey.as_ref().ok_or_else(not_set)?.into(),
-                    pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)),
-
-            _ => Err(wrong_key()),
-        }
+        let pair = openssl::pkey::PKey::generate_ed25519()?;
+        Ok((pair.raw_private_key()?.into(),
+            pair.raw_public_key()?.as_slice().try_into()?))
     }
 
     fn ed25519_derive_public(secret: &Protected) -> Result<[u8; 32]> {
-        let ctx = super::context();
-
-        let key = EvpPkey::import(
-            &ctx, EvpPkeyType::Ed25519,
-            PkeyData::Ecc(EccData {
-                pubkey: None,
-                prikey: Some(secret.into()),
-            })
-        )?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, .. }) => {
-                Ok(pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)
-            },
-
-            _ => Err(wrong_key()),
-        }
+        let key = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::ED25519)?;
+        Ok(key.raw_public_key()?.as_slice().try_into()?)
     }
 
-    fn ed25519_sign(secret: &Protected, public: &[u8; 32], digest: &[u8])
+    fn ed25519_sign(secret: &Protected, _public: &[u8; 32], digest: &[u8])
                     -> Result<[u8; 64]> {
-        let ctx = super::context();
+        let key = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::ED25519)?;
 
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Ed25519,
-            PkeyData::Ecc(EccData {
-                pubkey: Some(public.to_vec()),
-                prikey: Some(secret.into()),
-            })
-        )?;
-
-        let mut signer = OsslSignature::new(
-            &ctx, SigOp::Sign, SigAlg::Ed25519, &mut key, None)?;
-        let mut signature = [0; 64];
-        signer.sign(digest, Some(&mut signature))?;
-        Ok(signature)
+        let mut signer = OpenSslSigner::new_without_digest(&key)?;
+        Ok(signer.sign_oneshot_to_vec(digest)?.as_slice().try_into()?)
     }
 
     fn ed25519_verify(public: &[u8; 32], digest: &[u8], signature: &[u8; 64])
                       -> Result<bool> {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Ed25519,
-            PkeyData::Ecc(EccData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-            })
-        )?;
-
-        let mut verifier = OsslSignature::new(
-            &ctx, SigOp::Verify, SigAlg::Ed25519, &mut key, None)?;
-        Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
+        let key = PKey::public_key_from_raw_bytes(
+            public, openssl::pkey::Id::ED25519)?;
+        let mut verifier = Verifier::new_without_digest(&key)?;
+        Ok(verifier.verify_oneshot(signature, digest)?)
     }
 
     fn ed448_generate_key() -> Result<(Protected, [u8; 57])> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::Ed448)?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, ref prikey }) =>
-                Ok((prikey.as_ref().ok_or_else(not_set)?.into(),
-                    pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)),
-
-            _ => Err(wrong_key()),
-        }
+        let pair = openssl::pkey::PKey::generate_ed448()?;
+        Ok((pair.raw_private_key()?.into(),
+            pair.raw_public_key()?.as_slice().try_into()?))
     }
 
     fn ed448_derive_public(secret: &Protected) -> Result<[u8; 57]> {
-        let ctx = super::context();
-
-        let key = EvpPkey::import(
-            &ctx, EvpPkeyType::Ed448,
-            PkeyData::Ecc(EccData {
-                pubkey: None,
-                prikey: Some(secret.into()),
-            })
-        )?;
-        match key.export()? {
-            PkeyData::Ecc(EccData { ref pubkey, .. }) => {
-                Ok(pubkey.as_ref().ok_or_else(not_set)?.as_slice().try_into()?)
-            },
-
-            _ => Err(wrong_key()),
-        }
+        let key = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::ED448)?;
+        Ok(key.raw_public_key()?.as_slice().try_into()?)
     }
 
-    fn ed448_sign(secret: &Protected, public: &[u8; 57], digest: &[u8])
+    fn ed448_sign(secret: &Protected, _public: &[u8; 57], digest: &[u8])
                     -> Result<[u8; 114]> {
-        let ctx = super::context();
+        let key = PKey::private_key_from_raw_bytes(
+            secret, openssl::pkey::Id::ED448)?;
 
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Ed448,
-            PkeyData::Ecc(EccData {
-                pubkey: Some(public.to_vec()),
-                prikey: Some(secret.into()),
-            })
-        )?;
-
-        let mut signer = OsslSignature::new(
-            &ctx, SigOp::Sign, SigAlg::Ed448, &mut key, None)?;
-        let mut signature = [0; 114];
-        signer.sign(digest, Some(&mut signature))?;
-        Ok(signature)
+        let mut signer = OpenSslSigner::new_without_digest(&key)?;
+        Ok(signer.sign_oneshot_to_vec(digest)?.as_slice().try_into()?)
     }
 
     fn ed448_verify(public: &[u8; 57], digest: &[u8], signature: &[u8; 114])
                       -> Result<bool> {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Ed448,
-            PkeyData::Ecc(EccData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-            })
-        )?;
-
-        let mut verifier = OsslSignature::new(
-            &ctx, SigOp::Verify, SigAlg::Ed448, &mut key, None)?;
-        Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
+        let key = PKey::public_key_from_raw_bytes(
+            public, openssl::pkey::Id::ED448)?;
+        let mut verifier = Verifier::new_without_digest(&key)?;
+        Ok(verifier.verify_oneshot(signature, digest)?)
     }
 
     fn dsa_generate_key(p_bits: usize)
                         -> Result<(MPI, MPI, MPI, MPI, ProtectedMPI)>
     {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::Dsa(p_bits))?;
-        match key.export()? {
-            PkeyData::Dsa(key) => {
-                Ok((key.p.into(), key.q.into(), key.g.into(),
-                    key.pub_key.into(), key.priv_key.expect("to be set").into()))
-            },
-            _ => Err(wrong_key()),
-        }
+        use openssl::dsa::*;
+        let key = Dsa::<openssl::pkey::Private>::generate(p_bits.try_into()?)?;
+        Ok((key.p().into(), key.q().into(), key.g().into(),
+            key.pub_key().into(), key.priv_key().into()))
     }
 
     fn dsa_sign(x: &ProtectedMPI,
@@ -444,28 +178,21 @@ impl Asymmetric for super::Backend {
                 digest: &[u8])
                 -> Result<(MPI, MPI)>
     {
-        let ctx = super::context();
-
-        let pbits = p.bits();
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Dsa(pbits),
-            PkeyData::Dsa(DsaData {
-                p: p.value().into(),
-                q: q.value().into(),
-                g: g.value().into(),
-                priv_key: Some(x.into()),
-                pub_key: y.value().into(),
-            }),
+        use openssl::dsa::{Dsa, DsaSig};
+        let dsa = Dsa::from_private_components(
+            p.try_into()?,
+            q.try_into()?,
+            g.try_into()?,
+            x.try_into()?,
+            y.try_into()?,
         )?;
-
-        let mut signer = OsslSignature::new(
-            &ctx, SigOp::Sign, SigAlg::Dsa, &mut key, None)?;
-        let sig_len = signer.sign(digest, None)?;
-        let mut signature = vec![0u8; sig_len];
-        let sig_len = signer.sign(digest, Some(&mut signature))?;
-        signature.truncate(sig_len);
-        let (r, s) = der::parse_sig_r_s(&signature)?;
-        Ok((MPI::new(r), MPI::new(s)))
+        let key: PKey<_> = dsa.try_into()?;
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.sign_init()?;
+        let mut signature = vec![];
+        ctx.sign_to_vec(&digest, &mut signature)?;
+        let signature = DsaSig::from_der(&signature)?;
+        Ok((signature.r().to_vec().into(), signature.s().to_vec().into()))
     }
 
     fn dsa_verify(p: &MPI, q: &MPI, g: &MPI, y: &MPI,
@@ -473,300 +200,78 @@ impl Asymmetric for super::Backend {
                   r: &MPI, s: &MPI)
                   -> Result<bool>
     {
-        let ctx = super::context();
-
-        let pbits = p.bits();
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Dsa(pbits),
-            PkeyData::Dsa(DsaData {
-                p: p.value().into(),
-                q: q.value().into(),
-                g: g.value().into(),
-                priv_key: None,
-                pub_key: y.value().into(),
-            }),
+        use openssl::dsa::{Dsa, DsaSig};
+        let dsa = Dsa::from_public_components(
+            p.try_into()?,
+            q.try_into()?,
+            g.try_into()?,
+            y.try_into()?,
         )?;
-
-        let mut signature = Vec::new();
-        der::encode_sig_r_s(&mut signature, r.value(), s.value())?;
-        let mut verifier = OsslSignature::new(
-            &ctx, SigOp::Verify, SigAlg::Dsa, &mut key, None)?;
-        Ok(verifier.verify(digest, Some(&signature)).is_ok())
+        let key: PKey<_> = dsa.try_into()?;
+        let r = r.try_into()?;
+        let s = s.try_into()?;
+        let signature = DsaSig::from_private_components(r, s)?;
+        let mut ctx = PkeyCtx::new(&key)?;
+        ctx.verify_init()?;
+        Ok(ctx.verify(&digest, &signature.to_der()?)?)
     }
+}
 
-    fn mldsa65_generate_key() -> Result<(Protected, Box<[u8; 1952]>)> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::Mldsa65)?;
-        match key.export()? {
-            PkeyData::Mlkey(MlkeyData { ref pubkey, ref seed, .. }) => {
-                let pubkey = pubkey.as_ref().expect("to be set");
-                let mut public = Box::new([0; 1952]);
-                let l = public.len().min(pubkey.len());
-                public[..l].copy_from_slice(&pubkey[..l]);
-                Ok((seed.as_ref().ok_or_else(not_set)?.into(), public))
-            },
-            _ => Err(wrong_key()),
-        }
+impl TryFrom<&ProtectedMPI> for BigNum {
+    type Error = anyhow::Error;
+    fn try_from(mpi: &ProtectedMPI) -> std::result::Result<BigNum, anyhow::Error> {
+        let mut bn = BigNum::new_secure()?;
+        bn.copy_from_slice(mpi.value())?;
+        Ok(bn)
     }
+}
 
-    fn mldsa65_sign(secret: &Protected, digest: &[u8])
-                    -> Result<Box<[u8; 3309]>>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Mldsa65,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: None,
-                prikey: None,
-                seed: Some(secret.into()),
-            })
-        )?;
-
-        let mut signer = OsslSignature::new(
-            &ctx, SigOp::Sign, SigAlg::Mldsa65, &mut key, None)?;
-        let mut signature = Box::new([0; 3309]);
-        signer.sign(digest, Some(&mut signature[..]))?;
-        Ok(signature)
+impl From<&BigNumRef> for ProtectedMPI {
+    fn from(bn: &BigNumRef) -> Self {
+        bn.to_vec().into()
     }
+}
 
-    fn mldsa65_verify(public: &[u8; 1952], digest: &[u8], signature: &[u8; 3309])
-                      -> Result<bool>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Mldsa65,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-                seed: None,
-            })
-        )?;
-
-        let mut verifier = OsslSignature::new(
-            &ctx, SigOp::Verify, SigAlg::Mldsa65, &mut key, None)?;
-        Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
+impl From<BigNum> for ProtectedMPI {
+    fn from(bn: BigNum) -> Self {
+        bn.to_vec().into()
     }
+}
 
-    fn mldsa87_generate_key() -> Result<(Protected, Box<[u8; 2592]>)> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::Mldsa87)?;
-        match key.export()? {
-            PkeyData::Mlkey(MlkeyData { ref pubkey, ref seed, .. }) => {
-                let pubkey = pubkey.as_ref().expect("to be set");
-                let mut public = Box::new([0; 2592]);
-                let l = public.len().min(pubkey.len());
-                public[..l].copy_from_slice(&pubkey[..l]);
-                Ok((seed.as_ref().ok_or_else(not_set)?.into(), public))
-            },
-            _ => Err(wrong_key()),
-        }
+impl From<BigNum> for MPI {
+    fn from(bn: BigNum) -> Self {
+        bn.to_vec().into()
     }
+}
 
-    fn mldsa87_sign(secret: &Protected, digest: &[u8])
-                    -> Result<Box<[u8; 4627]>>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Mldsa87,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: None,
-                prikey: None,
-                seed: Some(secret.into()),
-            })
-        )?;
-
-        let mut signer = OsslSignature::new(
-            &ctx, SigOp::Sign, SigAlg::Mldsa87, &mut key, None)?;
-        let mut signature = Box::new([0; 4627]);
-        signer.sign(digest, Some(&mut signature[..]))?;
-        Ok(signature)
+impl TryFrom<&MPI> for BigNum {
+    type Error = anyhow::Error;
+    fn try_from(mpi: &MPI) -> std::result::Result<BigNum, anyhow::Error> {
+        Ok(BigNum::from_slice(mpi.value())?)
     }
+}
 
-    fn mldsa87_verify(public: &[u8; 2592], digest: &[u8], signature: &[u8; 4627])
-                      -> Result<bool>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::Mldsa87,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-                seed: None,
-            })
-        )?;
-
-        let mut verifier = OsslSignature::new(
-            &ctx, SigOp::Verify, SigAlg::Mldsa87, &mut key, None)?;
-        Ok(verifier.verify(digest, Some(&signature[..])).is_ok())
+impl From<&BigNumRef> for MPI {
+    fn from(bn: &BigNumRef) -> Self {
+        bn.to_vec().into()
     }
+}
 
-    slhdsa!(slhdsa128s_generate_key,
-            [u8; 32],
-            slhdsa128s_sign,
-            slhdsa128s_verify,
-            SlhdsaShake128s,
-            16,
-            SlhdsaShake128s,
-            7856);
-    slhdsa!(slhdsa128f_generate_key,
-            [u8; 32],
-            slhdsa128f_sign,
-            slhdsa128f_verify,
-            SlhdsaShake128f,
-            16,
-            SlhdsaShake128f,
-            17088);
-    slhdsa!(slhdsa256s_generate_key,
-            Box<[u8; 64]>,
-            slhdsa256s_sign,
-            slhdsa256s_verify,
-            SlhdsaShake256s,
-            32,
-            SlhdsaShake256s,
-            29792);
-
-    /// Generates a ML-KEM-768 key pair.
-    fn mlkem768_generate_key() -> Result<(Protected, Box<[u8; 1184]>)> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::MlKem768)?;
-        match key.export()? {
-            PkeyData::Mlkey(MlkeyData { ref pubkey, ref seed, .. }) => {
-                let pubkey = pubkey.as_ref().expect("to be set");
-                let mut public = Box::new([0; 1184]);
-                let l = public.len().min(pubkey.len());
-                public[..l].copy_from_slice(&pubkey[..l]);
-                Ok((seed.as_ref().ok_or_else(not_set)?.into(), public))
-            },
-            _ => Err(wrong_key()),
-        }
-    }
-
-    /// Generates and encapsulates a secret using ML-KEM-768.
-    fn mlkem768_encapsulate(public: &[u8; 1184])
-                            -> Result<(Box<[u8; 1088]>, Protected)>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::MlKem768,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-                seed: None,
-            })
-        )?;
-
-        let mut encryptor = OsslAsymcipher::new(
-            &ctx, EncOp::Encapsulate, &mut key, None)?;
-        let mut ciphertext = Protected::from(vec![0; 1088]);
-        let (keyshare, l) =
-            encryptor.encapsulate(&mut ciphertext)?;
-        debug_assert_eq!(l, 1088);
-        debug_assert_eq!(ciphertext.len(), l);
-        let mut boxed_ciphertext = Box::new([0; 1088]);
-        boxed_ciphertext.copy_from_slice(&ciphertext);
-
-        Ok((boxed_ciphertext, Protected::from(keyshare)))
-    }
-
-    /// Decapsulates a secret using ML-KEM-768.
-    fn mlkem768_decapsulate(secret: &Protected,
-                            ciphertext: &[u8; 1088])
-                            -> Result<Protected>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::MlKem768,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: None,
-                prikey: None,
-                seed: Some(secret.into()),
-            })
-        )?;
-
-        let mut encryptor = OsslAsymcipher::new(
-            &ctx, EncOp::Decapsulate, &mut key, None)?;
-        let keyshare = encryptor.decapsulate(&ciphertext[..])?;
-        debug_assert_eq!(keyshare.len(), 32);
-
-        Ok(keyshare.into())
-    }
-
-    /// Generates a ML-KEM-1024 key pair.
-    fn mlkem1024_generate_key() -> Result<(Protected, Box<[u8; 1568]>)> {
-        let ctx = super::context();
-
-        let key = EvpPkey::generate(&ctx, EvpPkeyType::MlKem1024)?;
-        match key.export()? {
-            PkeyData::Mlkey(MlkeyData { ref pubkey, ref seed, .. }) => {
-                let pubkey = pubkey.as_ref().expect("to be set");
-                let mut public = Box::new([0; 1568]);
-                let l = public.len().min(pubkey.len());
-                public[..l].copy_from_slice(&pubkey[..l]);
-                Ok((seed.as_ref().ok_or_else(not_set)?.into(), public))
-            },
-            _ => Err(wrong_key()),
-        }
-    }
-
-    /// Generates and encapsulates a secret using ML-KEM-1024.
-    fn mlkem1024_encapsulate(public: &[u8; 1568])
-                             -> Result<(Box<[u8; 1568]>, Protected)>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::MlKem1024,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: Some(public.to_vec()),
-                prikey: None,
-                seed: None,
-            })
-        )?;
-
-        let mut encryptor = OsslAsymcipher::new(
-            &ctx, EncOp::Encapsulate, &mut key, None)?;
-        let mut ciphertext = Protected::from(vec![0; 1568]);
-        let (keyshare, l) =
-            encryptor.encapsulate(&mut ciphertext)?;
-        debug_assert_eq!(l, 1568);
-        debug_assert_eq!(ciphertext.len(), l);
-        let mut boxed_ciphertext = Box::new([0; 1568]);
-        boxed_ciphertext.copy_from_slice(&ciphertext);
-
-        Ok((boxed_ciphertext, Protected::from(keyshare)))
-    }
-
-    /// Decapsulates a secret using ML-KEM-1024.
-    fn mlkem1024_decapsulate(secret: &Protected,
-                             ciphertext: &[u8; 1568])
-                             -> Result<Protected>
-    {
-        let ctx = super::context();
-
-        let mut key = EvpPkey::import(
-            &ctx, EvpPkeyType::MlKem1024,
-            PkeyData::Mlkey(MlkeyData {
-                pubkey: None,
-                prikey: None,
-                seed: Some(secret.into()),
-            })
-        )?;
-
-        let mut encryptor = OsslAsymcipher::new(
-            &ctx, EncOp::Decapsulate, &mut key, None)?;
-        let keyshare = encryptor.decapsulate(&ciphertext[..])?;
-        debug_assert_eq!(keyshare.len(), 32);
-
-        Ok(keyshare.into())
+impl TryFrom<&Curve> for Nid {
+    type Error = crate::Error;
+    fn try_from(curve: &Curve) -> std::result::Result<Nid, crate::Error> {
+        Ok(match curve {
+            Curve::NistP256 => Nid::X9_62_PRIME256V1,
+            Curve::NistP384 => Nid::SECP384R1,
+            Curve::NistP521 => Nid::SECP521R1,
+            Curve::BrainpoolP256 => Nid::BRAINPOOL_P256R1,
+            Curve::BrainpoolP384 => Nid::BRAINPOOL_P384R1,
+            Curve::BrainpoolP512 => Nid::BRAINPOOL_P512R1,
+            Curve::Ed25519 | // Handled differently.
+            Curve::Cv25519 | // Handled differently.
+            Curve::Unknown(_) =>
+                return Err(crate::Error::UnsupportedEllipticCurve(curve.clone()).into()),
+        })
     }
 }
 
@@ -783,36 +288,30 @@ impl KeyPair {
                 (
                     RSAEncryptSign,
                     mpi::PublicKey::RSA { e, n },
-                    mpi::SecretKeyMaterial::RSA { d, .. },
+                    mpi::SecretKeyMaterial::RSA { p, q, d, .. },
                 )
                 | (
                     RSASign,
                     mpi::PublicKey::RSA { e, n },
-                    mpi::SecretKeyMaterial::RSA { d, .. },
+                    mpi::SecretKeyMaterial::RSA { p, q, d, .. },
                 ) => {
-                    let ctx = super::context();
+                    let key =
+                        RsaPrivateKeyBuilder::new(n.try_into()?, e.try_into()?, d.try_into()?)?
+                            .set_factors(p.try_into()?, q.try_into()?)?
+                            .build();
+
+                    let key = PKey::from_rsa(key)?;
+
+                    let mut signature: Vec<u8> = vec![];
 
                     const MAX_OID_SIZE: usize = 20;
                     let mut v = Vec::with_capacity(MAX_OID_SIZE + digest.len());
                     v.extend(hash_algo.oid()?);
                     v.extend(digest);
 
-                    let mut params = ossl::OsslParamBuilder::with_capacity(3);
-                    params.add_bn(E, e.value())?;
-                    params.add_bn(N, n.value())?;
-                    params.add_bn(D, d.value())?;
-                    let params = params.finalize();
-
-                    let mut key = EvpPkey::fromdata(
-                        &ctx, RSA, ossl::bindings::EVP_PKEY_KEYPAIR, &params)?;
-                    let mut signer = OsslSignature::new(
-                        &ctx, SigOp::Sign, SigAlg::Rsa, &mut key, None)?;
-
-                    let size = signer.sign(&v, None)?;
-                    let mut signature = vec![0; size];
-                    let real_size =
-                        signer.sign(&v, Some(&mut signature))?;
-                    crate::vec_truncate(&mut signature, real_size);
+                    let mut ctx = PkeyCtx::new(&key)?;
+                    ctx.sign_init()?;
+                    ctx.sign_to_vec(&v, &mut signature)?;
 
                     Ok(mpi::Signature::RSA {
                         s: signature.into(),
@@ -824,31 +323,17 @@ impl KeyPair {
                     mpi::PublicKey::ECDSA { curve, q },
                     mpi::SecretKeyMaterial::ECDSA { scalar },
                 ) => {
-                    let ctx = super::context();
-
-                    let mut key = EvpPkey::import(
-                        &ctx, curve.try_into()?,
-                        PkeyData::Ecc(EccData {
-                            pubkey: Some(q.value().to_vec()),
-                            prikey: Some(
-                                ossl::OsslSecret::from_slice(scalar.value())),
-                        })
-                    )?;
-
-                    let mut signer = OsslSignature::new(
-                        &ctx, SigOp::Sign, SigAlg::Ecdsa, &mut key, None)?;
-                    let size = signer.sign(digest, None)?;
-                    let mut signature = vec![0; size];
-                    let real_size =
-                        signer.sign(digest, Some(&mut signature))?;
-                    crate::vec_truncate(&mut signature, real_size);
-
-                    // Recover the DER-encoded R and S.
-                    let (r, s) = der::parse_sig_r_s(&signature)?;
-
+                    let nid = curve.try_into()?;
+                    let group = EcGroup::from_curve_name(nid)?;
+                    let mut ctx = BigNumContext::new()?;
+                    let point = EcPoint::from_bytes(&group, q.value(), &mut ctx)?;
+                    let mut private = BigNum::new_secure()?;
+                    private.copy_from_slice(scalar.value())?;
+                    let key = EcKey::from_private_components(&group, &private, &point)?;
+                    let sig = EcdsaSig::sign(digest, &key)?;
                     Ok(mpi::Signature::ECDSA {
-                        r: MPI::new(r),
-                        s: MPI::new(s),
+                        r: sig.r().into(),
+                        s: sig.s().into(),
                     })
                 }
 
@@ -860,22 +345,6 @@ impl KeyPair {
                     self.secret()
                 ))
                 .into()),
-        }
-    }
-}
-
-impl TryFrom<&Curve> for EvpPkeyType {
-    type Error = crate::Error;
-
-    fn try_from(c: &Curve) -> std::result::Result<Self, Self::Error> {
-        match c {
-            Curve::NistP256 => Ok(EvpPkeyType::P256),
-            Curve::NistP384 => Ok(EvpPkeyType::P384),
-            Curve::NistP521 => Ok(EvpPkeyType::P521),
-            Curve::BrainpoolP256 => Ok(EvpPkeyType::BrainpoolP256r1),
-            Curve::BrainpoolP384 => Ok(EvpPkeyType::BrainpoolP384r1),
-            Curve::BrainpoolP512 => Ok(EvpPkeyType::BrainpoolP512r1),
-            c => Err(Error::UnsupportedEllipticCurve(c.clone()))?,
         }
     }
 }
@@ -892,31 +361,22 @@ impl KeyPair {
         Ok(match (self.public().mpis(), secret, ciphertext) {
                 (
                     PublicKey::RSA { ref e, ref n },
-                    mpi::SecretKeyMaterial::RSA { d, .. },
+                    mpi::SecretKeyMaterial::RSA {
+                        ref p,
+                        ref q,
+                        ref d,
+                        ..
+                    },
                     mpi::Ciphertext::RSA { ref c },
                 ) => {
-                    let ctx = super::context();
+                    let key =
+                        RsaPrivateKeyBuilder::new(n.try_into()?, e.try_into()?, d.try_into()?)?
+                            .set_factors(p.try_into()?, q.try_into()?)?
+                            .build();
 
-                    let mut params = ossl::OsslParamBuilder::with_capacity(3);
-                    params.add_bn(E, e.value())?;
-                    params.add_bn(N, n.value())?;
-                    params.add_bn(D, d.value())?;
-                    let params = params.finalize();
-
-                    let mut key = EvpPkey::fromdata(
-                        &ctx, RSA, ossl::bindings::EVP_PKEY_KEYPAIR, &params)?;
-                    let params = ossl::asymcipher::rsa_enc_params(
-                        EncAlg::RsaPkcs1_5, None)?;
-                    let mut decryptor = OsslAsymcipher::new(
-                        &ctx, EncOp::Decrypt, &mut key, Some(&params))?;
-
-                    let size = decryptor.decrypt(c.value(), None)?;
-                    let mut buf: Protected = vec![0; size].into();
-                    let real_size =
-                        decryptor.decrypt(c.value(), Some(&mut buf))?;
-                    let mut plaintext: Protected = vec![0; real_size].into();
-                    plaintext[..].copy_from_slice(&buf[..real_size]);
-                    plaintext.into()
+                    let mut buf: Protected = vec![0; key.size().try_into()?].into();
+                    let encrypted_len = key.private_decrypt(c.value(), &mut buf, Padding::PKCS1)?;
+                    buf[..encrypted_len].into()
                 }
 
                 (
@@ -956,26 +416,13 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
                         .into());
                     }
 
-                    let ctx = super::context();
+                    let e = BigNum::from_slice(e.value())?;
+                    let n = BigNum::from_slice(n.value())?;
+                    let rsa = Rsa::<openssl::pkey::Public>::from_public_components(n, e)?;
 
-                    let mut params = ossl::OsslParamBuilder::with_capacity(2);
-                    params.add_bn(E, e.value())?;
-                    params.add_bn(N, n.value())?;
-                    let params = params.finalize();
-
-                    let mut key = EvpPkey::fromdata(
-                        &ctx, RSA, ossl::bindings::EVP_PKEY_PUBLIC_KEY, &params)?;
-                    let params = ossl::asymcipher::rsa_enc_params(
-                        EncAlg::RsaPkcs1_5, None)?;
-                    let mut encryptor = OsslAsymcipher::new(
-                        &ctx, EncOp::Encrypt, &mut key, Some(&params))?;
-
-                    let size = encryptor.encrypt(data, None)?;
-                    let mut buf = vec![0; size];
-                    let real_size =
-                        encryptor.encrypt(data, Some(&mut buf))?;
-                    crate::vec_truncate(&mut buf, real_size);
-
+                    // The ciphertext has the length of the modulus.
+                    let mut buf = vec![0; rsa.size().try_into()?];
+                    rsa.public_encrypt(data, &mut buf, Padding::PKCS1)?;
                     Ok(mpi::Ciphertext::RSA {
                         c: buf.into(),
                     })
@@ -1015,43 +462,32 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
     ) -> Result<()> {
         let ok = match (self.mpis(), sig) {
             (mpi::PublicKey::RSA { e, n }, mpi::Signature::RSA { s }) => {
-                let ctx = super::context();
+                let e = BigNum::from_slice(e.value())?;
+                let n = BigNum::from_slice(n.value())?;
+                let keypair = Rsa::<openssl::pkey::Public>::from_public_components(n, e)?;
+                let keypair = PKey::from_rsa(keypair)?;
 
-                let mut params = ossl::OsslParamBuilder::with_capacity(2);
-                params.add_bn(E, e.value())?;
-                params.add_bn(N, n.value())?;
-                let params = params.finalize();
-
-                let mut key = EvpPkey::fromdata(
-                    &ctx, RSA, ossl::bindings::EVP_PKEY_PUBLIC_KEY, &params)?;
-                let mut verifier = OsslSignature::new(
-                    &ctx, SigOp::Verify, SigAlg::Rsa, &mut key, None)?;
-
+                let signature = s.value();
                 let mut v = vec![];
                 v.extend(hash_algo.oid()?);
                 v.extend(digest);
 
-                verifier.verify(&v, Some(s.value())).is_ok()
+                let mut ctx = PkeyCtx::new(&keypair)?;
+                ctx.verify_init()?;
+                ctx.verify(&v, signature)?
             }
 
-            (mpi::PublicKey::ECDSA { curve, q }, mpi::Signature::ECDSA { r, s }) => {
-                let ctx = super::context();
-
-                let mut key = EvpPkey::import(
-                    &ctx, curve.try_into()?,
-                    PkeyData::Ecc(EccData {
-                        pubkey: Some(q.value().to_vec()),
-                        prikey: None,
-                    })
+            (mpi::PublicKey::ECDSA { curve, q }, mpi::Signature::ECDSA { s, r }) => {
+                let nid = curve.try_into()?;
+                let group = EcGroup::from_curve_name(nid)?;
+                let mut ctx = BigNumContext::new()?;
+                let point = EcPoint::from_bytes(&group, q.value(), &mut ctx)?;
+                let key = EcKey::from_public_key(&group, &point)?;
+                let sig = EcdsaSig::from_private_components(
+                    r.try_into()?,
+                    s.try_into()?,
                 )?;
-
-                // DER-encode R and S.
-                let mut signature = Vec::new();
-                der::encode_sig_r_s(&mut signature, r.value(), s.value())?;
-
-                let mut verifier = OsslSignature::new(
-                    &ctx, SigOp::Verify, SigAlg::Ecdsa, &mut key, None)?;
-                verifier.verify(digest, Some(&signature)).is_ok()
+                sig.verify(digest, &key)?
             }
             _ => {
                 return Err(crate::Error::MalformedPacket(format!(
@@ -1087,66 +523,89 @@ where
         // RFC 4880: `p < q`
         let (p, q) = crate::crypto::rsa_sort_raw_pq(p, q);
 
-        let (e, key_data) = RsaData::from_dpq(d, p, q)?;
+        let mut big_p = BigNum::new_secure()?;
+        big_p.copy_from_slice(p)?;
+        let mut big_q = BigNum::new_secure()?;
+        big_q.copy_from_slice(q)?;
+        let n = &big_p * &big_q;
 
-        let ctx = super::context();
-        let key = EvpPkey::import(
-            &ctx, EvpPkeyType::Rsa(0, vec![]),
-            PkeyData::Rsa(key_data))?;
+        let mut one = BigNum::new_secure()?;
+        one.copy_from_slice(&[1])?;
 
-        Self::make_rsa(&e, key, ctime.into())
+        // Compute e ≡ d⁻¹ (lcm(p-1, q-1))
+        let big_p_minus_1 = &big_p - &one;
+        let big_q_minus_1 = &big_q - &one;
+
+        let big_phi = &big_p_minus_1 * &big_q_minus_1;
+
+        let mut ctx = BigNumContext::new_secure()?;
+
+        let mut gcd = BigNum::new_secure()?;
+        gcd.gcd(&big_p_minus_1, &big_q_minus_1, &mut ctx)?;
+
+        let m = &big_phi / &gcd;
+
+        let mut d_bn = BigNum::new_secure()?;
+        d_bn.copy_from_slice(d)?;
+
+        let mut e = BigNum::new_secure()?;
+
+        e.mod_inverse(&d_bn, &m, &mut ctx)?;
+
+        let mut u = BigNum::new_secure()?;
+        u.mod_inverse(&big_p, &big_q, &mut ctx)?; // RFC 4880: u ≡ p⁻¹ (mod q)
+
+        Self::with_secret(
+            ctime.into().unwrap_or_else(crate::now),
+            PublicKeyAlgorithm::RSAEncryptSign,
+            mpi::PublicKey::RSA {
+                e: e.into(),
+                n: n.into(),
+            },
+            mpi::SecretKeyMaterial::RSA {
+                d: d_bn.into(),
+                p: p.into(),
+                q: q.into(),
+                u: u.into(),
+            }
+            .into(),
+        )
     }
 
     /// Generates a new RSA key with a public modulus of size `bits`.
     pub fn generate_rsa(bits: usize) -> Result<Self> {
-        let ctx = super::context();
+        let key = Rsa::generate(bits.try_into()?)?;
+        let e = key.e();
+        let n = key.n();
+        let d = key.d();
+        let p = key
+            .p()
+            .ok_or_else(|| crate::Error::InvalidOperation("p".into()))?;
+        let q = key
+            .q()
+            .ok_or_else(|| crate::Error::InvalidOperation("q".into()))?;
+        // RFC 4880: `p < q`
+        let (p, q) = rsa_sort_pq(p, q);
 
-        let e = 65537_i32.to_be_bytes();
-        let key = EvpPkey::generate(
-            &ctx, EvpPkeyType::Rsa(bits, e.to_vec()))?;
-        Self::make_rsa(&e, key, None)
-    }
+        let mut ctx = BigNumContext::new_secure()?;
+        let mut u = BigNum::new_secure()?;
+        u.mod_inverse(p, q, &mut ctx)?;
 
-    /// Creates an RSA OpenPGP key from the given `EvpPkey`.
-    fn make_rsa(e: &[u8], key: EvpPkey, ctime: Option<SystemTime>)
-                -> Result<Self>
-    {
-        use ossl::pkey::PkeyData;
-
-        match key.export()? {
-            PkeyData::Rsa(mut key) => {
-                use crate::crypto::raw_bigint_cmp;
-                use std::cmp::Ordering;
-
-                // Make sure that p < q.
-                if raw_bigint_cmp(key.p.as_ref().expect("to be set"),
-                                  key.q.as_ref().expect("to be set"))
-                    == Ordering::Greater
-                {
-                    // p > q, swap!
-                    std::mem::swap(&mut key.p, &mut key.q);
-                }
-                let u = key.inverse_p_mod_q()?;
-
-                Self::with_secret(
-                    ctime.unwrap_or_else(crate::now),
-                    PublicKeyAlgorithm::RSAEncryptSign,
-                    mpi::PublicKey::RSA {
-                        e: MPI::new(&e),
-                        n: MPI::new(key.n.as_ref()),
-                    },
-                    mpi::SecretKeyMaterial::RSA {
-                        d: key.d.as_ref().expect("to be set").into(),
-                        p: key.p.as_ref().expect("to be set").into(),
-                        q: key.q.as_ref().expect("to be set").into(),
-                        u: u.into(),
-                    }
-                    .into())
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::RSAEncryptSign,
+            mpi::PublicKey::RSA {
+                e: e.into(),
+                n: n.into(),
             },
-
-            _ => Err(Error::InvalidOperation(
-                "got the wrong key type".into()).into()),
-        }
+            mpi::SecretKeyMaterial::RSA {
+                d: d.into(),
+                p: p.into(),
+                q: q.into(),
+                u: u.into(),
+            }
+            .into(),
+        )
     }
 
     /// Generates a new ECC key over `curve`.
@@ -1160,36 +619,58 @@ where
                                                   mpi::PublicKey,
                                                   mpi::SecretKeyMaterial)>
     {
-        let ctx = super::context();
+        let nid = (&curve).try_into()?;
+        let group = EcGroup::from_curve_name(nid)?;
+        let key = EcKey::generate(&group)?;
 
-        let key = EvpPkey::generate(&ctx, (&curve).try_into()?)?;
         let hash = crate::crypto::ecdh::default_ecdh_kdf_hash(&curve);
         let sym = crate::crypto::ecdh::default_ecdh_kek_cipher(&curve);
+        let mut ctx = BigNumContext::new()?;
 
-        match key.export()? {
-            PkeyData::Ecc(key) => {
-                let q = key.pubkey.as_ref().expect("to be set").clone().into();
-                let scalar = key.prikey.as_ref().expect("to be set").into();
+        let q = MPI::new(&key.public_key().to_bytes(
+            &group,
+            PointConversionForm::UNCOMPRESSED,
+            &mut ctx,
+        )?);
+        let scalar = key.private_key().to_vec().into();
 
-                if for_signing {
-                    Ok((
-                        PublicKeyAlgorithm::ECDSA,
-                        mpi::PublicKey::ECDSA { curve, q },
-                        mpi::SecretKeyMaterial::ECDSA { scalar },
-                    ))
-                } else {
-                    Ok((
-                        PublicKeyAlgorithm::ECDH,
-                        mpi::PublicKey::ECDH {
-                            curve, q, hash, sym,
-                        },
-                        mpi::SecretKeyMaterial::ECDH { scalar },
-                    ))
-                }
-            },
-
-            _ => Err(Error::InvalidOperation(
-                "got the wrong key type".into()).into()),
+        if for_signing {
+            Ok((
+                PublicKeyAlgorithm::ECDSA,
+                mpi::PublicKey::ECDSA { curve, q },
+                mpi::SecretKeyMaterial::ECDSA { scalar },
+            ))
+        } else {
+            Ok((
+                PublicKeyAlgorithm::ECDH,
+                mpi::PublicKey::ECDH {
+                    curve,
+                    q,
+                    hash,
+                    sym,
+                },
+                mpi::SecretKeyMaterial::ECDH { scalar },
+            ))
         }
+    }
+}
+
+/// Given the secret prime values `p` and `q`, returns the pair of
+/// primes so that the smaller one comes first.
+///
+/// Section 5.5.3 of RFC4880 demands that `p < q`.  This function can
+/// be used to order `p` and `q` accordingly.
+///
+/// Note: even though this function seems trivial, we introduce it as
+/// explicit abstraction.  The reason is that the function's
+/// expression also "works" (as in it compiles) for byte slices, but
+/// does the wrong thing, see [`crate::crypto::rsa_sort_raw_pq`].
+fn rsa_sort_pq<'a>(p: &'a BigNumRef, q: &'a BigNumRef)
+                   -> (&'a BigNumRef, &'a BigNumRef)
+{
+    if p < q {
+        (p, q)
+    } else {
+        (q, p)
     }
 }
