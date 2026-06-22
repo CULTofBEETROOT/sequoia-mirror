@@ -83,7 +83,7 @@ impl Url {
     /// Returns a [`Url`] from an email address string.
     pub fn from<S: AsRef<str>>(email_address: S) -> Result<Self> {
         let email = EmailAddress::from(email_address)?;
-        let local_encoded = encode_local_part(&email.local_part.to_lowercase());
+        let local_encoded = encode_local_part(&email.local_part.to_ascii_lowercase());
         let url = Url {
             domain : email.domain,
             local_encoded,
@@ -546,8 +546,27 @@ mod tests {
     fn test_protect_localpart_in_get_request() -> Result<()> {
         let wkd_url = Url::from("test1+tag_&admin=root%@example.com").unwrap();
         assert_eq!(
-            "https://openpgpkey.example.com/.well-known/openpgpkey/example.com/hu/zpceuwttodc1e13yw1bo5dwot183s6kc?l=test1%2Btag_%26admin%3Droot%25", 
+            "https://openpgpkey.example.com/.well-known/openpgpkey/example.com/hu/zpceuwttodc1e13yw1bo5dwot183s6kc?l=test1%2Btag_%26admin%3Droot%25",
             wkd_url.to_string());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_case_folding() -> Result<()> {
+        // Upper and lower german 'U'-umlaut in unicode.
+        let email_upper = "\u{00DC}ser@example.com";
+        let email_lower = "\u{00FC}ser@example.com";
+
+        let url_upper = Url::from(email_upper)?.to_string();
+        let url_lower = Url::from(email_lower)?.to_string();
+
+        // Cut off the query of the url (everything after '?').
+        let url_upper = url_upper.split("?").next().unwrap();
+        let url_lower = url_lower.split("?").next().unwrap();
+
+        // The urls should be different.
+        assert_ne!(url_upper, url_lower);
 
         Ok(())
     }
