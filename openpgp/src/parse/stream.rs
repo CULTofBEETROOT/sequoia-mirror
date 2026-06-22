@@ -144,6 +144,78 @@ use crate::parse::{
     Parse,
 };
 
+// Sometimes the same error cascades, e.g.:
+//
+// ```
+// $ sq-wot --time 20230110T0406   --keyring sha1.pgp path B5FA089BA76FE3E17DC11660960E53286738F94C 231BC4AB9D8CAB86D1622CE02C0CE554998EECDB FABA8485B2D4D5BF1582AA963A8115E774FA9852 "<carol@example.org>"
+// [ ] FABA8485B2D4D5BF1582AA963A8115E774FA9852 <carol@example.org>: not authenticated (0%)
+//   ◯ B5FA089BA76FE3E17DC11660960E53286738F94C ("<alice@example.org>")
+//   │   No adequate certification found.
+//   │   No binding signature at time 2023-01-10T04:06:00Z
+//   │     No binding signature at time 2023-01-10T04:06:00Z
+//   │     No binding signature at time 2023-01-10T04:06:00Z
+// ...
+// ```
+//
+// Compress these.
+pub(crate) fn error_chain(err: &anyhow::Error) -> Vec<String> {
+    let mut errs = std::iter::once(err.to_string())
+        .chain(err.chain().map(|source| source.to_string()))
+        .collect::<Vec<String>>();
+    errs.dedup();
+    errs
+}
+
+use std::borrow::Borrow;
+
+/// Returns the error chain as a string.
+///
+/// The error and causes are separated by `error_separator`.  The
+/// causes are separated by `cause_separator`, or, if that is `None`,
+/// `error_separator`.
+pub(crate) fn display_error_chain<'a, E, C>(err: E,
+                                            error_separator: &str,
+                                            cause_separator: C)
+                                            -> String
+where E: Borrow<anyhow::Error>,
+      C: Into<Option<&'a str>>
+{
+    let err = err.borrow();
+    let cause_separator = cause_separator.into();
+
+    let error_chain = error_chain(err);
+    match error_chain.len() {
+        0 => unreachable!(),
+        1 => {
+            error_chain.into_iter().next().expect("have one")
+        }
+        2 => {
+            format!("{}{}{}",
+                    error_chain[0],
+                    error_separator,
+                    error_chain[1])
+        }
+        _ => {
+            if let Some(cause_separator) = cause_separator {
+                format!("{}{}{}",
+                        error_chain[0],
+                        error_separator,
+                        error_chain[1..].join(cause_separator))
+            } else {
+                error_chain.join(error_separator)
+            }
+        }
+    }
+
+}
+
+pub(crate) fn one_line_error_chain<E>(err: E) -> String
+where E: Borrow<anyhow::Error>,
+{
+    display_error_chain(err, ": ", ", because ")
+}
+
+
 /// Whether to trace execution by default (on stderr).
 const TRACE : bool = false;
 
@@ -2791,11 +2863,16 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
 
     /// Verifies the signatures.
     fn verify_signatures(&mut self) -> Result<()> {
-        tracer!(TRACE, "Decryptor::verify_signatures", TRACE_INDENT);
+        tracer!(true, "Decryptor::verify_signatures", TRACE_INDENT);
         t!("called");
 
         self.certs = self.helper.get_certs(&self.issuers)?;
-        t!("VerificationHelper::get_certs produced {} certs", self.certs.len());
+        t!("VerificationHelper::get_certs produced {} certs: {}",
+           self.certs.len(),
+           self.certs.iter()
+               .map(|c| c.fingerprint().to_string())
+               .collect::<Vec<_>>()
+               .join(", "));
 
         let mut results = MessageStructure::new(
             self.processing_csf_message.unwrap_or(false));
@@ -2858,12 +2935,16 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                         for ka in self.certs.iter().flat_map(
                             |c| c.keys().key_handles(issuers.clone()))
                         {
+                            t!("Considering {} on {}",
+                               ka.key().fingerprint(),
+                               ka.cert().fingerprint());
                             if no_issuers {
                                 // Slightly awkward control flow
                                 // change.  Below this loop, we still
                                 // have to add this signature to the
                                 // results with the default error,
                                 // `VerificationError::MissingKey`.
+                                t!("No issuers");
                                 break;
                             }
 
@@ -2977,7 +3058,8 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                                                 error,
                                             }
                                         } else {
-                                            t!("{:02X}{:02X}: good checksum using {}",
+                                            t!("{:02X}{:02X}: good checksum using {} \
+                                                (continuing to next signature)",
                                                sigid[0], sigid[1], ka.key().fingerprint());
                                             results.push_verification_result(
                                                 Ok(GoodChecksum {
@@ -2990,7 +3072,8 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                                     }
                                     Err(error) => {
                                         t!("{:02X}{:02X} using {}: error: {}",
-                                           sigid[0], sigid[1], ka.key().fingerprint(), error);
+                                           sigid[0], sigid[1], ka.key().fingerprint(),
+                                           one_line_error_chain(&error));
                                         VerificationErrorInternal::BadSignature {
                                             ka,
                                             error,
