@@ -2791,11 +2791,16 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
 
     /// Verifies the signatures.
     fn verify_signatures(&mut self) -> Result<()> {
-        tracer!(TRACE, "Decryptor::verify_signatures", TRACE_INDENT);
+        tracer!(true, "Decryptor::verify_signatures", TRACE_INDENT);
         t!("called");
 
         self.certs = self.helper.get_certs(&self.issuers)?;
-        t!("VerificationHelper::get_certs produced {} certs", self.certs.len());
+        t!("VerificationHelper::get_certs produced {} certs: {}",
+           self.certs.len(),
+           self.certs.iter()
+               .map(|c| c.fingerprint().to_string())
+               .collect::<Vec<_>>()
+               .join(", "));
 
         let mut results = MessageStructure::new(
             self.processing_csf_message.unwrap_or(false));
@@ -2858,12 +2863,16 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                         for ka in self.certs.iter().flat_map(
                             |c| c.keys().key_handles(issuers.clone()))
                         {
+                            t!("Considering {} on {}",
+                               ka.key().fingerprint(),
+                               ka.cert().fingerprint());
                             if no_issuers {
                                 // Slightly awkward control flow
                                 // change.  Below this loop, we still
                                 // have to add this signature to the
                                 // results with the default error,
                                 // `VerificationError::MissingKey`.
+                                t!("No issuers");
                                 break;
                             }
 
@@ -2977,7 +2986,8 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                                                 error,
                                             }
                                         } else {
-                                            t!("{:02X}{:02X}: good checksum using {}",
+                                            t!("{:02X}{:02X}: good checksum using {} \
+                                                (continuing to next signature)",
                                                sigid[0], sigid[1], ka.key().fingerprint());
                                             results.push_verification_result(
                                                 Ok(GoodChecksum {
