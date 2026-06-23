@@ -2,7 +2,7 @@ use crate::{Error, Result};
 
 use crate::crypto::asymmetric::KeyPair;
 use crate::crypto::backend::interface::Asymmetric;
-use crate::crypto::backend::openssl::der;
+use crate::crypto::backend::ossl::der;
 use crate::crypto::mpi;
 use crate::crypto::mpi::{ProtectedMPI, MPI};
 use crate::crypto::mem::Protected;

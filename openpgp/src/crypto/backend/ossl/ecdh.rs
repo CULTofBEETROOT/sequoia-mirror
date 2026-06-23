@@ -1,6 +1,6 @@
 //! Elliptic Curve Diffie-Hellman.
 
-use crate::crypto::backend::openssl::asymmetric::wrong_key;
+use crate::crypto::backend::ossl::asymmetric::wrong_key;
 use crate::crypto::ecdh::{decrypt_unwrap, encrypt_wrap};
 use crate::crypto::mpi;
 use crate::crypto::mpi::{Ciphertext, SecretKeyMaterial};

@@ -86,11 +86,11 @@ pub use self::rust::*;
 pub use self::rust::Backend;
 
 #[cfg(any(feature = "crypto-openssl", feature = "crypto-ossl"))]
-mod openssl;
+mod ossl;
 #[cfg(any(feature = "crypto-openssl", feature = "crypto-ossl"))]
-pub use self::openssl::*;
+pub use self::ossl::*;
 #[cfg(any(feature = "crypto-openssl", feature = "crypto-ossl"))]
-pub use self::openssl::Backend;
+pub use self::ossl::Backend;
 
 #[cfg(any(feature = "crypto-botan", feature = "crypto-botan2"))]
 mod botan;
