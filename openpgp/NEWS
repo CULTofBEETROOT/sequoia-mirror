@@ -6,12 +6,18 @@
 
 * Changes in 2.4.0
 ** Notable changes
-   - We are now using the ossl OpenSSL bindings instead of the
-     rust-openssl bindings.  The ossl OpenSSL bindings use OpenSSL's
-     v3 API and includes support for Post-Quantum algorithms like
-     ML-DSA, SLH-DSA, and ML-KEM.  In terms of algorithm coverage,
-     ossl does not currently include support for RipeMD160, but it
-     brings support for CAST5 and Blowfish.
+   - The OpenSSL support now has two backends.  The `crypto-openssl`
+     backend continues to use the `openssl` crate.
+
+     The new experimental `crypto-ossl` backend uses the `ossl`
+     OpenSSL bindings and OpenSSL's v3 API.  In terms of algorithm
+     coverage, `crypto-ossl` does not currently include support for
+     RipeMD160, but it brings support for CAST5 and Blowfish.
+
+   - The `crypto-openssl`, `crypto-ossl`, and `crypto-rust` backends
+     now support Post-Quantum algorithms like ML-DSA, SLH-DSA, and
+     ML-KEM.  The OpenSSL-based backends require OpenSSL 3.5 or later
+     for this support.
 
 ** New functionality
    - types::PublicKeyAlgorithmSpecification
