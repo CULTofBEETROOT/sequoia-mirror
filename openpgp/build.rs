@@ -66,6 +66,7 @@ fn crypto_backends_sanity_check() {
         (cfg!(all(feature = "crypto-nettle",
                   not(all(feature = "__implicit-crypto-backend-for-tests",
                           any(feature = "crypto-openssl",
+                              feature = "crypto-ossl",
                               feature = "crypto-botan",
                               feature = "crypto-botan2",
                               feature = "crypto-fuzzing",
@@ -79,6 +80,7 @@ fn crypto_backends_sanity_check() {
                   not(all(feature = "__implicit-crypto-backend-for-tests",
                           any(feature = "crypto-nettle",
                               feature = "crypto-openssl",
+                              feature = "crypto-ossl",
                               feature = "crypto-botan",
                               feature = "crypto-botan2",
                               feature = "crypto-fuzzing",
@@ -98,6 +100,12 @@ fn crypto_backends_sanity_check() {
          Backend {
              name: "OpenSSL",
              production_ready: true,
+             constant_time: true,
+         }),
+        (cfg!(feature = "crypto-ossl"),
+         Backend {
+             name: "OpenSSL (ossl)",
+             production_ready: false,
              constant_time: true,
          }),
         (cfg!(feature = "crypto-botan"),

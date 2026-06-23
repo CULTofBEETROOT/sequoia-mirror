@@ -146,6 +146,7 @@ crypto-cng = [
     "dep:zeroize"
 ]
 crypto-openssl = ["dep:ossl"]
+crypto-ossl = ["dep:ossl"]
 crypto-botan = ["dep:botan", "botan?/botan3"]
 crypto-botan2 = ["dep:botan"]
 crypto-fuzzing = []
