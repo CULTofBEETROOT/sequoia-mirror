@@ -85,11 +85,18 @@ pub use self::rust::*;
 #[cfg(feature = "crypto-rust")]
 pub use self::rust::Backend;
 
-#[cfg(any(feature = "crypto-openssl", feature = "crypto-ossl"))]
+#[cfg(feature = "crypto-openssl")]
+mod openssl;
+#[cfg(feature = "crypto-openssl")]
+pub use self::openssl::*;
+#[cfg(feature = "crypto-openssl")]
+pub use self::openssl::Backend;
+
+#[cfg(feature = "crypto-ossl")]
 mod ossl;
-#[cfg(any(feature = "crypto-openssl", feature = "crypto-ossl"))]
+#[cfg(feature = "crypto-ossl")]
 pub use self::ossl::*;
-#[cfg(any(feature = "crypto-openssl", feature = "crypto-ossl"))]
+#[cfg(feature = "crypto-ossl")]
 pub use self::ossl::Backend;
 
 #[cfg(any(feature = "crypto-botan", feature = "crypto-botan2"))]
