@@ -3255,7 +3255,6 @@ dependencies = [
  "anyhow",
  "base64",
  "bytes",
- "hickory-proto",
  "hickory-resolver",
  "http",
  "http-body-util",

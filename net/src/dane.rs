@@ -27,7 +27,7 @@ use sequoia_openpgp::parse::Parse;
 use super::Result;
 
 #[cfg(feature = "dane-client")]
-use hickory_proto::rr::{RData, RecordType};
+use hickory_resolver::proto::rr::{RData, RecordType};
 #[cfg(feature = "dane-client")]
 use hickory_resolver::config::ResolverOpts;
 #[cfg(feature = "dane-client")]
@@ -66,18 +66,18 @@ async fn get_raw(email_address: impl AsRef<str>) -> Result<Vec<Vec<u8>>> {
     let mut opts = ResolverOpts::default();
     opts.validate = true;
 
-    let resolver = TokioResolver::builder_tokio()?.with_options(opts).build();
+    let resolver = TokioResolver::builder_tokio()?.with_options(opts).build()?;
 
-    let answers = resolver
+    let lookup = resolver
         .lookup(fqdn, RecordType::OPENPGPKEY)
         .await
         .map_err(Error::NotFound)?;
 
     let mut bytes = vec![];
 
-    for record in answers.iter() {
-        if let RData::OPENPGPKEY(key) = record {
-            bytes.push(key.public_key().into());
+    for record in lookup.answers().iter() {
+        if let RData::OPENPGPKEY(key) = &record.data {
+            bytes.push(key.public_key.clone().into());
         }
     }
 
@@ -372,7 +372,7 @@ fn generate_<'a>(cert: &ValidCert<'a>, fqdn: &str, ttl: Option<Duration>,
 pub enum Error {
     /// A requested cert was not found.
     #[error("Cert not found")]
-    NotFound(#[from] hickory_resolver::ResolveError),
+    NotFound(#[from] hickory_resolver::net::NetError),
 }
 
 #[cfg(test)]
