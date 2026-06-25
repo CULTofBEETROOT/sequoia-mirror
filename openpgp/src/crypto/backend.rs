@@ -15,6 +15,7 @@ pub(crate) mod sha1cd;
 #[cfg(all(feature = "crypto-nettle",
           not(all(feature = "__implicit-crypto-backend-for-tests",
                   any(feature = "crypto-openssl",
+                      feature = "crypto-ossl",
                       feature = "crypto-botan",
                       feature = "crypto-botan2",
                       feature = "crypto-fuzzing",
@@ -23,6 +24,7 @@ mod nettle;
 #[cfg(all(feature = "crypto-nettle",
           not(all(feature = "__implicit-crypto-backend-for-tests",
                   any(feature = "crypto-openssl",
+                      feature = "crypto-ossl",
                       feature = "crypto-botan",
                       feature = "crypto-botan2",
                       feature = "crypto-fuzzing",
@@ -31,6 +33,7 @@ pub use self::nettle::*;
 #[cfg(all(feature = "crypto-nettle",
           not(all(feature = "__implicit-crypto-backend-for-tests",
                   any(feature = "crypto-openssl",
+                      feature = "crypto-ossl",
                       feature = "crypto-botan",
                       feature = "crypto-botan2",
                       feature = "crypto-rust")))))]
@@ -48,6 +51,7 @@ pub use self::nettle::Backend;
           not(all(feature = "__implicit-crypto-backend-for-tests",
                   any(feature = "crypto-nettle",
                       feature = "crypto-openssl",
+                      feature = "crypto-ossl",
                       feature = "crypto-botan",
                       feature = "crypto-botan2",
                       feature = "crypto-fuzzing",
@@ -57,6 +61,7 @@ mod cng;
           not(all(feature = "__implicit-crypto-backend-for-tests",
                   any(feature = "crypto-nettle",
                       feature = "crypto-openssl",
+                      feature = "crypto-ossl",
                       feature = "crypto-botan",
                       feature = "crypto-botan2",
                       feature = "crypto-fuzzing",
@@ -66,6 +71,7 @@ pub use self::cng::*;
           not(all(feature = "__implicit-crypto-backend-for-tests",
                   any(feature = "crypto-nettle",
                       feature = "crypto-openssl",
+                      feature = "crypto-ossl",
                       feature = "crypto-botan",
                       feature = "crypto-botan2",
                       feature = "crypto-fuzzing",
@@ -85,6 +91,13 @@ mod openssl;
 pub use self::openssl::*;
 #[cfg(feature = "crypto-openssl")]
 pub use self::openssl::Backend;
+
+#[cfg(feature = "crypto-ossl")]
+mod ossl;
+#[cfg(feature = "crypto-ossl")]
+pub use self::ossl::*;
+#[cfg(feature = "crypto-ossl")]
+pub use self::ossl::Backend;
 
 #[cfg(any(feature = "crypto-botan", feature = "crypto-botan2"))]
 mod botan;

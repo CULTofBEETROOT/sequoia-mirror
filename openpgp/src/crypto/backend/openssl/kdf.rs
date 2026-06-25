@@ -1,6 +1,7 @@
-use ossl::{
-    derive::{HkdfDerive, HkdfMode},
-    digest::DigestAlg,
+use openssl::{
+    md::Md,
+    pkey::Id,
+    pkey_ctx::PkeyCtx,
 };
 
 use crate::{
@@ -16,16 +17,15 @@ impl Kdf for super::Backend {
                    okm: &mut SessionKey)
                    -> Result<()>
     {
-        let ctx = super::context();
-
-        let mut hkdf = HkdfDerive::new(&ctx, DigestAlg::Sha2_256)?;
-        hkdf.set_mode(HkdfMode::ExtractAndExpand);
-        hkdf.set_key(&ikm);
+        let mut pkey = PkeyCtx::new_id(Id::HKDF)?;
+        pkey.derive_init()?;
+        pkey.set_hkdf_md(Md::sha256())?;
+        pkey.set_hkdf_key(&ikm)?;
         if let Some(salt) = salt {
-            hkdf.set_salt(salt);
+            pkey.set_hkdf_salt(salt)?;
         }
-        hkdf.set_info(info);
-        hkdf.derive(okm)?;
+        pkey.add_hkdf_info(info)?;
+        pkey.derive(Some(okm))?;
         Ok(())
     }
 
@@ -33,16 +33,15 @@ impl Kdf for super::Backend {
                    okm: &mut SessionKey)
                    -> Result<()>
     {
-        let ctx = super::context();
-
-        let mut hkdf = HkdfDerive::new(&ctx, DigestAlg::Sha2_512)?;
-        hkdf.set_mode(HkdfMode::ExtractAndExpand);
-        hkdf.set_key(&ikm);
+        let mut pkey = PkeyCtx::new_id(Id::HKDF)?;
+        pkey.derive_init()?;
+        pkey.set_hkdf_md(Md::sha512())?;
+        pkey.set_hkdf_key(&ikm)?;
         if let Some(salt) = salt {
-            hkdf.set_salt(salt);
+            pkey.set_hkdf_salt(salt)?;
         }
-        hkdf.set_info(info);
-        hkdf.derive(okm)?;
+        pkey.add_hkdf_info(info)?;
+        pkey.derive(Some(okm))?;
         Ok(())
     }
 }

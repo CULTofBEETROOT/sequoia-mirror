@@ -13,9 +13,18 @@ fn main() {
 
 /// Optionally include configuration passed from openssl-sys build
 /// script.  This configuration is then exposed as a set of `osslconf`
-/// parameters and is used by OpenSSL backend to enable or disable
-/// algorithms available by the current environment.
+/// parameters and `ossl*` version cfgs and is used by OpenSSL backend
+/// to enable or disable algorithms available by the current environment.
 fn include_openssl_conf() {
+    println!("cargo:rustc-check-cfg=cfg(ossl350)");
+
+    if let Ok(version) = env::var("DEP_OPENSSL_VERSION_NUMBER") {
+        let version = u64::from_str_radix(&version, 16).unwrap();
+        if version >= 0x3_05_00_00_0 {
+            println!("cargo:rustc-cfg=ossl350");
+        }
+    }
+
     if let Ok(vars) = env::var("DEP_OPENSSL_CONF") {
         for var in vars.split(',') {
             println!("cargo:rustc-cfg=osslconf=\"{}\"", var);
@@ -66,6 +75,7 @@ fn crypto_backends_sanity_check() {
         (cfg!(all(feature = "crypto-nettle",
                   not(all(feature = "__implicit-crypto-backend-for-tests",
                           any(feature = "crypto-openssl",
+                              feature = "crypto-ossl",
                               feature = "crypto-botan",
                               feature = "crypto-botan2",
                               feature = "crypto-fuzzing",
@@ -79,6 +89,7 @@ fn crypto_backends_sanity_check() {
                   not(all(feature = "__implicit-crypto-backend-for-tests",
                           any(feature = "crypto-nettle",
                               feature = "crypto-openssl",
+                              feature = "crypto-ossl",
                               feature = "crypto-botan",
                               feature = "crypto-botan2",
                               feature = "crypto-fuzzing",
@@ -98,6 +109,12 @@ fn crypto_backends_sanity_check() {
          Backend {
              name: "OpenSSL",
              production_ready: true,
+             constant_time: true,
+         }),
+        (cfg!(feature = "crypto-ossl"),
+         Backend {
+             name: "OpenSSL (ossl)",
+             production_ready: false,
              constant_time: true,
          }),
         (cfg!(feature = "crypto-botan"),
