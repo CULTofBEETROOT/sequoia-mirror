@@ -6,6 +6,9 @@
 
 * Changes in 2.4.0
 ** Notable changes
+   - This version adds support for post-quantum cryptography as
+     defined in RFC 9980.  Post-quantum algorithms are supported by
+     the OpenSSL, and Rust Crypto crypto backends.
    - We are now using the ossl OpenSSL bindings instead of the
      rust-openssl bindings.  The ossl OpenSSL bindings use OpenSSL's
      v3 API and includes support for Post-Quantum algorithms like
