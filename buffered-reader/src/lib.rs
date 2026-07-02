@@ -216,7 +216,7 @@
 //!
 //! In addition to utility [`BufferedReader`]s like the
 //! [`Limitor`], this crate also includes a few
-//! general-purpose parsers, like the [`Zlib`]
+//! general-purpose parsers, like the `Zlib`
 //! decompressor.
 //!
 //! [`BufRead`]: std::io::BufRead
