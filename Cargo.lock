@@ -337,7 +337,7 @@ checksum = "04285fa0c094cc9961fe435b1b279183db9394844ad82ce483aa6196c0e6da38"
 
 [[package]]
 name = "buffered-reader"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "bzip2",
  "flate2",
