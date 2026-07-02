@@ -142,6 +142,7 @@ macro_rules! slhdsa {
 impl Asymmetric for super::Backend {
     fn supports_algo(algo: PublicKeyAlgorithm) -> bool {
         use PublicKeyAlgorithm::*;
+        let pqc = ossl::api_level() >= (3, 5, 0);
         #[allow(deprecated)]
         match algo {
             X25519 | Ed25519 |
@@ -149,10 +150,9 @@ impl Asymmetric for super::Backend {
             RSAEncryptSign | RSAEncrypt | RSASign => true,
             DSA => true,
             ECDH | ECDSA | EdDSA => true,
-            MLDSA65_Ed25519 | MLDSA87_Ed448 => true,
-            SLHDSA128s | SLHDSA128f | SLHDSA256s => true,
-            MLKEM768_X25519 | MLKEM1024_X448 =>
-                true,
+            MLDSA65_Ed25519 | MLDSA87_Ed448 => pqc,
+            SLHDSA128s | SLHDSA128f | SLHDSA256s => pqc,
+            MLKEM768_X25519 | MLKEM1024_X448 => pqc,
             ElGamalEncrypt | ElGamalEncryptSign |
             Private(_) | Unknown(_)
                 => false,
