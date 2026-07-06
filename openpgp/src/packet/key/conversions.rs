@@ -310,7 +310,13 @@ macro_rules! create_role_conversions {
 }
 
 macro_rules! create_conversions {
-    ( $Key:ident<$( $l:lifetime ),*> ) => {
+    ( $Key:ident ) => {
+        create_conversions!(@ $Key);
+    };
+    ( $Key:ident < $( $l:lifetime ),* > ) => {
+        create_conversions!(@ $Key $( $l ),*);
+    };
+    ( @ $Key:ident $( $l:lifetime ),* ) => {
         create_part_conversions!($Key<$($l ),* ; R> where R: KeyRole);
         create_role_conversions!($Key<$($l ),* >);
 
@@ -539,10 +545,10 @@ macro_rules! create_conversions {
     }
 }
 
-create_conversions!(Key<>);
-create_conversions!(Key4<>);
-create_conversions!(Key6<>);
-create_conversions!(KeyBundle<>);
+create_conversions!(Key);
+create_conversions!(Key4);
+create_conversions!(Key6);
+create_conversions!(KeyBundle);
 
 // A hack, since the type has to be an ident, which means that we
 // can't use <>.
