@@ -57,6 +57,8 @@ pub struct Keybox<'a> {
     previous_error: bool,
 }
 
+const MAX_RECORD_SIZE: usize = 16 * 1024 * 1024; // 16MB
+
 impl<'a> Keybox<'a> {
     fn read_next_record(&mut self) -> Result<KeyboxRecord> {
         // The first 4 bytes contain the record's length,
@@ -67,6 +69,10 @@ impl<'a> Keybox<'a> {
             .map_err(|e| Error::NotEnoughData(e.to_string()))?;
         // input holds at least 4 bytes, so this cannot fail.
         let len = u32::from_be_bytes(input[..4].try_into().unwrap()) as usize;
+
+        if len > MAX_RECORD_SIZE {
+            return Err(Error::LargeRecord(len).into());
+        }
 
         let content = self.reader.data_consume_hard(len)?;
 
@@ -465,6 +471,12 @@ pub enum Error {
     /// Invalid data
     #[error("Invalid data: {0}")]
     InvalidData(String),
+    /// Invalid record size
+    #[error("Invalid record size {0}")]
+    InvalidRecordSize(usize),
+    /// Too large record
+    #[error("Large Record: Size {0} exceeds maximum of {MAX_RECORD_SIZE}")]
+    LargeRecord(usize),
 }
 
 #[cfg(test)]
@@ -611,5 +623,72 @@ mod tests {
 
         assert!(matches!(kbx.next(), Some(Err(_))));
         assert!(matches!(kbx.next(), None));
+    }
+
+    #[test]
+    fn record_length_too_short() -> Result<()> {
+        // Create a minimal record with length 0.
+        let mut kbx = Vec::new();
+        let len: u32 = 0;
+        kbx.extend_from_slice(&len.to_be_bytes());
+        kbx.push(1);
+        kbx.push(1);
+
+        let mut keybox = Keybox::from_bytes(&kbx)?;
+        let record = keybox.read_next_record();
+
+        assert!(
+            matches!(
+                record,
+                Err(ref e) if matches!(e.downcast_ref(),
+                                       Some(Error::InvalidRecordSize(_)))),
+            "Got: {:?}", record.as_ref().map(|_| "<data>"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn record_too_big() -> Result<()> {
+        // Create a record exceeding the maximum length
+        let mut kbx = Vec::new();
+        let len: u32 = (MAX_RECORD_SIZE + 1) as u32;
+        kbx.extend_from_slice(&len.to_be_bytes());
+        kbx.push(1);
+        kbx.push(1);
+
+        let mut keybox = Keybox::from_bytes(&kbx)?;
+        let record = keybox.read_next_record();
+
+        assert!(
+            matches!(
+                record,
+                Err(ref e) if matches!(e.downcast_ref(),
+                                       Some(Error::LargeRecord(_)))),
+            "Got: {:?}", record.as_ref().map(|_| "<data>"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn record_length_invalid() -> Result<()> {
+        // Create a record with a length pointing into the header of the
+        // record.
+        let mut kbx = Vec::new();
+        let len: u32 = 3;
+        kbx.extend_from_slice(&len.to_be_bytes());
+        kbx.push(1);
+        kbx.push(1);
+
+        let mut keybox = Keybox::from_bytes(&kbx)?;
+        let record = keybox.read_next_record();
+
+        assert!(
+            matches!(
+                record,
+                Err(ref e) if matches!(e.downcast_ref(),
+                                       Some(Error::InvalidRecordSize(_)))),
+            "Got: {:?}", record.as_ref().map(|_| "<data>"));
+
+        Ok(())
     }
 }
