@@ -1,3 +1,7 @@
+//! Fuzz the keybox parser - Keybox::from_bytes()
+//!
+//! Starting from a valid keybox file, load the file and walk through
+//! it's content - even if it is invalid - without crashing.
 #![no_main]
 
 use libfuzzer_sys::{Corpus, fuzz_target};
