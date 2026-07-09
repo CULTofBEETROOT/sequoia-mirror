@@ -13,6 +13,31 @@ pub mod symmetric;
 
 pub struct Backend(());
 
+#[ctor::ctor(unsafe)]
+fn openssl_init() {
+    // Older versions of OpenSSL register an atexit handler that calls
+    // OPENSSL_cleanup to free some resources.  This can lead to a
+    // crash if another thread is still using OpenSSL when the atexit
+    // handler is invoked.
+    //
+    // Happily, this is no longer automatically called:
+    //
+    //   https://openssl-library.org/post/2026-03-10-remove-atexit
+    //
+    // But the version of OpenSSL shipped in Debian Trixie (3.5.5)
+    // still calls it.
+    //
+    // We use this mechanism to call OPENSSL_init_ssl (hopefully)
+    // first so that the atexit handlers are not registered.
+    use openssl_sys::OPENSSL_init_ssl;
+    use openssl_sys::OPENSSL_INIT_NO_ATEXIT;
+
+    unsafe {
+        OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT,
+                         std::ptr::null());
+    }
+}
+
 impl super::interface::Backend for Backend {
     fn backend() -> String {
         format!("OpenSSL {}",
