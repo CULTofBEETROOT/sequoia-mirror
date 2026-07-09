@@ -16,20 +16,41 @@ cargo install cargo-fuzz
 
 ## Running fuzz targets
 
-Run fuzz targets from the `openpgp/` directory (not from `openpgp/fuzz/`).
-
-Examples:
+Run fuzz targets from the `openpgp/` directory (not from
+`openpgp/fuzz/`). Note: you need to run these with the nightly
+option. On macOS with homebrew installed, you may need to set the path
+prefix as follows:
 
 ```bash
-cargo fuzz run cert_from_bytes fuzz/corpus/cert_from_bytes
-cargo fuzz run key_packet_from_bytes fuzz/corpus/key_packet_from_bytes
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+
+By default, `cargo-fuzz` uses `fuzz/corpus/<target-name>` as the corpus
+directory for a target.  Additional corpus directories can be supplied after
+the target name when needed.
+
+Examples that reply on this default include:
+
+```bash
+cargo fuzz run cert_from_bytes
+cargo fuzz run key_packet_from_bytes
+```
+
+Optionally the corpus directory can be specified, here is an example
+with two corpus folders.
+
+```bash
+cargo fuzz run key_packet_from_bytes \
+  fuzz/corpus/key_packet_from_bytes \
+  fuzz/corpus/cert_from_bytes \
+  -- -max_total_time=30
 ```
 
 To limit execution time during local experimentation, pass libFuzzer options
 after `--`:
 
 ```bash
-cargo fuzz run key_packet_from_bytes fuzz/corpus/key_packet_from_bytes -- -max_total_time=30
+cargo fuzz run key_packet_from_bytes -- -max_total_time=30
 ```
 
 (`-max_total_time` specifies time to run in seconds before giving up.)
@@ -44,10 +65,19 @@ cargo run -p sequoia-openpgp --example generate_key_seeds
 
 This currently creates:
 
-```
+```bash
 fuzz/corpus/cert_from_bytes/
 fuzz/corpus/key_packet_from_bytes/
 ```
+
+This script to populate the fuzz targets corpora is augmented with:
+
+```bash
+bash openpgp/fuzz/scripts/populate-parser-corpora.sh
+```
+
+This is safe to run more than once, once is enough unless the fuzzing
+runs in a new or cleaned environment.
 
 The generated inputs are valid OpenPGP objects (certificates and key packets).
 They provide useful starting points for fuzzing so that mutations explore
