@@ -16,11 +16,38 @@ fn main() {
 /// parameters and is used by OpenSSL backend to enable or disable
 /// algorithms available by the current environment.
 fn include_openssl_conf() {
+    let max_version = 20;
+    let values = std::iter::once(1).chain(3..=max_version)
+        .map(|v| format!("\"{}\"", v))
+        .collect::<Vec<_>>()
+        .join(", ");
+    println!("cargo:rustc-check-cfg=cfg(opensslmajorversion, values({}))",
+             values);
+
+    if ! cfg!(feature = "crypto-openssl") {
+        return;
+    }
+
     if let Ok(vars) = env::var("DEP_OPENSSL_CONF") {
         for var in vars.split(',') {
             println!("cargo:rustc-cfg=osslconf=\"{}\"", var);
         }
     }
+
+    // This only works if we explicitly depend on openssl-sys.
+    let version = env::var("DEP_OPENSSL_VERSION_NUMBER")
+        .expect("Can get openssl version number");
+
+    let version = u64::from_str_radix(&version, 16)
+        .expect("Valid OpenSSL version");
+
+    let major = version / 0x100_00_00_0;
+    if major > max_version {
+        panic!("Hi from the past.  That's a lot of OpenSSL releases!  \
+                Update this code");
+    }
+
+    println!("cargo:rustc-cfg=opensslmajorversion=\"{}\"", major);
 }
 
 /// Builds the index of the test data for use with the `::tests`
