@@ -21,6 +21,19 @@ fn include_openssl_conf() {
             println!("cargo:rustc-cfg=osslconf=\"{}\"", var);
         }
     }
+
+    // This only works if we explicitly depend on openssl-sys.
+    let version = env::var("DEP_OPENSSL_VERSION_NUMBER")
+        .expect("Can get openssl version number");
+
+    let version = u64::from_str_radix(&version, 16)
+        .expect("Valid OpenSSL version");
+
+    let major = version / 0x100_00_00_0;
+
+    println!("cargo:rustc-check-cfg=cfg(opensslmajorversion, \
+              values(\"1\", \"3\", \"4\", \"5\", \"6\", \"7\"))");
+    println!("cargo:rustc-cfg=opensslmajorversion=\"{}\"", major);
 }
 
 /// Builds the index of the test data for use with the `::tests`
