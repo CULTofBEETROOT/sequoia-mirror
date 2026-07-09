@@ -4,6 +4,13 @@
 #+STARTUP: content hidestars
 
 
+* Changes in 2.4.1
+** Notable fixes
+   - When compiling against OpenSSL v3, configure the OpenSSL library
+     to not use atexit handlers to clean up OpenSSL's internal state.
+     This can lead to a crash if the OpenSSL cleanup handlers run
+     while other threads are still using OpenSSL.
+
 * Changes in 2.4.0
 ** Notable changes
    - This version adds support for post-quantum cryptography as
@@ -117,8 +124,6 @@
    - PacketParser::processing_csf_message
    - MessageStructure::processed_csf_message
    - Verifier::processing_csf_message
-
-** New functionality
    - CertBuilder::set_encryption_algorithm
    - CertBuilder::set_signing_algorithm
 
