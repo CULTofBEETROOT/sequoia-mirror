@@ -223,6 +223,7 @@ impl Descriptor {
     fn start(&self, external: bool)
         -> Result<(SocketAddr, bool, Option<JoinHandle<Result<()>>>)>
     {
+        let external = false;
         let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
         let addr = listener.local_addr()?;
 
