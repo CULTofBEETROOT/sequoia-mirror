@@ -50,8 +50,8 @@
 //!
 //! To create a trust signature, you create a signature whose [type]
 //! is either [GenericCertification], [PersonaCertification],
-//! [CasualCertification], or [PositiveCertification], and add a
-//! [Trust Signature] subpacket using, for instance, the
+//! [CasualCertification], [PositiveCertification], or [DirectKey],
+//! and add a [Trust Signature] subpacket using, for instance, the
 //! [`SignatureBuilder::set_trust_signature`] method.
 //!
 //!   [type]: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.1
@@ -59,6 +59,7 @@
 //!   [PersonaCertification]: crate::types::SignatureType::PersonaCertification
 //!   [CasualCertification]: crate::types::SignatureType::CasualCertification
 //!   [PositiveCertification]: crate::types::SignatureType::PositiveCertification
+//!   [DirectKey]: crate::types::SignatureType::DirectKey
 //!   [Trust Signature]: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.21
 //!   [`SignatureBuilder::set_trust_signature`]: crate::packet::signature::SignatureBuilder::set_trust_signature()
 //!
@@ -810,15 +811,16 @@ impl RegexSet {
     ///
     /// If the signature is not a valid trust signature (its [type] is
     /// [GenericCertification], [PersonaCertification],
-    /// [CasualCertification], or [PositiveCertification], and the
-    /// [Trust Signature] subpacket is present), this returns an
-    /// error.
+    /// [CasualCertification], [PositiveCertification], or [DirectKey],
+    /// and the [Trust Signature] subpacket is present), this returns
+    /// an error.
     ///
     ///   [type]: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.1
     ///   [GenericCertification]: crate::types::SignatureType::GenericCertification
     ///   [PersonaCertification]: crate::types::SignatureType::PersonaCertification
     ///   [CasualCertification]: crate::types::SignatureType::CasualCertification
     ///   [PositiveCertification]: crate::types::SignatureType::PositiveCertification
+    ///   [DirectKey]: crate::types::SignatureType::DirectKey
     ///
     /// By default, strings that don't pass a sanity check (in
     /// particular, include Unicode control characters) never match.
@@ -894,10 +896,11 @@ impl RegexSet {
             PersonaCertification => (),
             CasualCertification => (),
             PositiveCertification => (),
+            DirectKey => (),
             t => return Err(
                 Error::InvalidArgument(
                     format!(
-                        "Expected a certification signature, found a {}",
+                        "Expected a certification or direct key signature, found a {}",
                         t))
                     .into()),
         }
@@ -2176,6 +2179,34 @@ mod tests {
         assert!(re.is_match("x"));
         assert!(re.is_match("xyx"));
         assert!(re.is_match(""));
+
+        Ok(())
+    }
+
+    #[test]
+    fn regex_set_from_direct_key_signature() -> Result<()> {
+        use crate::cert::CertBuilder;
+
+        let (alice, _) =
+            CertBuilder::general_purpose(Some("Alice <alice@example.org>")).generate()?;
+        let mut alices_signer = alice
+            .primary_key()
+            .key()
+            .clone()
+            .parts_into_secret()?
+            .into_keypair()?;
+
+        let (ca, _) =
+            CertBuilder::general_purpose(Some("OpenPGP CA <openpgp-ca@example.com>")).generate()?;
+
+        let trust_signature = SignatureBuilder::new(SignatureType::DirectKey)
+            .set_trust_signature(1, 120)?
+            .set_regular_expression("<[^>]+[@.]example\\.com>$")?
+            .sign_direct_key(&mut alices_signer, ca.primary_key().key())?;
+
+        let re = RegexSet::from_signature(&trust_signature)?;
+        assert!(re.is_match("Alice <alice@example.com>"));
+        assert!(!re.is_match("Alice <alice@example.org>"));
 
         Ok(())
     }
