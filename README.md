@@ -1,14 +1,15 @@
 Sequoia PGP
 ===========
 
-Sequoia is a complete implementation of OpenPGP as defined by [RFC
-9580] as well as the deprecated OpenPGP as defined by [RFC 4880], and
-various related standards.
+Sequoia is an implementation of OpenPGP as defined by [RFC 9580] and
+[RFC 9980] as well as the deprecated OpenPGP as defined by [RFC 4880],
+and various related standards.
 
 OpenPGP is a standard by the IETF.  It was derived from the PGP
 software, which was created by Phil Zimmermann in 1991.
 
 [RFC 9580]: https://www.rfc-editor.org/rfc/rfc9580.html
+[RFC 9980]: https://www.rfc-editor.org/rfc/rfc9980.html
 [RFC 4880]: https://tools.ietf.org/html/rfc4880
 
 Sequoia consists of several crates, providing both a low-level and a
@@ -19,8 +20,9 @@ Low-level API
 
 The low-level API can be found in the [openpgp](./openpgp) crate.
 This crate aims to provide a complete implementation of OpenPGP as
-defined by [RFC 9580] as well as the deprecated OpenPGP as defined by
-[RFC 4880].  This includes support for unbuffered message processing.
+defined by [RFC 9580] and [RFC 9980] as well as the deprecated OpenPGP
+as defined by [RFC 4880].  This includes support for unbuffered
+message processing.
 
 The [openpgp](./openpgp) crate tries hard to avoid dictating how
 OpenPGP should be used.  This doesn't mean that we don't have opinions
@@ -35,37 +37,39 @@ historical reasons, some are maintained in this repository, and some
 are maintained outside of this repository.  These are the most
 important crates:
 
-  - [sequoia-cert-store](http://docs.rs/sequoia-cert-store): A store
+  - [`sequoia-cert-store`](http://docs.rs/sequoia-cert-store): A store
     for certificates.
-  - [sequoia-keystore](http://docs.rs/sequoia-keystore): A store for
+  - [`sequoia-keystore`](http://docs.rs/sequoia-keystore): A store for
     secret keys.
-  - [sequoia-wot](http://docs.rs/sequoia-wot): An implementation of
+  - [`sequoia-wot`](http://docs.rs/sequoia-wot): An implementation of
     the Web-of-Trust, a PKI engine.
-  - [sequoia-policy-config](http://docs.rs/sequoia-policy-config):
+  - [`sequoia-policy-config`](http://docs.rs/sequoia-policy-config):
     Loads cryptographic policies from files.
-  - [sequoia-net](./net): Network services for OpenPGP.
-  - [sequoia-ipc](./ipc): Low-level IPC services for Sequoia and
-    GnuPG.
-  - [sequoia-autocrypt](./autocrypt): Low-level Autocrypt support.
+  - [`sequoia-net`](./net): Network services for OpenPGP.
+  - [`sequoia-ipc`](./ipc): Low-level IPC services for Sequoia.
+  - [`sequoia-autocrypt`](./autocrypt): Low-level Autocrypt support.
 
 High-level API
 --------------
 
-As of this writing, we still don't have a single, simple, easy to use
-interface for Sequoia.  This is something we want to work on in the
-near term.  The plan is to extract the functionality from `sq` and put
-it into a crate which will become the high-level interface.
+The high-level API is implemented in the [`sequoia`] crate.  The crate
+aims to be usable by developers without deep understanding of the
+OpenPGP standard or the Sequoia ecosystem.  To achieve this, it is
+highly opinionated.  Nevertheless, because it builds on and reuses the
+low-level data structures, it is often possible to tweak its behavior
+when the semantics of the high-level functionality do not match the
+requirements.
 
-We maintain a [SOP] implementation called [sequoia-sop].  SOP is a
-high level interface, but has a very narrow scope.
+  [`sequoia`]: https://gitlab.com/sequoia-pgp/sequoia-sq/-/tree/main/lib
 
-[SOP]: https://datatracker.ietf.org/doc/draft-dkg-openpgp-stateless-cli/
-[sequoia-sop]: http://docs.rs/sequoia-sop
+[`sequoia`]'s interface is similar to [`sq`]'s interface.
+
+  [`sq`]: https://gitlab.com/sequoia-pgp/sequoia-sq/-/tree/main/tool
 
 Command line interface
 ----------------------
 
-We maintain `sq`, a command line interface use OpenPGP conveniently
+We maintain [`sq`], a command line interface use OpenPGP conveniently
 from the command line.  See the [sq user documentation] for
 instructions, or browse the [manual pages].  `sq` is packaged for most
 Linux distributions and should be easy to install.
@@ -77,16 +81,14 @@ We also maintain a minimalist command-line verification tool for
 detached signatures called ['sqv'].
 
 ['sqv']: https://gitlab.com/sequoia-pgp/sequoia-sqv
- The foreign function interface provides a C API for some of Sequoia's
-low- and high-level interfaces, but it is incomplete.
 
 Sequoia for GnuPG users
 -----------------------
 
 The Sequoia crates and `sq` provide good compatibility with existing
 GnuPG installations.  For example, `sq` will discover all certificates
-in GnuPG's keyrings, and can make of secret keys managed by
-`gpg-agent`, all without additional configuration.
+in GnuPG's keyrings, and can use secret keys managed by `gpg-agent`,
+all without additional configuration.
 
 For anyone directly or indirectly using GnuPG who wants to migrate to
 Sequoia, there is a re-implementation and drop-in replacement of `gpg`
@@ -112,17 +114,15 @@ project.  Please see [this guide] on how to use Sequoia in a library
 crate, or how to control the cryptographic backend used by Sequoia.
 
 ```toml
-sequoia-openpgp = "*"
+sequoia-openpgp = "2"
 ```
 
-Note that we depend on a number of C libraries, which must be present
-along with their development packages. See **Requirements** section
-below.
+Sequoia supports a number of different crypto backend.  Some of those
+use C libraries, which must be present.  When building their
+development packages also need to be installed. See the
+**Requirements** section below.
 
-Besides being a Rust crate, we also provide a C API, and bindings to
-other languages, see **Bindings**.
-
-[this guide]: openpgp/README.md#feature-flags
+[this guide]: ./openpgp/README.md#feature-flags
 
 Features
 --------
@@ -131,20 +131,20 @@ Sequoia is currently supported on a variety of platforms.
 
 ### Cryptography
 
-By default it uses the Nettle cryptographic library (version 3.9.1 or
-up) but it can be used with different cryptographic backends. At the
-time of writing, it also supports the native Windows [Cryptographic
-API: Next Generation (CNG)].
+By default Sequoia uses the Nettle cryptographic library (version
+3.9.1 or up) but it can be used with different cryptographic backends
+including OpenSSL, Botan, Rust Crypto and the native Windows
+[Cryptographic API: Next Generation (CNG)].
 
-Various backends can be enabled via Cargo features,
-e.g. `crypto-nettle` or `crypto-cng` and exactly one can be enabled at
-a time.
+The desired backend is enabled via Cargo features,
+e.g. `crypto-nettle` or `crypto-cng`, and exactly one can be enabled
+at a time.
 
 Currently, the `crypto-nettle` feature is enabled by default -
 regardless of the operating system used. If you choose to enable a
 different backend, please make sure to disable the default first.
 
-See [openpgp/README.md#features-flags] for more information.
+See [this guide] for more information.
 
 Building Sequoia
 ================
@@ -153,40 +153,39 @@ Using Cargo
 -----------
 
 To build all Sequoia components, simply execute `cargo build
-[--release] --all`.  Individual components may be built independently,
-e.g. to build `sq`, run `cargo build [--release] -p sequoia-sq`, or
-build `sequoia-openpgp-ffi` to build a shared object with the C API.
+[--release] --all`.
 
-## Requirements and MSRV
+## Requirements
 
-The minimum supported Rust version (MSRV) is 1.67.  Sequoia aims to always be
-compatible with the version included in [Debian testing], the MSRV follows what
-is available there.  Increasing the MSRV will be accompanied by a raise in
-the minor version of all crates.
+Sequoia aims to be compatible with the version of `rustc` included in
+[Debian testing].  Consequently, the MSRV tries to follow what is
+available there.  Increasing the MSRV will be accompanied by a raise
+in the minor version of all crates.
 
 [Debian testing]: https://tracker.debian.org/pkg/rustc
 
-Building Sequoia requires a few libraries, notably the Nettle cryptographic library
-version 3.9.1 or up.  Please see below for OS-specific commands to install the
-needed libraries:
-
-### Debian
-
-```shell
-# apt install cargo clang git nettle-dev pkg-config libssl-dev
-```
+Building Sequoia may require additional libraries.  These primarily
+depend on the cryptographic backend that you choose to use.  If you
+use `sequoia-net`, then you currently also need OpenSSL.  Please see
+below for OS-specific commands to install the needed libraries when
+using Nettle, the default cryptographic backend.
 
 Notes:
 
-  - You need at least `rustc` version 1.79.  The version of Rust
-    included in Debian 13 (trixie) is fine.  You can use [rustup] if
-    your distribution only includes an older Rust version.
+  - Make sure your Rust compiler is new enough.  You can use [rustup]
+    if your distribution only includes an older Rust version.
   - You need at least Nettle 3.9.1.  Debian 13 (trixie) and up is
     fine.
   - `libssl-dev` is only required by the `sequoia-net` crate and
     crates depending on it (`sq`).
 
 [rustup]: https://rustup.rs/
+
+### Debian
+
+```shell
+# apt install cargo clang git nettle-dev pkg-config libssl-dev
+```
 
 ### Arch Linux
 
@@ -199,11 +198,6 @@ Notes:
 ```shell
 # dnf install cargo clang git nettle-devel openssl-devel
 ```
-
-Notes:
-
-  - `openssl-devel` is only required by the `sequoia-net` crate and
-    crates depending on it (`sq`).
 
 ### NixOS
 
@@ -268,18 +262,13 @@ Please make sure to preserve line-endings when cloning the Sequoia
 repository.  The relevant git option is `core.autocrlf` which must be
 set to `false`.
 
-Due to Windows Runners being somewhat slow, we only run them
-automatically for MRs, which contain `windows` in the branch
-name. Please name your branch accordingly when contributing a patch
-which might affect Windows.
-
 #### CNG
 
 On Windows Sequoia PGP can use one of several cryptographic backends.
 The recommended one is Windows Cryptography API (CNG) as it doesn't
-require any additional dependencies.  The standard tooling required to
-build native dependencies ([Visual Studio Build Tools][]) is still
-needed.
+require as many additional dependencies.  The standard tooling
+required to build native dependencies ([Visual Studio Build Tools][])
+is still needed.
 
 [Visual Studio Build Tools]: https://visualstudio.microsoft.com/downloads?q=build+tools
 
@@ -313,13 +302,14 @@ command is the same as for the CNG backend.
 Sequoia PGP can also be built for 32-bit Windows.  See
 `.gitlab-ci.yml` for detailed example.
 
-Additionally, the experimental Rust backend can also be used on
-Windows. See the `sequoia-openpgp` crate's documentation for details.
+Additionally, the Rust backend can also be used on Windows. See the
+`sequoia-openpgp` crate's documentation for details.
 
 Getting help
 ============
 
-Sequoia's documentation is hosted here: https://docs.sequoia-pgp.org/
+Links to Sequoia's documentation are here:
+https://sequoia-pgp.org/docs/
 
 You can join our mailing list by sending a mail to
 devel-subscribe@lists.sequoia-pgp.org.
