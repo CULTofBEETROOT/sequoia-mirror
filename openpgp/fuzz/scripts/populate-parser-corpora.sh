@@ -13,7 +13,9 @@ set -euo pipefail
 
 ROOT="${1:-.}"
 DATA="$ROOT/openpgp/tests/data"
-CORPUS="$ROOT/openpgp/fuzz/corpus"
+# Destination corpus.  Defaults in-tree, but ./fuzz-all.sh sets FUZZ_CORPUS_OUT
+# to an out-of-tree directory so running the fuzzers never modifies the source.
+CORPUS="${FUZZ_CORPUS_OUT:-$ROOT/openpgp/fuzz/corpus}"
 
 if ! test -e "$DATA"
 then

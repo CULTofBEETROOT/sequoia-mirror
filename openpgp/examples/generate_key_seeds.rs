@@ -53,8 +53,14 @@ use openpgp::serialize::stream::*;
 const P: &StandardPolicy = &StandardPolicy::new();
 const MESSAGE: &[u8] = b"sequoia fuzz seed corpus message";
 
+/// Base corpus directory.  Defaults to the in-tree `openpgp/fuzz/corpus`, but
+/// `./fuzz-all.sh` sets `FUZZ_CORPUS_OUT` to an out-of-tree directory so that
+/// running the fuzzers never modifies the source tree.
 fn corpus(target: &str) -> PathBuf {
-    PathBuf::from("openpgp/fuzz/corpus").join(target)
+    let base = std::env::var_os("FUZZ_CORPUS_OUT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("openpgp/fuzz/corpus"));
+    base.join(target)
 }
 
 fn write_seed(dir: &Path, name: &str, bytes: &[u8]) -> Result<()> {
