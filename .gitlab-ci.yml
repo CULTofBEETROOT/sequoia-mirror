@@ -35,7 +35,8 @@ fuzzing:
 # are covered automatically once their fuzz targets land.
 .fuzz-base:
   image: registry.sequoia-pgp.org/sequoia-pgp/build-docker-image/fuzz
-  stage: test
+  stage: build
+  needs: ["check"]
   variables:
     ASAN_OPTIONS: "detect_leaks=0"
     CARGO_BUILD_JOBS: "4"
