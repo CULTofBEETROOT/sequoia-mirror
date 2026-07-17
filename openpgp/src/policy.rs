@@ -152,6 +152,16 @@ pub trait Policy : fmt::Debug + Send + Sync {
         Err(Error::PolicyViolation(
             "By default all packets are rejected.".into(), None).into())
     }
+
+    /// Evaluates whether the given asymmetric algorithm is permitted.
+    ///
+    /// This is useful when the full key is not available, but the algorithm
+    /// or its approximate strength is known (e.g., heuristically derived from
+    /// a standalone signature's MPIs).
+    fn asymmetric_algorithm(&self, _algo: AsymmetricAlgorithm) -> Result<()> {
+        Err(Error::PolicyViolation(
+            "By default all asymmetric algorithms are rejected.".into(), None).into())
+    }
 }
 
 /// Whether the signed data requires a hash algorithm with collision
@@ -1518,6 +1528,21 @@ impl<'a> Policy for StandardPolicy<'a> {
         Ok(())
     }
 
+    fn asymmetric_algorithm(&self, algo: AsymmetricAlgorithm) -> Result<()> {
+        let time = self.time.unwrap_or_else(Timestamp::now);
+
+        self.asymmetric_algos.check(algo, time, None)
+            .context("Policy rejected asymmetric algorithm")?;
+        if self.asymmetric_algorithm(algo).is_err() {
+            return Err(anyhow::Error::from(
+                Error::PolicyViolation(
+                    format!("Signature algorithm {:?} not allowed", algo), None))
+                       .context("Policy rejected disable public key algorithm"));
+        }
+
+        Ok(())
+    }
+
     fn key(&self, ka: &ValidErasedKeyAmalgamation<key::PublicParts>)
         -> Result<()>
     {
@@ -1925,6 +1950,9 @@ impl Policy for NullPolicy {
         Ok(())
     }
 
+    fn asymmetric_algorithm(&self, _algo: AsymmetricAlgorithm) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
