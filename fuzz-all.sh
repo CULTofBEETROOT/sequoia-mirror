@@ -22,6 +22,8 @@
 #   FUZZ_MODE               replay | timed          (default: timed)
 #   FUZZ_TIME_PER_TARGET    seconds, timed mode     (default: 60; or $1 if numeric)
 #   FUZZ_RSS_LIMIT_MB       libFuzzer RSS ceiling   (default: 2048)
+#   FUZZ_VERBOSITY          libFuzzer -verbosity: 0 = quiet (per-target stats +
+#                           PASS/FAIL only); 1 = full progress (default: 0)
 #   CARGO_BUILD_JOBS        compile parallelism / peak-RAM lever (default: 4)
 #   FUZZ_SKIP               space-separated target names to skip (e.g. a target
 #                           with a known-open bug that would fail the gate)
@@ -51,6 +53,11 @@ if test -z "${FUZZ_RSS_LIMIT_MB:-}"
 then
     FUZZ_RSS_LIMIT_MB=2048
 fi
+if test -z "${FUZZ_VERBOSITY:-}"
+then
+    FUZZ_VERBOSITY=0
+fi
+export FUZZ_VERBOSITY   # seen by the seed hook (generator + populate script)
 if test -z "${CARGO_BUILD_JOBS:-}"
 then
     CARGO_BUILD_JOBS=4
@@ -174,16 +181,30 @@ for crate in $crates; do
                 continue
             fi
             echo "----- replaying $crate/$target over $n corpus file(s) -----"
-            RUST_BACKTRACE=1 cargo +nightly fuzz run "$target" $corpora -- \
-                -artifact_prefix="$art_dir/" \
-                -runs=0 -rss_limit_mb="$FUZZ_RSS_LIMIT_MB" || status=1
+            if RUST_BACKTRACE=1 cargo +nightly fuzz run "$target" $corpora -- \
+                -artifact_prefix="$art_dir/" -verbosity="$FUZZ_VERBOSITY" \
+                -print_final_stats=1 \
+                -runs=0 -rss_limit_mb="$FUZZ_RSS_LIMIT_MB"
+            then
+                echo "PASS $crate/$target"
+            else
+                echo "FAIL $crate/$target (crash; artifact under $art_dir/)"
+                status=1
+            fi
             ;;
           timed)
             echo "----- fuzzing $crate/$target for ${FUZZ_TIME_PER_TARGET}s -----"
-            RUST_BACKTRACE=1 cargo +nightly fuzz run "$target" $corpora -- \
-                -artifact_prefix="$art_dir/" \
+            if RUST_BACKTRACE=1 cargo +nightly fuzz run "$target" $corpora -- \
+                -artifact_prefix="$art_dir/" -verbosity="$FUZZ_VERBOSITY" \
+                -print_final_stats=1 \
                 -max_total_time="$FUZZ_TIME_PER_TARGET" \
-                -rss_limit_mb="$FUZZ_RSS_LIMIT_MB" || status=1
+                -rss_limit_mb="$FUZZ_RSS_LIMIT_MB"
+            then
+                echo "PASS $crate/$target"
+            else
+                echo "FAIL $crate/$target (crash; artifact under $art_dir/)"
+                status=1
+            fi
             ;;
           *)
             echo "ERROR: unknown FUZZ_MODE='$FUZZ_MODE' (use replay|timed)" >&2

@@ -17,6 +17,11 @@ DATA="$ROOT/openpgp/tests/data"
 # to an out-of-tree directory so running the fuzzers never modifies the source.
 CORPUS="${FUZZ_CORPUS_OUT:-$ROOT/openpgp/fuzz/corpus}"
 
+# Per-file detail only when FUZZ_VERBOSITY is set and non-zero; otherwise print
+# just a one-line summary at the end.
+if [ "${FUZZ_VERBOSITY:-0}" != "0" ]; then VERBOSE=1; else VERBOSE=0; fi
+COPIED=0
+
 if ! test -e "$DATA"
 then
     echo "$DATA is missing.  Are you really running the script from the root of the repository?" >&2
@@ -39,7 +44,10 @@ copy_seed() {
 
   mkdir -p "$dst_dir"
   cp "$src" "$dst"
-  echo "$target <= $src_rel -> $dst_name"
+  COPIED=$((COPIED + 1))
+  if [ "$VERBOSE" = 1 ]; then
+    echo "$target <= $src_rel -> $dst_name"
+  fi
 }
 
 # Low-level packet parser: broad packet coverage.
@@ -86,6 +94,7 @@ copy_seed rawcert_vs_certparser keys/lutz.pgp
 copy_seed rawcert_vs_certparser keys/dkg.pgp
 copy_seed rawcert_vs_certparser keys/testy-private.pgp
 
-echo
-echo "Corpus population complete:"
-find "$CORPUS" -maxdepth 2 -type f | sort
+echo "populate-parser-corpora: copied $COPIED fixture(s) into $CORPUS"
+if [ "$VERBOSE" = 1 ]; then
+    find "$CORPUS" -maxdepth 2 -type f | sort
+fi

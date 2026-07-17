@@ -63,10 +63,27 @@ fn corpus(target: &str) -> PathBuf {
     base.join(target)
 }
 
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+
+static SEED_FILES: AtomicUsize = AtomicUsize::new(0);
+static SEED_BYTES: AtomicU64 = AtomicU64::new(0);
+
+/// Per-file detail is printed only when FUZZ_VERBOSITY is a positive integer;
+/// otherwise the generator prints just the one-line summary from main().
+fn verbose() -> bool {
+    std::env::var("FUZZ_VERBOSITY").ok()
+        .and_then(|v| v.trim().parse::<i64>().ok())
+        .map_or(false, |n| n > 0)
+}
+
 fn write_seed(dir: &Path, name: &str, bytes: &[u8]) -> Result<()> {
     fs::create_dir_all(dir)?;
     fs::write(dir.join(name), bytes)?;
-    eprintln!("  {:>7}  {}/{}", bytes.len(), dir.display(), name);
+    SEED_FILES.fetch_add(1, Ordering::Relaxed);
+    SEED_BYTES.fetch_add(bytes.len() as u64, Ordering::Relaxed);
+    if verbose() {
+        eprintln!("  {:>7}  {}/{}", bytes.len(), dir.display(), name);
+    }
     Ok(())
 }
 
@@ -172,7 +189,7 @@ fn main() -> Result<()> {
 
     // --- Distribute seeds to each target's corpus ------------------------
 
-    eprintln!("cert seeds:");
+    if verbose() { eprintln!("cert seeds:"); }
     write_seed(&corpus("cert_from_bytes"), "cert-public.pgp", &cert_public)?;
     write_seed(&corpus("cert_from_bytes"), "cert-secret.tsk", &cert_secret)?;
     write_seed(&corpus("cert_from_bytes"), "cert-armored.asc", &cert_armored)?;
@@ -191,7 +208,7 @@ fn main() -> Result<()> {
     // form.  `.key()` is public-typed, so `parts_into_secret()` is what pulls in
     // the secret MPIs / S2K structure that make the secret packets worth
     // fuzzing; we emit those only when the secret is actually present.
-    eprintln!("key-packet seeds:");
+    if verbose() { eprintln!("key-packet seeds:"); }
     let kp_dir = corpus("key_packet_from_bytes");
 
     let primary = cert.primary_key().key().clone();
@@ -217,7 +234,7 @@ fn main() -> Result<()> {
     }
 
     // Message-shaped seeds.
-    eprintln!("message seeds:");
+    if verbose() { eprintln!("message seeds:"); }
     write_seed(&corpus("message_from_bytes"), "literal.pgp", &literal)?;
     write_seed(&corpus("message_from_bytes"), "signed-inline.pgp", &signed)?;
     write_seed(&corpus("message_from_bytes"), "encrypted.pgp", &encrypted)?;
@@ -230,6 +247,10 @@ fn main() -> Result<()> {
     write_seed(&corpus("csf_verify_from_bytes"), "signed-cleartext.asc", &cleartext)?;
     write_seed(&corpus("decrypt_from_bytes"), "encrypted.pgp", &encrypted)?;
 
-    eprintln!("done.");
+    eprintln!(
+        "generate_key_seeds: wrote {} seed files ({} bytes)",
+        SEED_FILES.load(Ordering::Relaxed),
+        SEED_BYTES.load(Ordering::Relaxed),
+    );
     Ok(())
 }
