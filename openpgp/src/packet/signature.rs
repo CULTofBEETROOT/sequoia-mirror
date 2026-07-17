@@ -151,6 +151,7 @@ use crate::packet::signature::subpacket::{
     SubpacketTag,
     SubpacketValue,
 };
+use crate::policy::AsymmetricAlgorithm;
 use crate::types::Timestamp;
 
 #[cfg(test)]
@@ -3628,6 +3629,86 @@ impl Signature {
         self.verify_digest_internal(
             signer.parts_as_public().role_as_unspecified(),
             Some(hash.into_digest()?.into()))
+    }
+
+
+    /// Heuristically determines the AsymmetricAlgorithm used to create this
+    /// signature based on the sizes of its Multi-Precision Integers (MPIs).
+    ///
+    /// Because MPIs drop leading zeros, the size is calculated using thresholds.
+    pub fn heuristic_asymmetric_algorithm(&self) -> Option<AsymmetricAlgorithm> {
+        use crate::crypto::mpi;
+        match self.mpis() {
+            mpi::Signature::RSA { s } => {
+                // MPIs drop leading zeros, so a 2048-bit key might produce
+                // a 2040-bit signature. We use ranges to round up.
+                let bits = s.value().len() * 8;
+
+                if bits <= 1024 {
+                    Some(AsymmetricAlgorithm::RSA1024)
+                } else if bits <= 2048 {
+                    Some(AsymmetricAlgorithm::RSA2048)
+                } else if bits <= 3072 {
+                    Some(AsymmetricAlgorithm::RSA3072)
+                } else {
+                    Some(AsymmetricAlgorithm::RSA4096)
+                }
+            },
+            mpi::Signature::DSA { r, .. } => {
+                // DSA signature sizes depend on 'q', not 'p'.
+                // q=160 (1024-bit p), q=224 (2048-bit p), q=256 (3072-bit p)
+                let q_bits = r.value().len() * 8;
+
+                if q_bits <= 160 {
+                    Some(AsymmetricAlgorithm::DSA1024)
+                } else if q_bits <= 224 {
+                    Some(AsymmetricAlgorithm::DSA2048)
+                } else if q_bits <= 256 {
+                    Some(AsymmetricAlgorithm::DSA3072)
+                } else {
+                    Some(AsymmetricAlgorithm::DSA4096)
+                }
+            },
+            mpi::Signature::EdDSA { .. } => {
+                Some(AsymmetricAlgorithm::Ed25519)
+            },
+            mpi::Signature::ECDSA { r, .. } => {
+                // The curve size roughly matches the size of 'r' and 's'
+                let bits = r.value().len() * 8;
+
+                if bits <= 256 {
+                    // We cannot tell NistP256 from BrainpoolP256 just from size,
+                    // but for policy checks, asserting it's a 256-bit curve is usually sufficient.
+                    Some(AsymmetricAlgorithm::NistP256)
+                } else if bits <= 384 {
+                    Some(AsymmetricAlgorithm::NistP384)
+                } else {
+                    Some(AsymmetricAlgorithm::NistP521)
+                }
+            },
+            mpi::Signature::Ed25519 { .. } => {
+                Some(AsymmetricAlgorithm::Ed25519)
+            },
+            mpi::Signature::Ed448 { .. } => {
+                Some(AsymmetricAlgorithm::Ed448)
+            },
+            mpi::Signature::MLDSA65_Ed25519 { .. } => {
+                Some(AsymmetricAlgorithm::MLDSA65_Ed25519)
+            },
+            mpi::Signature::MLDSA87_Ed448 { .. } => {
+                Some(AsymmetricAlgorithm::MLDSA87_Ed448)
+            },
+            mpi::Signature::SLHDSA128s { .. } => {
+                Some(AsymmetricAlgorithm::SLHDSA128s)
+            },
+            mpi::Signature::SLHDSA128f { .. } => {
+                Some(AsymmetricAlgorithm::SLHDSA128f)
+            },
+            mpi::Signature::SLHDSA256s { .. } => {
+                Some(AsymmetricAlgorithm::SLHDSA256s)
+            },
+            _ => None, // non-signature algorithms (ElGamal, MLKEM768) or Unknown
+        }
     }
 }
 
