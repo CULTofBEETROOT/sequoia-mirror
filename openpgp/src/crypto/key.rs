@@ -72,7 +72,100 @@ impl<R> Key6<SecretParts, R>
             }.into())
     }
 
-    /// Generates a new SLHDSA128s key.
+    /// Generates a new MLDSA65+ECDSA-NISTP384 key.
+    pub fn generate_mldsa65_ecdsa_nistp384() -> Result<Self> {
+        let (ecdsa_secret, ecdsa_public) = Backend::ecdsa_generate_key(Curve::NistP384)?;
+        let ecdsa_public: Box<[u8; 97]> = ecdsa_public.try_into().unwrap();
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa65_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384,
+            mpi::PublicKey::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA65_ECDSA_NISTP384 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLDSA87+ECDSA-NISTP521 key.
+    pub fn generate_mldsa87_ecdsa_nistp521() -> Result<Self> {
+        let (ecdsa_secret, ecdsa_public) = Backend::ecdsa_generate_key(Curve::NistP521)?;
+        let ecdsa_public: Box<[u8; 133]> = ecdsa_public.try_into().unwrap();
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa87_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521,
+            mpi::PublicKey::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA87_ECDSA_NISTP521 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLDSA65+ECDSA-BrainpoolP384 key.
+    pub fn generate_mldsa65_ecdsa_brainpoolp384() -> Result<Self> {
+        let (ecdsa_secret, ecdsa_public) = Backend::ecdsa_generate_key(Curve::BrainpoolP384)?;
+        let ecdsa_public: Box<[u8; 97]> = ecdsa_public.try_into().unwrap();
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa65_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384,
+            mpi::PublicKey::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA65_ECDSA_BrainpoolP384 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
+    /// Generates a new MLDSA87+ECDSA-BrainpoolP512 key.
+    pub fn generate_mldsa87_ecdsa_brainpoolp512() -> Result<Self> {
+        let (ecdsa_secret, ecdsa_public) = Backend::ecdsa_generate_key(Curve::BrainpoolP512)?;
+        let ecdsa_public: Box<[u8; 129]> = ecdsa_public.try_into().unwrap();
+
+        let (mldsa_secret, mldsa_public) = Backend::mldsa87_generate_key()?;
+
+        Self::with_secret(
+            crate::now(),
+            PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512,
+            mpi::PublicKey::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: ecdsa_public,
+                mldsa: mldsa_public,
+            },
+            mpi::SecretKeyMaterial::MLDSA87_ECDSA_BrainpoolP512 {
+                ecdsa: ecdsa_secret,
+                mldsa: mldsa_secret,
+            }
+            .into(),
+        )
+    }
+
+
+    /// Generates a new SLH-DSA-SHAKE-128s key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn generate_slhdsa128s() -> Result<Self> {
         let (secret, public) = Backend::slhdsa128s_generate_key()?;
 
@@ -83,7 +176,11 @@ impl<R> Key6<SecretParts, R>
             mpi::SecretKeyMaterial::SLHDSA128s { secret }.into())
     }
 
-    /// Generates a new SLHDSA128f key.
+    /// Generates a new SLH-DSA-SHAKE-128f key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn generate_slhdsa128f() -> Result<Self> {
         let (secret, public) = Backend::slhdsa128f_generate_key()?;
 
@@ -94,7 +191,11 @@ impl<R> Key6<SecretParts, R>
             mpi::SecretKeyMaterial::SLHDSA128f { secret }.into())
     }
 
-    /// Generates a new SLHDSA256s key.
+    /// Generates a new SLH-DSA-SHAKE-256s key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn generate_slhdsa256s() -> Result<Self> {
         let (secret, public) = Backend::slhdsa256s_generate_key()?;
 

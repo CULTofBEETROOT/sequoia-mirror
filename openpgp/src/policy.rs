@@ -1762,13 +1762,37 @@ pub enum AsymmetricAlgorithm {
     /// Composite signature algorithm using ML-DSA-87 and Ed448.
     MLDSA87_Ed448,
 
-    /// SLH-DSA signature algorithm 128 bit, small signatures.
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over NIST P-384.
+    MLDSA65_ECDSA_NISTP384,
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over NIST P-521.
+    MLDSA87_ECDSA_NISTP521,
+
+    /// Composite signature algorithm using ML-DSA-65 and ECDSA over brainpoolP384r1.
+    MLDSA65_ECDSA_BrainpoolP384,
+
+    /// Composite signature algorithm using ML-DSA-87 and ECDSA over brainpoolP512r1.
+    MLDSA87_ECDSA_BrainpoolP512,
+
+    /// SLH-DSA signature algorithm SHAKE 128 bit, small signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128s,
 
-    /// SLH-DSA signature algorithm 128 bit, fast signatures.
+    /// SLH-DSA signature algorithm SHAKE 128 bit, fast signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128f,
 
-    /// SLH-DSA signature algorithm 256 bit, small signatures.
+    /// SLH-DSA signature algorithm SHAKE 256 bit, small signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA256s,
 
     /// Composite KEM using ML-KEM-768 and X25519.
