@@ -67,13 +67,25 @@ pub enum PublicKeyAlgorithm {
     /// Composite signature algorithm using ML-DSA-87 and Ed448.
     MLDSA87_Ed448,
 
-    /// SLH-DSA signature algorithm 128 bit, small signatures.
+    /// SLH-DSA-SHAKE signature algorithm 128 bit, small signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128s,
 
-    /// SLH-DSA signature algorithm 128 bit, fast signatures.
+    /// SLH-DSA-SHAKE signature algorithm 128 bit, fast signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128f,
 
-    /// SLH-DSA signature algorithm 256 bit, small signatures.
+    /// SLH-DSA-SHAKE signature algorithm 256 bit, small signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA256s,
 
     /// Composite KEM using ML-KEM-768 and X25519.
@@ -309,11 +321,11 @@ impl fmt::Display for PublicKeyAlgorithm {
                 MLDSA87_Ed448 =>
                     f.write_str("Composite signature algorithm using ML-DSA-87 and Ed448"),
                 SLHDSA128s =>
-                    f.write_str("SLH-DSA signature algorithm 128 bit, small signatures"),
+                    f.write_str("SLH-DSA signature algorithm SHAKE 128 bit, small signatures"),
                 SLHDSA128f =>
-                    f.write_str("SLH-DSA signature algorithm 128 bit, fast signatures"),
+                    f.write_str("SLH-DSA signature algorithm SHAKE 128 bit, fast signatures"),
                 SLHDSA256s =>
-                    f.write_str("SLH-DSA signature algorithm 256 bit, small signatures"),
+                    f.write_str("SLH-DSA signature algorithm SHAKE 256 bit, small signatures"),
                 MLKEM768_X25519 =>
                     f.write_str("Composite KEM using ML-KEM-768 and X25519"),
                 MLKEM1024_X448 =>
