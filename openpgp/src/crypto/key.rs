@@ -72,7 +72,11 @@ impl<R> Key6<SecretParts, R>
             }.into())
     }
 
-    /// Generates a new SLHDSA128s key.
+    /// Generates a new SLH-DSA-SHAKE-128s key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn generate_slhdsa128s() -> Result<Self> {
         let (secret, public) = Backend::slhdsa128s_generate_key()?;
 
@@ -83,7 +87,11 @@ impl<R> Key6<SecretParts, R>
             mpi::SecretKeyMaterial::SLHDSA128s { secret }.into())
     }
 
-    /// Generates a new SLHDSA128f key.
+    /// Generates a new SLH-DSA-SHAKE-128f key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn generate_slhdsa128f() -> Result<Self> {
         let (secret, public) = Backend::slhdsa128f_generate_key()?;
 
@@ -94,7 +102,11 @@ impl<R> Key6<SecretParts, R>
             mpi::SecretKeyMaterial::SLHDSA128f { secret }.into())
     }
 
-    /// Generates a new SLHDSA256s key.
+    /// Generates a new SLH-DSA-SHAKE-256s key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn generate_slhdsa256s() -> Result<Self> {
         let (secret, public) = Backend::slhdsa256s_generate_key()?;
 

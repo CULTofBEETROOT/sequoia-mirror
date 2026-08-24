@@ -499,12 +499,16 @@ where R: KeyRole,
     }
 
     /// Creates an OpenPGP public key packet from existing
-    /// SLH-DSA-128s key material.
+    /// SLH-DSA-SHAKE-128s key material.
     ///
-    /// SLH-DSA-128s keys must be exactly 32 bytes.
+    /// SLH-DSA-SHAKE-128s keys must be exactly 32 bytes.
     ///
     /// The key will have its creation date set to `ctime` or the
     /// current time if `None` is given.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn import_public_slhdsa128s<T>(public: &[u8], ctime: T)
         -> Result<Self>
     where
@@ -520,12 +524,16 @@ where R: KeyRole,
     }
 
     /// Creates an OpenPGP public key packet from existing
-    /// SLH-DSA-128f key material.
+    /// SLH-DSA-SHAKE-128f key material.
     ///
-    /// SLH-DSA-128f keys must be exactly 32 bytes.
+    /// SLH-DSA-SHAKE-128f keys must be exactly 32 bytes.
     ///
     /// The key will have its creation date set to `ctime` or the
     /// current time if `None` is given.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn import_public_slhdsa128f<T>(public: &[u8], ctime: T)
         -> Result<Self>
     where
@@ -541,12 +549,16 @@ where R: KeyRole,
     }
 
     /// Creates an OpenPGP public key packet from existing
-    /// SLH-DSA-256s key material.
+    /// SLH-DSA-SHAKE-256s key material.
     ///
-    /// SLH-DSA-256s keys must be exactly 64 bytes.
+    /// SLH-DSA-SHAKE-256s keys must be exactly 64 bytes.
     ///
     /// The key will have its creation date set to `ctime` or the
     /// current time if `None` is given.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn import_public_slhdsa256s<T>(public: &[u8], ctime: T)
         -> Result<Self>
     where
