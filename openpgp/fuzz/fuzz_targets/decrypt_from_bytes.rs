@@ -7,7 +7,6 @@ use libfuzzer_sys::{Corpus, fuzz_target};
 use sequoia_openpgp as openpgp;
 use openpgp::{
     Cert,
-    Fingerprint,
     KeyHandle,
     Result,
     crypto::SessionKey,

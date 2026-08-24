@@ -23,6 +23,56 @@ fuzzing:
   rules:
     - !reference [.default_rules, rules]
 
+# --- Fuzzing smoke tests -----------------------------------------------------
+# Run the cargo-fuzz targets briefly, to catch regressions/crashes.  These use
+# the dedicated fuzz image (nightly + cargo-fuzz) from build-docker-image.
+#
+# The targets build with AddressSanitizer, so:
+#   * ASAN_OPTIONS=detect_leaks=0 avoids LeakSanitizer needing CAP_SYS_PTRACE;
+#     drop it (and grant the capability on the runner) to also hunt leaks.
+#   * ASan builds are memory-hungry — tune CARGO_BUILD_JOBS to the runner's RAM.
+# fuzz-all.sh auto-discovers every crate with a fuzz/ project.
+.fuzz-base:
+  image: registry.sequoia-pgp.org/sequoia-pgp/build-docker-image/fuzz
+  stage: build
+  needs: ["check"]
+  variables:
+    ASAN_OPTIONS: "detect_leaks=0"
+    CARGO_BUILD_JOBS: "4"
+    FUZZ_RSS_LIMIT_MB: "2048"
+    # Collect crash artifacts from a fixed out-of-tree path (fuzz-all.sh writes
+    # crashes here instead of into the source tree).
+    FUZZ_ARTIFACT_ROOT: "$CI_PROJECT_DIR/fuzz-artifacts"
+  artifacts:
+    when: on_failure
+    paths:
+      - "fuzz-artifacts/"
+    expire_in: 30 days
+  rules:
+    - !reference [.default_rules, rules]
+
+# Deterministic regression gate: (re)generate seeds, then replay each corpus
+# file once (-runs=0).  A crash here is a real, reintroduced bug -> blocks.
+fuzz-replay:
+  extends: .fuzz-base
+  variables:
+    FUZZ_MODE: replay
+    # Exclude a target with a known-open bug until its fix lands, e.g.:
+    # FUZZ_SKIP: "keybox_from_bytes"
+  script:
+    - ./fuzz-all.sh
+
+# Short mutation run.  Nondeterministic, so it surfaces new crashes as a
+# pipeline warning rather than blocking an unrelated MR.
+fuzz-timed:
+  extends: .fuzz-base
+  variables:
+    FUZZ_MODE: timed
+    FUZZ_TIME_PER_TARGET: "30"
+  script:
+    - ./fuzz-all.sh
+  allow_failure: true
+
 doc:
   image: registry.sequoia-pgp.org/sequoia-pgp/build-docker-image/trixie-prebuild
   stage: build
