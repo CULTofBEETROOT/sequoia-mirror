@@ -50,11 +50,23 @@ enum PublicKeyAlgorithmSpecificationInner {
     MLDSA65_Ed25519,
     /// Composite signature algorithm using ML-DSA-87 and Ed448.
     MLDSA87_Ed448,
-    /// SLH-DSA signature algorithm 128 bit, small signatures.
+    /// SLH-DSA signature algorithm SHAKE 128 bit, small signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128s,
-    /// SLH-DSA signature algorithm 128 bit, fast signatures.
+    /// SLH-DSA signature algorithm SHAKE 128 bit, fast signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128f,
-    /// SLH-DSA signature algorithm 256 bit, small signatures.
+    /// SLH-DSA signature algorithm SHAKE 256 bit, small signatures.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA256s,
     /// Composite KEM using ML-KEM-768 and X25519.
     MLKEM768_X25519,
@@ -441,56 +453,69 @@ impl PublicKeyAlgorithmSpecification {
         }
     }
 
-    /// SLHDSA128s.
+    /// SLH-DSA-SHAKE-128s.
     ///
-    /// SLHDSA128s is a post-quantum secure signing algorithm.  There
-    /// is more confidence that SLHDSA is secure than MLDSA and as
-    /// such there is no classical fallback.  SLHDSA is very slow and
-    /// thus this algorithm is only recommended for infrequent signing
-    /// (e.g., software releases) and asynchronous operations.
-    /// SLHDSA128f is faster than SLHDSA128s (but still not
-    /// recommended for frequent synchronous use), but it generates
-    /// larger artifacts.
+    /// SLH-DSA-SHAKE-128s is a post-quantum secure signing algorithm.
+    /// There is more confidence that SLH-DSA is secure than ML-DSA
+    /// and as such there is no classical fallback.  SLH-DSA is very
+    /// slow and thus this algorithm is only recommended for
+    /// infrequent signing (e.g., software releases) and asynchronous
+    /// operations.  SLH-DSA-SHAKE-128f is faster than
+    /// SLH-DSA-SHAKE-128s (but still not recommended for frequent
+    /// synchronous use), but it generates larger artifacts.
     ///
-    /// SLHDSA128s is defined in [RFC
+    /// SLH-DSA-SHAKE-128s is defined in [RFC
     /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn slhdsa128s() -> Self {
         PublicKeyAlgorithmSpecification {
             inner: PublicKeyAlgorithmSpecificationInner::SLHDSA128s,
         }
     }
 
-    /// SLHDSA128f.
+    /// SLH-DSA-SHAKE-128f.
     ///
-    /// SLHDSA128f is a post-quantum secure signing algorithm.  There
-    /// is more confidence that SLHDSA is secure than MLDSA and as
-    /// such there is no classical fallback.  SLHDSA is very slow and
-    /// thus this algorithm is only recommended for infrequent signing
-    /// (e.g., software releases) and asynchronous operations.
-    /// SLHDSA128f is faster than SLHDSA128s (but still not
-    /// recommended for frequent synchronous use), but generates
-    /// larger artifacts.
+    /// SLH-DSA-SHAKE-128f is a post-quantum secure signing algorithm.
+    /// There is more confidence that SLH-DSA is secure than ML-DSA
+    /// and as such there is no classical fallback.  SLH-DSA is very
+    /// slow and thus this algorithm is only recommended for
+    /// infrequent signing (e.g., software releases) and asynchronous
+    /// operations.  SLH-DSA-SHAKE-128f is faster than
+    /// SLH-DSA-SHAKE-128f (but still not recommended for frequent
+    /// synchronous use), but it generates larger artifacts.
     ///
-    /// SLHDSA128f is defined in [RFC
+    /// SLH-DSA-SHAKE-128f is defined in [RFC
     /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn slhdsa128f() -> Self {
         PublicKeyAlgorithmSpecification {
             inner: PublicKeyAlgorithmSpecificationInner::SLHDSA128f,
         }
     }
 
-    /// SLHDSA256s.
+    /// SLH-DSA-SHAKE-256s.
     ///
-    /// SLHDSA256s is a post-quantum secure signing algorithm.  There
-    /// is more confidence that SLHDSA is secure than MLDSA and as
-    /// such there is no classical fallback.  SLHDSA is very slow and
-    /// thus this algorithm is only recommended for infrequent signing
-    /// (e.g., software releases) and asynchronous operations.
-    /// SLHDSA256s has a higher security margin than SLHDSA256s and
-    /// SLHDSA256f and in consequently even slower.
+    /// SLH-DSA-SHAKE-256s is a post-quantum secure signing algorithm.
+    /// There is more confidence that SLH-DSA is secure than ML-DSA
+    /// and as such there is no classical fallback.  SLH-DSA is very
+    /// slow and thus this algorithm is only recommended for
+    /// infrequent signing (e.g., software releases) and asynchronous
+    /// operations.  SLH-DSA-SHAKE-256f is faster than
+    /// SLH-DSA-SHAKE-256s (but still not recommended for frequent
+    /// synchronous use), but it generates larger artifacts.
     ///
-    /// SLHDSA256s is defined in [RFC
+    /// SLH-DSA-SHAKE-256s is defined in [RFC
     /// 9980](https://datatracker.ietf.org/doc/draft-ietf-openpgp-pqc/).
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     pub fn slhdsa256s() -> Self {
         PublicKeyAlgorithmSpecification {
             inner: PublicKeyAlgorithmSpecificationInner::SLHDSA256s,

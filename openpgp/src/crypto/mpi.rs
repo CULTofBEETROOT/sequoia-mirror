@@ -629,18 +629,30 @@ pub enum PublicKey {
     },
 
     /// SLH-DSA-SHAKE-128s public key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128s {
         /// The public key, an opaque string.
         public: [u8; 32],
     },
 
     /// SLH-DSA-SHAKE-128f public key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128f {
         /// The public key, an opaque string.
         public: [u8; 32],
     },
 
     /// SLH-DSA-SHAKE-256s public key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA256s {
         /// The public key, an opaque string.
         public: Box<[u8; 64]>,
@@ -1858,18 +1870,30 @@ pub enum Signature {
     },
 
     /// SLH-DSA-SHAKE-128s signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128s {
         /// The signature, an opaque string.
         sig: Box<[u8; 7856]>,
     },
 
     /// SLH-DSA-SHAKE-128f signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA128f {
         /// The signature, an opaque string.
         sig: Box<[u8; 17088]>,
     },
 
     /// SLH-DSA-SHAKE-256s signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     SLHDSA256s {
         /// The signature, an opaque string.
         sig: Box<[u8; 29792]>,

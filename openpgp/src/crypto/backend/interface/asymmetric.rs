@@ -174,15 +174,23 @@ pub trait Asymmetric {
             PublicKeyAlgorithm::MLDSA87_Ed448).into())
     }
 
-    /// Generates an SLHDSA128s key pair.
+    /// Generates an SLH-DSA-SHAKE-128s key pair.
     ///
     /// Returns a tuple containing the secret and public key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa128s_generate_key() -> Result<(Protected, [u8; 32])> {
         Err(Error::UnsupportedPublicKeyAlgorithm(
             PublicKeyAlgorithm::SLHDSA128s).into())
     }
 
-    /// Creates an SLHDSA128s signature.
+    /// Creates an SLH-DSA-SHAKE-128s signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa128s_sign(_secret: &Protected, _digest: &[u8])
                        -> Result<Box<[u8; 7856]>>
     {
@@ -190,7 +198,11 @@ pub trait Asymmetric {
             PublicKeyAlgorithm::SLHDSA128s).into())
     }
 
-    /// Verifies an SLHDSA128s signature.
+    /// Verifies an SLH-DSA-SHAKE-128s signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa128s_verify(_public: &[u8; 32], _digest: &[u8], _signature: &[u8; 7856])
                          -> Result<bool>
     {
@@ -198,15 +210,23 @@ pub trait Asymmetric {
             PublicKeyAlgorithm::SLHDSA128s).into())
     }
 
-    /// Generates an SLHDSA128f key pair.
+    /// Generates an SLH-DSA-SHAKE-128f key pair.
     ///
     /// Returns a tuple containing the secret and public key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa128f_generate_key() -> Result<(Protected, [u8; 32])> {
         Err(Error::UnsupportedPublicKeyAlgorithm(
             PublicKeyAlgorithm::SLHDSA128f).into())
     }
 
-    /// Creates an SLHDSA128f signature.
+    /// Creates an SLH-DSA-SHAKE-128f signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa128f_sign(_secret: &Protected, _digest: &[u8])
                        -> Result<Box<[u8; 17088]>>
     {
@@ -214,7 +234,11 @@ pub trait Asymmetric {
             PublicKeyAlgorithm::SLHDSA128f).into())
     }
 
-    /// Verifies an SLHDSA128f signature.
+    /// Verifies an SLH-DSA-SHAKE-128f signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa128f_verify(_public: &[u8; 32], _digest: &[u8], _signature: &[u8; 17088])
                          -> Result<bool>
     {
@@ -222,15 +246,23 @@ pub trait Asymmetric {
             PublicKeyAlgorithm::SLHDSA128f).into())
     }
 
-    /// Generates an SLHDSA256s key pair.
+    /// Generates an SLH-DSA-SHAKE-256s key pair.
     ///
     /// Returns a tuple containing the secret and public key.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa256s_generate_key() -> Result<(Protected, Box<[u8; 64]>)> {
         Err(Error::UnsupportedPublicKeyAlgorithm(
             PublicKeyAlgorithm::SLHDSA256s).into())
     }
 
-    /// Creates an SLHDSA256s signature.
+    /// Creates an SLH-DSA-SHAKE-256s signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa256s_sign(_secret: &Protected, _digest: &[u8])
                        -> Result<Box<[u8; 29792]>>
     {
@@ -238,7 +270,11 @@ pub trait Asymmetric {
             PublicKeyAlgorithm::SLHDSA256s).into())
     }
 
-    /// Verifies an SLHDSA256s signature.
+    /// Verifies an SLH-DSA-SHAKE-256s signature.
+    ///
+    /// Note: [RFC 9980 only specifies the SHAKE variant of the
+    /// SLH-DSA
+    /// algorithm](https://www.rfc-editor.org/rfc/rfc9980.html#name-supported-public-key-algori).
     fn slhdsa256s_verify(_public: &[u8; 64], _digest: &[u8], _signature: &[u8; 29792])
                          -> Result<bool>
     {
