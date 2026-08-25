@@ -48,7 +48,7 @@ xxhash-rust = { version = "0.8", features = ["xxh3"] }
 # OpenSSL.
 ctor = { version = "1", optional = true }
 openssl-sys = { version = "0.9", optional = true }
-ossl = { version = "1.5.2", default-features = false, features = ["openssl-sys", "rfc9580"], optional = true }
+ossl = { git = "https://github.com/Jakuje/kryoptic.git", branch="fips-permissive", version = "1.5.2", default-features = false, features = ["openssl-sys", "rfc9580"], optional = true }
 
 # Botan.
 botan = { version = ">= 0.10.6, < 0.12", optional = true }
