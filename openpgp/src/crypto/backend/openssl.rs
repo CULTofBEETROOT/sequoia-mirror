@@ -70,10 +70,17 @@ pub fn context() -> &'static ossl::OsslContext {
 
     OSSL_CONTEXT.get_or_init(|| {
         let mut context = ossl::OsslContext::new_lib_ctx();
+        // First, load default configuration. It should change the context
+        // to sensible defaults defined in the configuration file, loading
+        // providers, FIPS module, cryptographic policy ...
+        // Failure is not fatal.
+        let _ = context.load_default_configuration();
         // Try to load legacy provider. Ignore the failures as the worst
         // what could happen is that we won't support some of the legacy
         // algorithms.
         let _ = context.load_legacy_provider();
+        // If we have FIPS provider, set it to permissive mode.
+        let _ = context.set_permissive_fips();
         context
     })
 }
