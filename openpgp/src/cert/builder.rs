@@ -92,6 +92,22 @@ pub enum CipherSuite {
     /// KEM MLKEM1024+X448.
     MLDSA87_Ed448,
 
+    /// Composite signature algorithm MLDSA65+ECDSA over NIST P-384,
+    /// and composite KEM MLKEM768+ECDH over NIST P-384.
+    MLDSA65_ECDSA_NISTP384,
+
+    /// Composite signature algorithm MLDSA87+ECDSA over NIST P-521,
+    /// and composite KEM MLKEM1024+ECDH over NIST P-521.
+    MLDSA87_ECDSA_NISTP521,
+
+    /// Composite signature algorithm MLDSA65+ECDSA over Brainpool P-384,
+    /// and composite KEM MLKEM768+ECDH over Brainpool P-384.
+    MLDSA65_ECDSA_BrainpoolP384,
+
+    /// Composite signature algorithm MLDSA87+ECDSA over Brainpool P-512,
+    /// and composite KEM MLKEM1024+ECDH over Brainpool P-512.
+    MLDSA87_ECDSA_BrainpoolP512,
+
     // If you add a variant here, be sure to update
     // CipherSuite::variants below.
 }
@@ -109,7 +125,9 @@ impl CipherSuite {
         use CipherSuite::*;
 
         [ Cv25519, Cv448, RSA3k, P256, P384, P521, RSA2k, RSA4k,
-          MLDSA65_Ed25519, MLDSA87_Ed448 ]
+          MLDSA65_Ed25519, MLDSA87_Ed448,
+          MLDSA65_ECDSA_NISTP384, MLDSA87_ECDSA_NISTP521,
+          MLDSA65_ECDSA_BrainpoolP384, MLDSA87_ECDSA_BrainpoolP512 ]
             .into_iter()
     }
 
@@ -174,6 +192,22 @@ impl CipherSuite {
             MLDSA87_Ed448 => {
                 check_pk!(PublicKeyAlgorithm::MLDSA87_Ed448);
                 check_pk!(PublicKeyAlgorithm::MLKEM1024_X448);
+            }
+            MLDSA65_ECDSA_NISTP384 => {
+                check_pk!(PublicKeyAlgorithm::MLDSA65_ECDSA_NISTP384);
+                check_pk!(PublicKeyAlgorithm::MLKEM768_ECDH_NISTP384);
+            }
+            MLDSA87_ECDSA_NISTP521 => {
+                check_pk!(PublicKeyAlgorithm::MLDSA87_ECDSA_NISTP521);
+                check_pk!(PublicKeyAlgorithm::MLKEM1024_ECDH_NISTP521);
+            }
+            MLDSA65_ECDSA_BrainpoolP384 => {
+                check_pk!(PublicKeyAlgorithm::MLDSA65_ECDSA_BrainpoolP384);
+                check_pk!(PublicKeyAlgorithm::MLKEM768_ECDH_BrainpoolP384);
+            }
+            MLDSA87_ECDSA_BrainpoolP512 => {
+                check_pk!(PublicKeyAlgorithm::MLDSA87_ECDSA_BrainpoolP512);
+                check_pk!(PublicKeyAlgorithm::MLKEM1024_ECDH_BrainpoolP512);
             }
         }
         Ok(())
@@ -256,7 +290,12 @@ impl CipherSuite {
                 }
             },
 
-            CipherSuite::MLDSA65_Ed25519 | CipherSuite::MLDSA87_Ed448 =>
+            CipherSuite::MLDSA65_Ed25519
+                | CipherSuite::MLDSA87_Ed448
+                | CipherSuite::MLDSA65_ECDSA_NISTP384
+                | CipherSuite::MLDSA87_ECDSA_NISTP521
+                | CipherSuite::MLDSA65_ECDSA_BrainpoolP384
+                | CipherSuite::MLDSA87_ECDSA_BrainpoolP512 =>
                 Err(Error::InvalidOperation(
                     "can't use algorithms for v4 keys".into())
                     .into()),
@@ -335,18 +374,41 @@ impl CipherSuite {
                 }
             },
 
-            a @ CipherSuite::MLDSA65_Ed25519 | a @ CipherSuite::MLDSA87_Ed448 =>
+            a @ CipherSuite::MLDSA65_Ed25519
+                | a @ CipherSuite::MLDSA87_Ed448
+                | a @ CipherSuite::MLDSA65_ECDSA_NISTP384
+                | a @ CipherSuite::MLDSA87_ECDSA_NISTP521
+                | a @ CipherSuite::MLDSA65_ECDSA_BrainpoolP384
+                | a @ CipherSuite::MLDSA87_ECDSA_BrainpoolP512 =>
                 match (sign, encrypt, a) {
                     (true, false, CipherSuite::MLDSA65_Ed25519) =>
                         Key6::generate_mldsa65_ed25519(),
                     (true, false, CipherSuite::MLDSA87_Ed448) =>
                         Key6::generate_mldsa87_ed448(),
+                    (true, false, CipherSuite::MLDSA65_ECDSA_NISTP384) =>
+                        Key6::generate_mldsa65_ecdsa_nistp384(),
+                    (true, false, CipherSuite::MLDSA87_ECDSA_NISTP521) =>
+                        Key6::generate_mldsa87_ecdsa_nistp521(),
+                    (true, false, CipherSuite::MLDSA65_ECDSA_BrainpoolP384) =>
+                        Key6::generate_mldsa65_ecdsa_brainpoolp384(),
+                    (true, false, CipherSuite::MLDSA87_ECDSA_BrainpoolP512) =>
+                        Key6::generate_mldsa87_ecdsa_brainpoolp512(),
                     (true, false, _) => unreachable!(),
+
                     (false, true, CipherSuite::MLDSA65_Ed25519) =>
                         Key6::generate_mlkem768_x25519(),
                     (false, true, CipherSuite::MLDSA87_Ed448) =>
                         Key6::generate_mlkem1024_x448(),
+                    (false, true, CipherSuite::MLDSA65_ECDSA_NISTP384) =>
+                        Key6::generate_mlkem768_ecdh_nistp384(),
+                    (false, true, CipherSuite::MLDSA87_ECDSA_NISTP521) =>
+                        Key6::generate_mlkem1024_ecdh_nistp521(),
+                    (false, true, CipherSuite::MLDSA65_ECDSA_BrainpoolP384) =>
+                        Key6::generate_mlkem768_ecdh_brainpoolp384(),
+                    (false, true, CipherSuite::MLDSA87_ECDSA_BrainpoolP512) =>
+                        Key6::generate_mlkem1024_ecdh_brainpoolp512(),
                     (false, true, _) => unreachable!(),
+
                     (true, true, _) =>
                         Err(Error::InvalidOperation(
                             "Can't use key for encryption and signing".into())
