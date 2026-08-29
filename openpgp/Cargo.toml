@@ -45,7 +45,7 @@ sha1collisiondetection = { version = "0.3.1", default-features = false, features
 thiserror = ">=1, <3"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
-ossl = { version = "1.3.1", features = ["dynamic", "rfc9580"], optional = true }
+ossl = { version = "1.5.2", features = ["dynamic", "rfc9580"], optional = true }
 
 # Botan.
 botan = { version = ">= 0.10.6, < 0.12", optional = true }
